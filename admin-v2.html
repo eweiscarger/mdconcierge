@@ -460,7 +460,8 @@ function selL(id){
     <div><div class="dp-st">Contact</div><div class="dp-f"><span class="dp-fk">Phone</span><span class="dp-fv">${l.phone}</span></div><div class="dp-f"><span class="dp-fk">Email</span><span class="dp-fv" style="font-size:11px;">${l.email}</span></div><div class="dp-f"><span class="dp-fk">Location</span><span class="dp-fv">${l.city}, ${l.state} ${l.zip}</span></div></div>
     <div><div class="dp-st">Case details</div><div class="dp-f"><span class="dp-fk">Injury</span><span class="dp-fv" style="font-size:11px;line-height:1.4;">${l.injury}</span></div><div class="dp-f"><span class="dp-fk">Employer</span><span class="dp-fv">${l.employer}</span></div><div class="dp-f"><span class="dp-fk">Reported</span><span class="dp-fv">${l.reported}</span></div><div class="dp-f"><span class="dp-fk">Claim filed</span><span class="dp-fv">${l.claimFiled}</span></div></div>
     <div><div class="dp-st">Medical</div><div class="dp-f"><span class="dp-fk">Treatment</span><span class="dp-fv" style="font-size:11px;line-height:1.4;">${l.treatment}</span></div><div class="dp-f"><span class="dp-fk">Prior atty</span><span class="dp-fv">${l.attorney}</span></div></div>
-    ${rB}${dB}`;
+    ${rB}${dB}
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;"><button onclick="deleteLead(${l.id})" style="width:100%;padding:9px;background:transparent;border:1px solid var(--red);color:var(--red);border-radius:8px;font-size:12px;cursor:pointer;">Delete lead</button></div>`;
   const act=document.getElementById('dp-act');
   act.style.display=(l.status==='new'||l.status==='review')?'flex':'none';
   const mA=ATTORNEYS.filter(a=>a.types.includes(l.caseType)&&a.status!=='full'&&a.states.includes(l.state));
@@ -475,6 +476,23 @@ function selL(id){
   }
   mkOpts(document.getElementById('ra'),mA,aA,'Select attorney');
   mkOpts(document.getElementById('rp'),mP,aP,'Select provider');
+}
+async function deleteLead(id){
+  const l=LEADS.find(x=>x.id===id);
+  if(!l)return;
+  const clearPanel=function(){selLead=null;const b=document.getElementById('dp-body');if(b)b.innerHTML='';const dn=document.getElementById('dp-name');if(dn)dn.textContent='Select a lead';const ds=document.getElementById('dp-sub');if(ds)ds.textContent='';const da=document.getElementById('dp-act');if(da)da.style.display='none';};
+  if(!l._supa){
+    if(confirm('Remove sample lead "'+l.name+'" from view? (Sample data — it reappears on reload.)')){
+      const i=LEADS.findIndex(x=>x.id===id);if(i>=0)LEADS.splice(i,1);clearPanel();renderTable();showToast('Sample lead removed from view');
+    }
+    return;
+  }
+  if(!confirm('Permanently delete lead "'+l.name+'" from the database? This cannot be undone.'))return;
+  const {error}=await sbClient.from('cases').delete().eq('id',l.supaId);
+  if(error){showToast('Delete failed: '+(error.message||'error'));return;}
+  const i=LEADS.findIndex(x=>x.id===id);if(i>=0)LEADS.splice(i,1);
+  clearPanel();renderTable();
+  showToast('Lead permanently deleted');
 }
 
 function renderActivity(){
@@ -577,7 +595,7 @@ function mapSupaCase(r){
     phone:r.patient_phone||'',state:state,city:city,caseType:r.case_type||'',score:sm?parseInt(sm[1],10):0,
     status:r.status||'new',timeAgo:_timeAgo(r.created_at||r.intake_date),email:_nf(notes,/Email:\s*([^|]+)/),
     zip:r.patient_zip||'',employer:'',injury:r.injury_type||'',reported:'',claimFiled:r.claim_status||'',
-    treatment:'',priorInjury:'',attorney:'None',caseId:r.case_id||'',_supa:true};
+    treatment:'',priorInjury:'',attorney:'None',caseId:r.case_id||'',supaId:r.id,_supa:true};
 }
 async function loadPortalLeads(){
   try{
