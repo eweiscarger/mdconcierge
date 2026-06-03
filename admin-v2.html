@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>InjuryRight — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0b0f14;--bg2:#111720;--bg3:#171e28;--bg4:#1c2535;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --gold:#c8922a;--gold2:#e8b84b;
+  --text:#e8e4dc;--muted:#6b7583;--muted2:#8e97a3;
+  --green:#2ecc8a;--green-bg:rgba(46,204,138,0.1);
+  --red:#e05555;--red-bg:rgba(224,85,85,0.1);
+  --amber:#e8a830;--amber-bg:rgba(232,168,48,0.1);
+  --blue:#4a9eff;--blue-bg:rgba(74,158,255,0.1);
+  --purple:#a374f7;--purple-bg:rgba(163,116,247,0.1);
+  --teal:#2ec4b6;--teal-bg:rgba(46,196,182,0.1);
+  --mono:'IBM Plex Mono',monospace;--r:6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;}
+.sidebar{width:224px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;bottom:0;z-index:50;}
+.sb-logo{padding:22px 20px 18px;border-bottom:1px solid var(--border);}
+.sb-logo .wm{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--text);}
+.sb-logo .wm span{color:var(--gold);}
+.sb-logo .tag{font-size:10px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;}
+.sb-nav{padding:14px 10px;flex:1;display:flex;flex-direction:column;gap:2px;}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r);cursor:pointer;font-size:13px;color:var(--muted2);transition:all .15s;border:none;background:none;width:100%;text-align:left;}
+.ni:hover{background:var(--bg3);color:var(--text);}
+.ni.active{background:rgba(200,146,42,.13);color:var(--gold);}
+.ni-ic{width:16px;text-align:center;}
+.nb{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:500;padding:1px 6px;border-radius:10px;font-family:var(--mono);}
+.ns{padding:13px 12px 5px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.sb-foot{padding:16px;border-top:1px solid var(--border);}
+.u-chip{display:flex;align-items:center;gap:10px;}
+.u-av{width:32px;height:32px;border-radius:50%;background:rgba(200,146,42,.2);border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:var(--gold);}
+.main{margin-left:224px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{height:54px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 26px;gap:14px;flex-shrink:0;background:var(--bg);position:sticky;top:0;z-index:40;}
+.pg-title{font-size:15px;font-weight:500;}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.live{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--green);font-family:var(--mono);}
+.ldot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.ib{background:var(--bg3);border:1px solid var(--border);color:var(--muted2);padding:5px 10px;border-radius:var(--r);cursor:pointer;font-size:13px;transition:all .15s;font-family:'DM Sans',sans-serif;}
+.ib:hover{border-color:var(--border2);color:var(--text);}
+.view{display:none;padding:26px;flex:1;}
+.view.active{display:block;}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;position:relative;overflow:hidden;}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.kpi.gold::before{background:var(--gold);}
+.kpi.green::before{background:var(--green);}
+.kpi.blue::before{background:var(--blue);}
+.kpi.purple::before{background:var(--purple);}
+.kpi-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.kpi-v{font-family:'Playfair Display',serif;font-size:34px;font-weight:700;line-height:1;margin-bottom:4px;}
+.kpi.gold .kpi-v{color:var(--gold);}
+.kpi.green .kpi-v{color:var(--green);}
+.kpi.blue .kpi-v{color:var(--blue);}
+.kpi.purple .kpi-v{color:var(--purple);}
+.kpi-d{font-size:12px;color:var(--muted2);}
+.kpi-d.up{color:var(--green);}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px;}
+.ph{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.pt{font-size:14px;font-weight:500;}
+.ps{font-size:12px;color:var(--muted);margin-left:auto;}
+.filter-row{padding:10px 18px;border-bottom:1px solid var(--border);display:flex;gap:7px;flex-wrap:wrap;align-items:center;}
+.fb{padding:4px 11px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-family:'DM Sans',sans-serif;transition:all .15s;}
+.fb:hover,.fb.active{background:var(--gold);border-color:var(--gold);color:#0b0f14;}
+.si{margin-left:auto;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:4px 11px;border-radius:var(--r);font-size:12px;outline:none;font-family:'DM Sans',sans-serif;width:160px;}
+.si::placeholder{color:var(--muted);}
+.lt{width:100%;border-collapse:collapse;}
+.lt th{padding:9px 14px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--border);font-weight:400;white-space:nowrap;}
+.lt td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.lt tr:last-child td{border-bottom:none;}
+.lt tbody tr{cursor:pointer;transition:background .12s;}
+.lt tbody tr:hover{background:var(--bg3);}
+.lt tbody tr.sel{background:rgba(200,146,42,.07);}
+.ln{font-size:13px;font-weight:500;}
+.lm{font-size:11px;color:var(--muted);margin-top:2px;font-family:var(--mono);}
+.ct{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:500;white-space:nowrap;}
+.ct-ssdi{background:var(--purple-bg);color:var(--purple);}
+.ct-truck{background:var(--amber-bg);color:var(--amber);}
+.ct-construct{background:var(--teal-bg);color:var(--teal);}
+.ct-malpractice{background:var(--red-bg);color:var(--red);}
+.sp{display:inline-flex;align-items:center;gap:3px;font-family:var(--mono);font-size:12px;padding:3px 7px;border-radius:4px;}
+.sp.hi{background:var(--green-bg);color:var(--green);}
+.sp.md{background:var(--amber-bg);color:var(--amber);}
+.sp.lo{background:var(--red-bg);color:var(--red);}
+.sd{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px;}
+.s-new{background:var(--blue);}
+.s-review{background:var(--amber);}
+.s-routed{background:var(--green);}
+.s-disq{background:var(--red);}
+.mg{display:grid;grid-template-columns:1fr 330px;gap:18px;}
+.rc{display:flex;flex-direction:column;gap:18px;}
+.dp{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);display:flex;flex-direction:column;max-height:660px;}
+.dp-h{padding:16px 18px;border-bottom:1px solid var(--border);}
+.dp-n{font-size:16px;font-weight:500;margin-bottom:2px;}
+.dp-s{font-size:12px;color:var(--muted);font-family:var(--mono);}
+.dp-b{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:13px;}
+.dp-b::-webkit-scrollbar{width:3px;}
+.dp-b::-webkit-scrollbar-thumb{background:var(--border2);}
+.dp-st{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:7px;}
+.dp-f{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;}
+.dp-fk{font-size:12px;color:var(--muted);flex-shrink:0;min-width:106px;}
+.dp-fv{font-size:12px;color:var(--text);text-align:right;font-family:var(--mono);}
+.sc-track{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:4px;}
+.sc-fill{height:100%;border-radius:3px;transition:width .6s;}
+.dp-act{padding:14px 18px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:7px;}
+.as{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:8px 11px;border-radius:var(--r);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;width:100%;appearance:none;cursor:pointer;}
+.br{background:var(--gold);color:#0b0f14;border:none;padding:9px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;}
+.br:hover{background:var(--gold2);}
+.bdq{background:transparent;color:var(--red);border:1px solid var(--red-bg);padding:7px;border-radius:var(--r);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;width:100%;}
+.bdq:hover{background:var(--red-bg);}
+.af{display:flex;flex-direction:column;}
+.ai{padding:11px 18px;border-bottom:1px solid var(--border);display:flex;gap:9px;align-items:flex-start;}
+.ai:last-child{border-bottom:none;}
+.ai-ic{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px;}
+.ic-new{background:var(--blue-bg);}
+.ic-rt{background:var(--green-bg);}
+.ic-dq{background:var(--red-bg);}
+.ic-net{background:var(--amber-bg);}
+.ai-txt{font-size:12px;line-height:1.5;}
+.ai-time{font-size:11px;color:var(--muted);font-family:var(--mono);margin-top:2px;}
+.mc-spark{display:flex;align-items:flex-end;gap:3px;height:40px;padding:0 18px 14px;}
+.bar{flex:1;background:rgba(200,146,42,.22);border-radius:2px 2px 0 0;cursor:pointer;}
+.bar:hover,.bar.today{background:var(--gold);}
+/* NETWORK */
+.net-tabs{display:flex;border-bottom:1px solid var(--border);}
+.net-tab{padding:12px 20px;font-size:13px;color:var(--muted2);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;font-family:'DM Sans',sans-serif;}
+.net-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.net-body{padding:20px;}
+.net-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;}
+.mc-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:18px;transition:border-color .2s;}
+.mc-card:hover{border-color:var(--border2);}
+.mc-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;}
+.mc-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;flex-shrink:0;}
+.av-a{background:rgba(200,146,42,.15);border:1px solid rgba(200,146,42,.3);color:var(--gold);}
+.av-p{background:rgba(46,196,182,.12);border:1px solid rgba(46,196,182,.25);color:var(--teal);}
+.av-v{background:rgba(163,116,247,.12);border:1px solid rgba(163,116,247,.25);color:var(--purple);}
+.mc-name{font-size:14px;font-weight:500;margin-bottom:2px;}
+.mc-role{font-size:11px;color:var(--muted);}
+.mc-st{display:flex;align-items:center;gap:5px;font-size:11px;margin-top:3px;}
+.dot-on{width:6px;height:6px;border-radius:50%;background:var(--green);}
+.dot-full{width:6px;height:6px;border-radius:50%;background:var(--amber);}
+.ct-checks{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.ct-chip{padding:3px 9px;border-radius:20px;font-size:11px;border:1px solid var(--border2);color:var(--muted2);}
+.ct-chip.on.ssdi{background:var(--purple-bg);border-color:var(--purple);color:var(--purple);}
+.ct-chip.on.truck{background:var(--amber-bg);border-color:var(--amber);color:var(--amber);}
+.ct-chip.on.construct{background:var(--teal-bg);border-color:var(--teal);color:var(--teal);}
+.ct-chip.on.malpractice{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+.cap-row{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.cap-lbl{font-size:11px;color:var(--muted);flex-shrink:0;width:72px;}
+.cap-track{flex:1;height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;}
+.cap-fill{height:100%;border-radius:2px;background:var(--green);}
+.cap-fill.warn{background:var(--amber);}
+.cap-fill.full{background:var(--red);}
+.cap-num{font-size:11px;font-family:var(--mono);color:var(--muted2);width:32px;text-align:right;}
+.stags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:9px;}
+.stag{padding:2px 7px;border-radius:4px;font-size:10px;font-family:var(--mono);background:var(--bg4);border:1px solid var(--border2);color:var(--muted2);}
+.mc-acts{display:flex;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.btn-sm{flex:1;padding:6px;border-radius:var(--r);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;border:1px solid var(--border2);background:transparent;color:var(--muted2);transition:all .15s;}
+.btn-sm:hover{border-color:var(--gold);color:var(--gold);}
+.btn-sm.danger:hover{border-color:var(--red);color:var(--red);}
+.add-card{background:var(--bg3);border:2px dashed var(--border2);border-radius:var(--r);padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;min-height:170px;transition:border-color .2s;}
+.add-card:hover{border-color:var(--gold);}
+.add-ic{width:36px;height:36px;border-radius:50%;background:rgba(200,146,42,.1);display:flex;align-items:center;justify-content:center;font-size:20px;}
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:200;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);width:100%;max-width:500px;padding:26px;animation:fu .25s ease both;max-height:90vh;overflow-y:auto;}
+@keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.modal h2{font-family:'Playfair Display',serif;font-size:19px;margin-bottom:5px;}
+.modal p{font-size:13px;color:var(--muted2);margin-bottom:18px;line-height:1.6;}
+.ms{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:var(--r);font-size:13px;font-family:'DM Sans',sans-serif;margin-bottom:9px;outline:none;}
+.mn{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:9px 12px;border-radius:var(--r);font-size:13px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:70px;outline:none;margin-bottom:14px;}
+.mbtns{display:flex;gap:9px;justify-content:flex-end;}
+.btn-cancel{background:transparent;border:1px solid var(--border2);color:var(--muted2);padding:8px 16px;border-radius:var(--r);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;}
+.btn-ok{background:var(--gold);color:#0b0f14;border:none;padding:8px 18px;border-radius:var(--r);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;}
+.btn-ok:hover{background:var(--gold2);}
+.fgroup{margin-bottom:12px;}
+.flabel{font-size:11px;color:var(--muted);margin-bottom:4px;display:block;text-transform:uppercase;letter-spacing:.06em;}
+.finput{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:9px 12px;border-radius:var(--r);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;}
+.finput::placeholder{color:var(--muted);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.ct-check-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.ct-chk{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--muted2);}
+.ct-chk input{accent-color:var(--gold);}
+.toast{position:fixed;bottom:26px;right:26px;background:var(--bg3);border:1px solid var(--green);color:var(--green);padding:11px 18px;border-radius:var(--r);font-size:13px;z-index:300;display:none;animation:fu .2s ease both;}
+</style>
+</head>
+<body>
+<nav class="sidebar">
+  <div class="sb-logo"><div class="wm">Injury<span>Right</span></div><div class="tag">Admin Portal</div></div>
+  <div class="sb-nav">
+    <button class="ni active" onclick="showView('leads',this)"><span class="ni-ic">📋</span> Lead Queue <span class="nb" id="new-count">6</span></button>
+    <button class="ni" onclick="showView('network',this)"><span class="ni-ic">🌐</span> Network</button>
+    <div class="ns">Analytics</div>
+    <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
+    <div class="ns">Settings</div>
+    <button class="ni" onclick="showView('settings',this)"><span class="ni-ic">⚙️</span> Settings</button>
+  </div>
+  <div class="sb-foot"><div class="u-chip"><div class="u-av">A</div><div><div style="font-size:13px;">Admin</div><div style="font-size:11px;color:var(--muted);">InjuryRight Owner</div></div></div></div>
+</nav>
+<main class="main">
+  <div class="topbar">
+    <div class="pg-title" id="pg-title">Lead Queue</div>
+    <div class="tb-right">
+      <div class="live"><div class="ldot"></div> Live</div>
+      <button class="ib" onclick="showToast('Refreshed')">↻ Refresh</button>
+      <button class="ib" onclick="exportCSV()">⬇ Export</button>
+    </div>
+  </div>
+
+  <!-- LEADS VIEW -->
+  <div class="view active" id="view-leads">
+    <div class="kpi-row">
+      <div class="kpi gold"><div class="kpi-lbl">New today</div><div class="kpi-v">8</div><div class="kpi-d up">↑ 3 vs yesterday</div></div>
+      <div class="kpi green"><div class="kpi-lbl">Routed this week</div><div class="kpi-v">21</div><div class="kpi-d up">↑ 8%</div></div>
+      <div class="kpi blue"><div class="kpi-lbl">Avg case score</div><div class="kpi-v">7.8</div><div class="kpi-d">out of 10</div></div>
+      <div class="kpi purple"><div class="kpi-lbl">Network members</div><div class="kpi-v">22</div><div class="kpi-d up">↑ 3 this month</div></div>
+    </div>
+    <div class="panel"><div class="ph"><div class="pt">Lead volume — last 7 days</div><div class="ps" style="font-family:var(--mono);font-size:11px;">Mon–Sun</div></div><div class="mc-spark" id="sparkline"></div></div>
+    <div class="mg">
+      <div class="panel" style="margin-bottom:0;">
+        <div class="ph"><div class="pt">Incoming leads</div><div class="ps" id="lc-lbl">8 new</div></div>
+        <div class="filter-row">
+          <button class="fb active" onclick="filterL('all',this)">All</button>
+          <button class="fb" onclick="filterL('new',this)">New</button>
+          <button class="fb" onclick="filterL('review',this)">In Review</button>
+          <button class="fb" onclick="filterL('routed',this)">Routed</button>
+          <button class="fb" onclick="filterL('disqualified',this)">Disqualified</button>
+          <input class="si" type="text" placeholder="Search…" oninput="searchL(this.value)"/>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="lt"><thead><tr><th>Client</th><th>Case type</th><th>Score</th><th>Status</th><th>State</th><th>Received</th></tr></thead><tbody id="ltbody"></tbody></table>
+        </div>
+      </div>
+      <div class="rc">
+        <div class="dp">
+          <div class="dp-h"><div class="dp-n" id="dp-name">Select a lead</div><div class="dp-s" id="dp-sub">Click any row to view details</div></div>
+          <div class="dp-b" id="dp-body"><div style="padding:20px 0;text-align:center;color:var(--muted);font-size:13px;">← Select a lead</div></div>
+          <div class="dp-act" id="dp-act" style="display:none;">
+            <select class="as" id="ra"><option value="">— Assign attorney —</option></select>
+            <select class="as" id="rp"><option value="">— Assign provider —</option></select>
+            <button class="br" onclick="openRouteModal()">➤ Route This Lead</button>
+            <button class="bdq" onclick="disqualify()">✕ Mark Disqualified</button>
+          </div>
+        </div>
+        <div class="panel" style="margin-bottom:0;"><div class="ph"><div class="pt">Recent activity</div></div><div class="af" id="act-feed"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NETWORK VIEW -->
+  <div class="view" id="view-network">
+    <div class="panel" style="margin-bottom:0;">
+      <div class="ph">
+        <div class="pt">Network management</div>
+        <div class="ps">Attorneys · Providers · Vendors</div>
+        <button class="ib" style="margin-left:12px;" onclick="openAddModal()">+ Add member</button>
+      </div>
+      <div class="net-tabs">
+        <button class="net-tab active" onclick="switchTab('attorneys',this)">Attorneys (6)</button>
+        <button class="net-tab" onclick="switchTab('providers',this)">Medical Providers (9)</button>
+        <button class="net-tab" onclick="switchTab('vendors',this)">Vendors (7)</button>
+      </div>
+      <div class="net-body">
+        <div id="tab-attorneys"><div class="net-grid" id="atty-grid"></div></div>
+        <div id="tab-providers" style="display:none;"><div class="net-grid" id="prov-grid"></div></div>
+        <div id="tab-vendors"   style="display:none;"><div class="net-grid" id="vend-grid"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVENUE VIEW -->
+  <div class="view" id="view-revenue">
+    <div class="kpi-row">
+      <div class="kpi gold"><div class="kpi-lbl">Provider retainers/mo</div><div class="kpi-v">$8,100</div><div class="kpi-d up">9 active providers</div></div>
+      <div class="kpi green"><div class="kpi-lbl">Vendor retainers/mo</div><div class="kpi-v">$4,500</div><div class="kpi-d up">7 active vendors</div></div>
+      <div class="kpi blue"><div class="kpi-lbl">Total MRR</div><div class="kpi-v">$12,600</div><div class="kpi-d">Monthly recurring</div></div>
+      <div class="kpi purple"><div class="kpi-lbl">Leads routed YTD</div><div class="kpi-v">184</div><div class="kpi-d up">↑ 22% vs last yr</div></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="pt">Revenue by member</div></div>
+      <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Member</th><th>Type</th><th>Monthly fee</th><th>Since</th><th>Status</th></tr></thead><tbody>
+        <tr><td><div class="ln">Atlantic Spine &amp; Rehab</div></td><td><span class="ct ct-construct">Provider</span></td><td style="font-family:var(--mono);color:var(--green);">$900/mo</td><td style="color:var(--muted);font-size:12px;">Jan 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
+        <tr><td><div class="ln">Premier Pain Management</div></td><td><span class="ct ct-construct">Provider</span></td><td style="font-family:var(--mono);color:var(--green);">$900/mo</td><td style="color:var(--muted);font-size:12px;">Feb 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
+        <tr><td><div class="ln">MedLien Finance Group</div></td><td><span class="ct ct-ssdi">Vendor</span></td><td style="font-family:var(--mono);color:var(--green);">$1,200/mo</td><td style="color:var(--muted);font-size:12px;">Jan 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
+        <tr><td><div class="ln">Legal Records Plus</div></td><td><span class="ct ct-ssdi">Vendor</span></td><td style="font-family:var(--mono);color:var(--green);">$600/mo</td><td style="color:var(--muted);font-size:12px;">Mar 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
+        <tr><td><div class="ln">Metro Orthopedics</div></td><td><span class="ct ct-construct">Provider</span></td><td style="font-family:var(--mono);color:var(--green);">$900/mo</td><td style="color:var(--muted);font-size:12px;">Mar 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
+      </tbody></table></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div class="view" id="view-settings">
+    <div class="panel"><div class="ph"><div class="pt">Platform settings</div></div><div style="padding:20px;color:var(--muted);font-size:13px;">Settings panel coming soon.</div></div>
+  </div>
+</main>
+
+<!-- ROUTE MODAL -->
+<div class="modal-bg" id="modal-route">
+  <div class="modal">
+    <h2>Route Lead</h2>
+    <p id="m-desc">Attorney and provider will receive the full case profile with InjuryRight attribution immediately upon routing.</p>
+    <select class="ms" id="m-atty"><option value="">— Select attorney —</option></select>
+    <select class="ms" id="m-prov"><option value="">— Select provider —</option></select>
+    <textarea class="mn" id="m-note" placeholder="Internal routing notes (optional)…"></textarea>
+    <div class="mbtns"><button class="btn-cancel" onclick="closeModal('modal-route')">Cancel</button><button class="btn-ok" onclick="confirmRoute()">Confirm &amp; Route</button></div>
+  </div>
+</div>
+
+<!-- ADD MEMBER MODAL -->
+<div class="modal-bg" id="modal-add">
+  <div class="modal">
+    <h2>Add network member</h2>
+    <p>Case type selections control which leads are automatically matched to this member.</p>
+    <div class="fgroup"><label class="flabel">Member type</label>
+      <select class="ms" id="add-type"><option value="">— Select type —</option><option value="attorney">Attorney / Law Firm</option><option value="provider">Medical Provider</option><option value="vendor">Vendor</option></select>
+    </div>
+    <div class="form-row" style="margin-bottom:12px;">
+      <div class="fgroup"><label class="flabel">Organization name</label><input class="finput" id="add-name" placeholder="e.g. Smith &amp; Associates"/></div>
+      <div class="fgroup"><label class="flabel">Primary contact</label><input class="finput" id="add-contact" placeholder="e.g. Jane Smith"/></div>
+    </div>
+    <div class="form-row" style="margin-bottom:12px;">
+      <div class="fgroup"><label class="flabel">Phone</label><input class="finput" id="add-phone" placeholder="(555) 000-0000"/></div>
+      <div class="fgroup"><label class="flabel">Email</label><input class="finput" id="add-email" placeholder="contact@firm.com"/></div>
+    </div>
+    <div class="fgroup"><label class="flabel">Licensed / operating states</label><input class="finput" id="add-states" placeholder="e.g. PA, NJ, NY"/></div>
+    <div class="fgroup"><label class="flabel">Accepted case types</label>
+      <div class="ct-check-grid">
+        <label class="ct-chk"><input type="checkbox" value="ssdi"/> SSDI / SSI</label>
+        <label class="ct-chk"><input type="checkbox" value="truck"/> Trucking accidents</label>
+        <label class="ct-chk"><input type="checkbox" value="construct"/> Construction accidents</label>
+        <label class="ct-chk"><input type="checkbox" value="malpractice"/> Medical malpractice</label>
+      </div>
+    </div>
+    <div class="form-row" style="margin-bottom:16px;">
+      <div class="fgroup"><label class="flabel">Max leads / week</label><input class="finput" id="add-cap" type="number" placeholder="5" min="1" max="50"/></div>
+      <div class="fgroup"><label class="flabel">Monthly fee ($)</label><input class="finput" id="add-fee" type="number" placeholder="900"/></div>
+    </div>
+    <div class="mbtns"><button class="btn-cancel" onclick="closeModal('modal-add')">Cancel</button><button class="btn-ok" onclick="addMember()">Add to network</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CT={ssdi:{l:'SSDI / SSI',c:'ct-ssdi'},truck:{l:'Trucking',c:'ct-truck'},construct:{l:'Construction',c:'ct-construct'},malpractice:{l:'Malpractice',c:'ct-malpractice'}};
+const ATTORNEYS=[
+  {id:'a1',name:'Goldstein & Reyes LLP',contact:'David Goldstein',phone:'(215) 555-0110',email:'dgoldstein@grlaw.com',states:['PA','NJ','DE'],types:['truck','construct'],cap:8,used:5,fee:0,status:'active'},
+  {id:'a2',name:'Martinez Law Group',contact:'Sofia Martinez',phone:'(305) 555-0224',email:'sofia@martinezlaw.com',states:['FL','GA'],types:['ssdi','malpractice'],cap:10,used:3,fee:0,status:'active'},
+  {id:'a3',name:'Chen & Associates',contact:'Kevin Chen',phone:'(718) 555-0387',email:'kchen@chenlaw.com',states:['NY','NJ'],types:['ssdi','truck','construct','malpractice'],cap:12,used:9,fee:0,status:'active'},
+  {id:'a4',name:'Park Injury Attorneys',contact:'Linda Park',phone:'(312) 555-0541',email:'lpark@parkinjury.com',states:['IL','WI'],types:['construct','truck'],cap:6,used:6,fee:0,status:'full'},
+  {id:'a5',name:'Okafor Law Firm',contact:'Emeka Okafor',phone:'(404) 555-0693',email:'eokafor@okaforlaw.com',states:['GA','SC','NC'],types:['ssdi','malpractice'],cap:8,used:2,fee:0,status:'active'},
+  {id:'a6',name:'Rivera & Webb',contact:'Carlos Rivera',phone:'(713) 555-0812',email:'crivera@rvwlaw.com',states:['TX'],types:['truck','construct','malpractice'],cap:10,used:4,fee:0,status:'active'},
+];
+const PROVIDERS=[
+  {id:'p1',name:'Atlantic Spine & Rehab',contact:'Dr. James Obi',phone:'(856) 555-0120',email:'admin@atlanticspine.com',states:['NJ','PA'],types:['truck','construct'],cap:15,used:8,fee:900,status:'active'},
+  {id:'p2',name:'Premier Pain Management',contact:'Dr. Anita Desai',phone:'(267) 555-0235',email:'adesai@premierpm.com',states:['PA'],types:['truck','construct','malpractice'],cap:20,used:11,fee:900,status:'active'},
+  {id:'p3',name:'Metro Orthopedics',contact:'Dr. Carl Bishop',phone:'(212) 555-0348',email:'cbishop@metroortho.com',states:['NY','NJ'],types:['construct','truck'],cap:18,used:7,fee:900,status:'active'},
+  {id:'p4',name:'Coastal Chiropractic',contact:'Dr. Nina Ross',phone:'(904) 555-0461',email:'nross@coastalchiro.com',states:['FL'],types:['truck'],cap:12,used:12,fee:700,status:'full'},
+  {id:'p5',name:'Advanced Imaging Center',contact:'Tom Walsh',phone:'(215) 555-0574',email:'twalsh@advimaging.com',states:['PA','DE'],types:['truck','construct','malpractice'],cap:30,used:14,fee:600,status:'active'},
+  {id:'p6',name:'Gulf Coast Rehab',contact:'Dr. Maria Fuentes',phone:'(713) 555-0687',email:'mfuentes@gulfrehab.com',states:['TX'],types:['truck','construct'],cap:15,used:4,fee:800,status:'active'},
+  {id:'p7',name:'Neurology Associates SE',contact:'Dr. Priya Nair',phone:'(404) 555-0793',email:'pnair@neurologyse.com',states:['GA','FL'],types:['malpractice','ssdi'],cap:10,used:3,fee:1100,status:'active'},
+  {id:'p8',name:'Keystone Physical Therapy',contact:'Brian Moss',phone:'(717) 555-0816',email:'bmoss@keystonept.com',states:['PA'],types:['construct'],cap:20,used:9,fee:700,status:'active'},
+  {id:'p9',name:'MidWest Spine Center',contact:'Dr. Rachel Kim',phone:'(312) 555-0929',email:'rkim@midwestspine.com',states:['IL','WI'],types:['construct','truck'],cap:14,used:5,fee:900,status:'active'},
+];
+const VENDORS=[
+  {id:'v1',name:'MedLien Finance Group',role:'Lien funding',contact:'Sarah Cho',phone:'(800) 555-0142',fee:1200,status:'active'},
+  {id:'v2',name:'Legal Records Plus',role:'Medical records retrieval',contact:'Tom Adler',phone:'(800) 555-0255',fee:600,status:'active'},
+  {id:'v3',name:'CaseDocs AI',role:'Document automation',contact:'Jen Wu',phone:'(415) 555-0368',fee:800,status:'active'},
+  {id:'v4',name:'InjuryBilling Solutions',role:'Medical billing',contact:'Mike Torres',phone:'(888) 555-0471',fee:700,status:'active'},
+  {id:'v5',name:'Expert Witness Network',role:'Expert witness referrals',contact:'Dr. Alan Frost',phone:'(800) 555-0584',fee:500,status:'active'},
+  {id:'v6',name:'PharmaCare Rx',role:'Medication management',contact:'Lisa Grant',phone:'(888) 555-0697',fee:400,status:'active'},
+  {id:'v7',name:'Settlement Advance Co.',role:'Pre-settlement funding',contact:'Paul Chen',phone:'(800) 555-0713',fee:300,status:'active'},
+];
+const LEADS=[
+  {id:1,name:'Marcus Rodriguez',phone:'(215) 555-0142',state:'PA',city:'Philadelphia',caseType:'construct',score:9,status:'new',timeAgo:'6m ago',employer:'Apex Construction LLC',injury:'L4/L5 herniation — fell from scaffolding',reported:'Yes, same day',claimFiled:'Denied',treatment:'Jefferson Hospital ER → Dr. Singh spine',priorInjury:'No',attorney:'None',email:'m.rodriguez@email.com',zip:'19103'},
+  {id:2,name:'Diane Lewkowski',phone:'(267) 555-0389',state:'PA',city:'Allentown',caseType:'ssdi',score:8,status:'new',timeAgo:'22m ago',employer:'Left workforce 2021',injury:'MS + neuropathy, non-ambulatory',reported:'N/A',claimFiled:'Denied twice',treatment:'Dr. Patel neurology',priorInjury:'N/A',attorney:'None',email:'dlewk@mail.com',zip:'18101'},
+  {id:3,name:'Sandra Pham',phone:'(610) 555-0774',state:'NJ',city:'Cherry Hill',caseType:'truck',score:9,status:'review',timeAgo:'1h ago',employer:'N/A',injury:'Whiplash + shoulder — Amazon Logistics truck',reported:'Police report filed',claimFiled:'State Farm vs Amazon Logistics',treatment:'Virtua ER → chiro',priorInjury:'No',attorney:'None',email:'spham@gmail.com',zip:'08002'},
+  {id:4,name:'Robert Hastings',phone:'(856) 555-0211',state:'NJ',city:'Camden',caseType:'malpractice',score:8,status:'new',timeAgo:'2h ago',employer:'N/A',injury:'Surgical error — wrong-site knee surgery',reported:'Hospital incident report',claimFiled:'N/A',treatment:'Follow-up surgery required',priorInjury:'No',attorney:'None',email:'rhastings@email.com',zip:'08101'},
+  {id:5,name:'Diane Morales',phone:'(787) 555-0193',state:'FL',city:'Orlando',caseType:'ssdi',score:9,status:'routed',timeAgo:'Yesterday',employer:'Disney (left 2020)',injury:'MS + fibromyalgia',reported:'N/A',claimFiled:'Appeal pending',treatment:'Dr. Howard neurology',priorInjury:'N/A',attorney:'None',email:'dmorales@email.com',zip:'32801',routedTo:{attorney:'Martinez Law Group',provider:'Neurology Associates SE'}},
+  {id:6,name:'Jerome Tatum',phone:'(856) 555-0312',state:'NJ',city:'Trenton',caseType:'construct',score:7,status:'new',timeAgo:'3h ago',employer:'Camden Warehouse Services',injury:'Rotator cuff tear — fell from ladder',reported:'Next day',claimFiled:'Open — disputed',treatment:'None yet',priorInjury:'No',attorney:'None',email:'jtatum@email.com',zip:'08601'},
+  {id:7,name:'Kevin Osei',phone:'(404) 555-0449',state:'GA',city:'Atlanta',caseType:'construct',score:3,status:'disqualified',timeAgo:'Yesterday',employer:'Self-employed',injury:'Hand injury — off-site personal project',reported:'N/A',claimFiled:'N/A',treatment:'None',priorInjury:'No',attorney:'N/A',email:'kosei@email.com',zip:'30301',disqReason:'Incident occurred outside employment scope'},
+];
+const ACTIVITY=[
+  {t:'new',ic:'📥',tx:'New lead: <strong>Marcus Rodriguez</strong> — Construction PA',time:'6m ago'},
+  {t:'new',ic:'📥',tx:'New lead: <strong>Diane Lewkowski</strong> — SSDI PA',time:'22m ago'},
+  {t:'rt', ic:'➤', tx:'<strong>Diane Morales</strong> routed → Martinez Law + Neurology SE',time:'Yesterday 3:12pm'},
+  {t:'new',ic:'📥',tx:'New lead: <strong>Sandra Pham</strong> — Trucking NJ',time:'1h ago'},
+  {t:'dq', ic:'✕', tx:'<strong>Kevin Osei</strong> disqualified',time:'Yesterday 1:45pm'},
+];
+
+let selLead=null,filterMode='all',searchQ='';
+
+function ctTag(t){const c=CT[t]||{l:t,c:''};return`<span class="ct ${c.c}">${c.l}</span>`;}
+function scorePill(s){const cls=s>=7?'hi':s>=5?'md':'lo';return`<span class="sp ${cls}">${s>=7?'●':s>=5?'◐':'○'} ${s}/10</span>`;}
+function statusBadge(s){const m={new:{c:'s-new',l:'New'},review:{c:'s-review',l:'In Review'},routed:{c:'s-routed',l:'Routed'},disqualified:{c:'s-disq',l:'Disqualified'}}[s]||{c:'s-new',l:s};return`<span class="sd ${m.c}"></span><span style="font-size:12px;">${m.l}</span>`;}
+function capCls(u,c){if(!c)return'';const r=u/c;return r>=1?'full':r>=.8?'warn':'';}
+
+function renderSparkline(){
+  const d=[4,7,5,9,8,11,8],max=Math.max(...d);
+  document.getElementById('sparkline').innerHTML=d.map((v,i)=>`<div class="bar${i===6?' today':''}" style="height:${Math.max(5,Math.round(v/max*36))}px"></div>`).join('');
+}
+
+function renderTable(){
+  const rows=LEADS.filter(l=>{
+    if(filterMode!=='all'&&l.status!==filterMode)return false;
+    if(searchQ){const q=searchQ.toLowerCase();if(!l.name.toLowerCase().includes(q)&&!(CT[l.caseType]?.l||'').toLowerCase().includes(q)&&!l.state.toLowerCase().includes(q))return false;}
+    return true;
+  });
+  document.getElementById('ltbody').innerHTML=rows.map(l=>`<tr onclick="selL(${l.id})" class="${selLead?.id===l.id?'sel':''}"><td><div class="ln">${l.name}</div><div class="lm">${l.city}, ${l.state}</div></td><td>${ctTag(l.caseType)}</td><td>${scorePill(l.score)}</td><td>${statusBadge(l.status)}</td><td style="font-size:12px;font-family:var(--mono)">${l.state}</td><td style="font-size:11px;color:var(--muted);font-family:var(--mono)">${l.timeAgo}</td></tr>`).join('');
+  document.getElementById('lc-lbl').textContent=`${rows.length} leads · ${LEADS.filter(l=>l.status==='new').length} new`;
+  document.getElementById('new-count').textContent=LEADS.filter(l=>l.status==='new').length;
+}
+function filterL(f,btn){filterMode=f;document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTable();}
+function searchL(q){searchQ=q;renderTable();}
+
+function selL(id){
+  selLead=LEADS.find(l=>l.id===id); renderTable();
+  const l=selLead;
+  document.getElementById('dp-name').textContent=l.name;
+  document.getElementById('dp-sub').textContent=`${CT[l.caseType]?.l||l.caseType} · ${l.city}, ${l.state} · Score ${l.score}/10`;
+  const sc=l.score>=7?'var(--green)':l.score>=5?'var(--amber)':'var(--red)';
+  const rB=l.routedTo?`<div><div class="dp-st">Routing</div><div class="dp-f"><span class="dp-fk">Attorney</span><span class="dp-fv">${l.routedTo.attorney}</span></div><div class="dp-f"><span class="dp-fk">Provider</span><span class="dp-fv">${l.routedTo.provider}</span></div></div>`:'';
+  const dB=l.disqReason?`<div><div class="dp-st">Disqualification</div><div style="font-size:12px;color:var(--red);line-height:1.5;">${l.disqReason}</div></div>`:'';
+  document.getElementById('dp-body').innerHTML=`
+    <div><div class="dp-st">Case score</div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted2);margin-bottom:4px;"><span>${l.score>=7?'Strong':l.score>=5?'Solid':'Needs review'}</span><span style="font-family:var(--mono)">${l.score}/10</span></div><div class="sc-track"><div class="sc-fill" style="width:${l.score*10}%;background:${sc}"></div></div></div>
+    <div><div class="dp-st">Contact</div><div class="dp-f"><span class="dp-fk">Phone</span><span class="dp-fv">${l.phone}</span></div><div class="dp-f"><span class="dp-fk">Email</span><span class="dp-fv" style="font-size:11px;">${l.email}</span></div><div class="dp-f"><span class="dp-fk">Location</span><span class="dp-fv">${l.city}, ${l.state} ${l.zip}</span></div></div>
+    <div><div class="dp-st">Case details</div><div class="dp-f"><span class="dp-fk">Injury</span><span class="dp-fv" style="font-size:11px;line-height:1.4;">${l.injury}</span></div><div class="dp-f"><span class="dp-fk">Employer</span><span class="dp-fv">${l.employer}</span></div><div class="dp-f"><span class="dp-fk">Reported</span><span class="dp-fv">${l.reported}</span></div><div class="dp-f"><span class="dp-fk">Claim filed</span><span class="dp-fv">${l.claimFiled}</span></div></div>
+    <div><div class="dp-st">Medical</div><div class="dp-f"><span class="dp-fk">Treatment</span><span class="dp-fv" style="font-size:11px;line-height:1.4;">${l.treatment}</span></div><div class="dp-f"><span class="dp-fk">Prior atty</span><span class="dp-fv">${l.attorney}</span></div></div>
+    ${rB}${dB}`;
+  const act=document.getElementById('dp-act');
+  act.style.display=(l.status==='new'||l.status==='review')?'flex':'none';
+  const mA=ATTORNEYS.filter(a=>a.types.includes(l.caseType)&&a.status!=='full'&&a.states.includes(l.state));
+  const mP=PROVIDERS.filter(p=>p.types.includes(l.caseType)&&p.status!=='full'&&(p.states.includes(l.state)||p.states.includes('All')));
+  const aA=ATTORNEYS.filter(a=>a.status!=='full');
+  const aP=PROVIDERS.filter(p=>p.status!=='full');
+  function mkOpts(el,matched,all,lbl){
+    el.innerHTML=`<option value="">— ${lbl} —</option>`;
+    if(matched.length)el.innerHTML+=`<optgroup label="Best match for ${CT[l.caseType]?.l||''}">${matched.map(x=>`<option value="${x.id}">${x.name} — ${x.states.join(', ')}</option>`).join('')}</optgroup>`;
+    const rest=all.filter(x=>!matched.find(m=>m.id===x.id));
+    if(rest.length)el.innerHTML+=`<optgroup label="Other available">${rest.map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}</optgroup>`;
+  }
+  mkOpts(document.getElementById('ra'),mA,aA,'Select attorney');
+  mkOpts(document.getElementById('rp'),mP,aP,'Select provider');
+}
+
+function renderActivity(){
+  document.getElementById('act-feed').innerHTML=ACTIVITY.map(a=>`<div class="ai"><div class="ai-ic ic-${a.t==='new'?'new':a.t==='rt'?'rt':'dq'}">${a.ic}</div><div><div class="ai-txt">${a.tx}</div><div class="ai-time">${a.time}</div></div></div>`).join('');
+}
+
+function openRouteModal(){
+  if(!selLead)return;
+  document.getElementById('m-desc').textContent=`Routing ${selLead.name} — ${CT[selLead.caseType]?.l}, ${selLead.state}. Score ${selLead.score}/10. Both parties receive full case profile attributed to InjuryRight.`;
+  document.getElementById('m-atty').innerHTML=document.getElementById('ra').innerHTML;
+  document.getElementById('m-prov').innerHTML=document.getElementById('rp').innerHTML;
+  document.getElementById('m-note').value='';
+  document.getElementById('modal-route').classList.add('open');
+}
+function confirmRoute(){
+  const av=document.getElementById('m-atty').value,pv=document.getElementById('m-prov').value;
+  if(!av||!pv){showToast('Select both attorney and provider');return;}
+  const an=ATTORNEYS.find(a=>a.id===av)?.name||av;
+  const pn=PROVIDERS.find(p=>p.id===pv)?.name||pv;
+  selLead.status='routed';selLead.routedTo={attorney:an,provider:pn};
+  ACTIVITY.unshift({t:'rt',ic:'➤',tx:`<strong>${selLead.name}</strong> routed → ${an} + ${pn}`,time:'Just now'});
+  closeModal('modal-route');renderTable();selL(selLead.id);renderActivity();
+  showToast(`✓ ${selLead.name} routed to ${an}`);
+}
+function disqualify(){
+  if(!selLead)return;
+  const r=prompt('Reason for disqualification:');if(r===null)return;
+  selLead.status='disqualified';selLead.disqReason=r||'Manually disqualified';
+  ACTIVITY.unshift({t:'dq',ic:'✕',tx:`<strong>${selLead.name}</strong> disqualified`,time:'Just now'});
+  renderTable();selL(selLead.id);renderActivity();showToast('Marked as disqualified');
+}
+
+function attyCard(a){
+  const chips=['ssdi','truck','construct','malpractice'].map(t=>`<span class="ct-chip${a.types.includes(t)?' on '+t:''}">${CT[t]?.l||t}</span>`).join('');
+  const pct=a.cap?Math.min(100,Math.round(a.used/a.cap*100)):0;
+  const statusLbl=a.status==='full'?'At capacity':'Active';
+  const dotCls=a.status==='full'?'dot-full':'dot-on';
+  return`<div class="mc-card"><div class="mc-top"><div class="mc-av av-a">${a.name.charAt(0)}</div><div><div class="mc-name">${a.name}</div><div class="mc-role">${a.contact}</div><div class="mc-st"><div class="${dotCls}"></div><span style="color:var(--muted2);font-size:11px;">${statusLbl}</span></div></div></div><div class="stags">${a.states.map(s=>`<span class="stag">${s}</span>`).join('')}</div><div class="ct-checks">${chips}</div><div class="cap-row"><span class="cap-lbl">Capacity</span><div class="cap-track"><div class="cap-fill ${capCls(a.used,a.cap)}" style="width:${pct}%"></div></div><span class="cap-num">${a.used}/${a.cap}</span></div><div class="mc-acts"><button class="btn-sm" onclick="showToast('Edit: ${a.name}')">Edit</button><button class="btn-sm" onclick="showToast('${a.phone}')">Call</button><button class="btn-sm danger" onclick="showToast('Removed (demo)')">Remove</button></div></div>`;
+}
+function provCard(p){
+  const chips=p.types.map(t=>`<span class="ct-chip on ${t}">${CT[t]?.l||t}</span>`).join('');
+  const pct=p.cap?Math.min(100,Math.round(p.used/p.cap*100)):0;
+  return`<div class="mc-card"><div class="mc-top"><div class="mc-av av-p">${p.name.charAt(0)}</div><div><div class="mc-name">${p.name}</div><div class="mc-role">${p.contact}</div><div class="mc-st"><div class="${p.status==='full'?'dot-full':'dot-on'}"></div><span style="color:var(--muted2);font-size:11px;">${p.status==='full'?'At capacity':'Active'}</span></div></div></div><div class="stags">${p.states.map(s=>`<span class="stag">${s}</span>`).join('')}</div><div class="ct-checks">${chips}</div><div class="cap-row"><span class="cap-lbl">Patients</span><div class="cap-track"><div class="cap-fill ${capCls(p.used,p.cap)}" style="width:${pct}%"></div></div><span class="cap-num">${p.used}/${p.cap}</span></div><div class="dp-f" style="margin:4px 0 10px;"><span class="dp-fk" style="font-size:11px;min-width:80px;">Monthly fee</span><span class="dp-fv" style="font-size:12px;color:var(--green);">$${p.fee}/mo</span></div><div class="mc-acts"><button class="btn-sm" onclick="showToast('Edit: ${p.name}')">Edit</button><button class="btn-sm" onclick="showToast('${p.phone}')">Call</button><button class="btn-sm danger" onclick="showToast('Removed (demo)')">Remove</button></div></div>`;
+}
+function vendCard(v){
+  return`<div class="mc-card"><div class="mc-top"><div class="mc-av av-v">${v.name.charAt(0)}</div><div><div class="mc-name">${v.name}</div><div class="mc-role">${v.role}</div><div class="mc-st"><div class="dot-on"></div><span style="color:var(--muted2);font-size:11px;">Active</span></div></div></div><div class="dp-f" style="margin-bottom:4px;"><span class="dp-fk" style="font-size:11px;">Contact</span><span class="dp-fv" style="font-size:11px;">${v.contact}</span></div><div class="dp-f" style="margin-bottom:12px;"><span class="dp-fk" style="font-size:11px;">Monthly fee</span><span class="dp-fv" style="color:var(--green);">$${v.fee}/mo</span></div><div class="mc-acts"><button class="btn-sm" onclick="showToast('Edit: ${v.name}')">Edit</button><button class="btn-sm" onclick="showToast('${v.phone}')">Call</button><button class="btn-sm danger" onclick="showToast('Removed (demo)')">Remove</button></div></div>`;
+}
+
+function renderNetwork(){
+  document.getElementById('atty-grid').innerHTML=ATTORNEYS.map(attyCard).join('')+`<div class="add-card" onclick="openAddModal()"><div class="add-ic">+</div><div style="font-size:13px;color:var(--muted2);">Add attorney</div></div>`;
+  document.getElementById('prov-grid').innerHTML=PROVIDERS.map(provCard).join('')+`<div class="add-card" onclick="openAddModal()"><div class="add-ic">+</div><div style="font-size:13px;color:var(--muted2);">Add provider</div></div>`;
+  document.getElementById('vend-grid').innerHTML=VENDORS.map(vendCard).join('')+`<div class="add-card" onclick="openAddModal()"><div class="add-ic">+</div><div style="font-size:13px;color:var(--muted2);">Add vendor</div></div>`;
+}
+function switchTab(tab,btn){
+  document.querySelectorAll('.net-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
+  ['attorneys','providers','vendors'].forEach(t=>document.getElementById('tab-'+t).style.display=t===tab?'block':'none');
+}
+
+function openAddModal(){document.getElementById('modal-add').classList.add('open');}
+function addMember(){
+  const name=document.getElementById('add-name').value.trim();
+  const type=document.getElementById('add-type').value;
+  if(!name||!type){showToast('Name and type required');return;}
+  ACTIVITY.unshift({t:'net',ic:'🌐',tx:`<strong>${name}</strong> added as ${type}`,time:'Just now'});
+  closeModal('modal-add');renderActivity();showToast(`✓ ${name} added to network`);
+}
+
+function showView(v,btn){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',revenue:'Revenue',settings:'Settings'}[v]||v;
+  if(v==='network')renderNetwork();
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2800);}
+function exportCSV(){
+  const rows=[['Name','Phone','Email','State','Case Type','Score','Status','Injury']];
+  LEADS.forEach(l=>rows.push([l.name,l.phone,l.email,l.state,CT[l.caseType]?.l||l.caseType,l.score,l.status,l.injury]));
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='injuryright_leads.csv';a.click();
+  showToast('CSV exported');
+}
+['modal-route','modal-add'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))closeModal(id);});});
+renderSparkline();renderTable();renderActivity();
+</script>
+</body>
+</html>
