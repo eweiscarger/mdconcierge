@@ -12,8 +12,7 @@
   a{color:var(--gold2);}
   .top{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:10;}
   .brand{font-weight:800;font-size:18px;}.brand span{color:var(--gold);}
-  .top .sub{font-size:12px;color:var(--muted);}
-  .top .actions{display:flex;gap:10px;align-items:center;}
+  .top .sub{font-size:12px;color:var(--muted);}.top .actions{display:flex;gap:10px;align-items:center;}
   .wrap{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 56px);}
   .list{border-right:1px solid var(--border);padding:14px;overflow:auto;}
   .detail{padding:18px 22px;overflow:auto;}
@@ -22,12 +21,12 @@
   .btn.danger{background:transparent;border:1px solid var(--red);color:var(--red);font-weight:500;}
   .btn.sm{padding:5px 9px;font-size:12px;}
   .pcard{padding:10px 12px;border:1px solid var(--border);border-radius:9px;margin-bottom:8px;cursor:pointer;background:var(--bg2);}
-  .pcard:hover{border-color:var(--border2);}
-  .pcard.sel{border-color:var(--gold);background:var(--bg3);}
+  .pcard:hover{border-color:var(--border2);}.pcard.sel{border-color:var(--gold);background:var(--bg3);}
   .pcard .n{font-weight:600;}.pcard .m{font-size:12px;color:var(--muted);}
   label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 3px;}
   input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;}
   input:focus,select:focus,textarea:focus{border-color:var(--gold);}
+  select:disabled{opacity:.45;}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
   .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;}
@@ -44,6 +43,7 @@
   .toast{position:fixed;bottom:22px;right:22px;background:var(--bg3);border:1px solid var(--green);color:var(--green);padding:10px 16px;border-radius:8px;font-size:13px;display:none;z-index:200;}
   .editbox{border:1px solid var(--border2);border-radius:9px;padding:13px;margin:8px 0 14px;background:var(--bg2);}
   .editbox h4{margin:0 0 10px;font-size:13px;color:var(--gold2);}
+  .bpgrid{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px;}
 </style>
 </head>
 <body>
@@ -80,13 +80,17 @@ const SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
 const SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const ROLES=['Physician / Provider','Office Manager / Administrator','Medical Assistant','Work-Comp Coordinator','Billing Contact','Scheduler','MSO Contact','Other'];
-let state={msos:[],practices:[],providers:[],contacts:[],sel:null,editDoc:null};
+const SPECIALTIES=['Orthopedic Surgery','Orthopedics (non-surgical)','Neurosurgery','Spine Surgery','Neurospine','Neurology','Pain Management','Physical Medicine & Rehab (PM&R)','Chiropractic','Physical Therapy','Podiatry','Radiology / Imaging','Psychology / Psychiatry','Internal Medicine','Primary Care','Other'];
+const PROVIDER_TYPES=['MD','DO','DC (Chiropractor)','PT (Physical Therapist)','DPM (Podiatrist)','PA-C','NP','Imaging Center','Surgery Center','Facility','Other'];
+const BODY_PARTS=['Spine / Back','Neck / Cervical','Shoulder','Elbow','Hand / Wrist','Upper extremity','Hip','Knee','Ankle / Foot','Lower extremity','Head / TBI','Pain management','Other'];
+let state={msos:[],practices:[],providers:[],contacts:[],locations:[],sel:null,editDoc:null};
 
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2600);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function gate(show){document.getElementById('gate').style.display=show?'flex':'none';document.getElementById('app').style.display=show?'none':'block';}
 function v(id){const e=document.getElementById(id);return e?(e.value||'').trim():'';}
 function chk(id){const e=document.getElementById(id);return e?!!e.checked:false;}
+function selOpts(list,cur){const arr=(cur&&!list.includes(cur))?[cur,...list]:list;return '<option value=""></option>'+arr.map(x=>`<option ${x===cur?'selected':''}>${esc(x)}</option>`).join('');}
 
 async function login(){
   const email=v('g-email');const password=document.getElementById('g-pass').value||'';
@@ -100,13 +104,14 @@ async function login(){
 async function logout(){await sb.auth.signOut();gate(true);}
 
 async function loadAll(){
-  const [m,p,pr,c]=await Promise.all([
+  const [m,p,pr,c,loc]=await Promise.all([
     sb.from('msos').select('*').order('name'),
     sb.from('practices').select('*').order('name'),
     sb.from('providers').select('*').order('doctor_name'),
     sb.from('contacts').select('*').order('name'),
+    sb.from('locations').select('*').order('label'),
   ]);
-  state.msos=m.data||[];state.practices=p.data||[];state.providers=pr.data||[];state.contacts=c.data||[];
+  state.msos=m.data||[];state.practices=p.data||[];state.providers=pr.data||[];state.contacts=c.data||[];state.locations=loc.data||[];
   renderList();
   if(state.sel&&!state.practices.find(x=>x.id===state.sel))state.sel=null;
   if(state.sel)renderDetail();else document.getElementById('detail').innerHTML='<div class="empty">Select a practice on the left, or add one to get started.</div>';
@@ -127,6 +132,7 @@ function renderDetail(){
   const p=state.practices.find(x=>x.id===state.sel);if(!p)return;
   const docs=state.providers.filter(d=>d.practice_id===p.id);
   const cts=state.contacts.filter(c=>c.practice_id===p.id);
+  const locs=state.locations.filter(l=>l.practice_id===p.id);
   document.getElementById('detail').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <h2 style="margin:0;font-size:20px;">${esc(p.name)}</h2>
@@ -135,7 +141,7 @@ function renderDetail(){
     <div class="editbox">
       <div class="grid2">
         <div class="fld"><label>Practice / group name</label><input id="f-name" value="${esc(p.name)}"/></div>
-        <div class="fld"><label>Specialty</label><input id="f-spec" value="${esc(p.specialty)}" placeholder="Ortho, Neuro, Imaging…"/></div>
+        <div class="fld"><label>Primary specialty</label><select id="f-spec">${selOpts(SPECIALTIES,p.specialty)}</select></div>
       </div>
       <div class="grid4">
         <div class="fld"><label>State(s)</label><input id="f-states" value="${esc(p.states)}" placeholder="PA, NJ"/></div>
@@ -143,9 +149,19 @@ function renderDetail(){
         <div class="fld"><label>MSO</label><select id="f-mso" onchange="msoChange(this)">${msoOptions(p.mso_id)}</select></div>
         <div class="fld"><label>Website</label><input id="f-web" value="${esc(p.website)}"/></div>
       </div>
-      <div class="fld"><label>Address</label><input id="f-addr" value="${esc(p.address)}"/></div>
       <div class="fld"><label>Notes</label><textarea id="f-notes" rows="2">${esc(p.notes)}</textarea></div>
       <button class="btn sm" onclick="savePractice(${p.id})">Save practice</button>
+    </div>
+
+    <div class="sec">Office locations — ${locs.length} <span class="muted" style="text-transform:none;font-weight:400;">(add every office — providers can be "same as practice" or a specific one)</span></div>
+    <div id="loclist">${locs.map(locRow).join('')||'<div class="empty mb0">No locations yet — add the practice’s office(s) below.</div>'}</div>
+    <div class="editbox"><h4>Add location</h4>
+      <div class="grid3">
+        <div class="fld mb0"><label>Label</label><input id="nl-label" placeholder="Main Office / North Office"/></div>
+        <div class="fld mb0"><label>Address</label><input id="nl-addr" placeholder="123 Market St, Philadelphia, PA 19103"/></div>
+        <div class="fld mb0"><label>Phone</label><input id="nl-phone"/></div>
+      </div>
+      <button class="btn sm" style="margin-top:8px;" onclick="addLocation(${p.id})">+ Add location</button>
     </div>
 
     <div class="sec">Providers (doctors) — ${docs.length}</div>
@@ -168,21 +184,26 @@ function renderDetail(){
       <button class="btn sm" style="margin-top:9px;" onclick="addContact(${p.id})">+ Add contact</button>
     </div>`;
 }
+function locRow(l){return `<div class="row"><div class="grow"><div class="nm">${esc(l.label||'(office)')}</div><div class="mt">${esc(l.address||'—')}${l.phone?(' · '+esc(l.phone)):''}</div></div><button class="btn danger sm" onclick="delLocation(${l.id})">Remove</button></div>`;}
 function docRow(d){
   const flags=[d.active?'<span class="pill on">active</span>':'<span class="pill">inactive</span>',d.lien_acceptance?'<span class="pill">lien</span>':'',d.ncp_required?'<span class="pill">NCP req</span>':'',d.litigation_acceptance?'<span class="pill">litigation</span>':''].join('');
-  return `<div class="row"><div class="grow"><div class="nm">${esc(d.doctor_name)} ${flags}</div><div class="mt">${esc(d.specialty||d.provider_type||'—')}${d.states?(' · '+esc(d.states)):''}${d.location_address?(' · '+esc(d.location_address)):''}</div></div>
+  const where=(d.same_as_practice===false&&d.location_id)?(state.locations.find(l=>l.id===d.location_id)?.label||'specific office'):'same as practice';
+  const bp=(d.body_parts&&d.body_parts.length)?(' · '+esc(d.body_parts.join(', '))):'';
+  return `<div class="row"><div class="grow"><div class="nm">${esc(d.doctor_name)} ${flags}</div><div class="mt">${esc(d.specialty||d.provider_type||'—')}${d.states?(' · '+esc(d.states)):''} · 📍 ${esc(where)}${bp}</div></div>
     <button class="btn ghost sm" onclick="editDoc(${d.id})">Edit</button><button class="btn danger sm" onclick="delDoctor(${d.id})">Remove</button></div>`;
 }
 function docForm(pid){
   const d=state.editDoc?state.providers.find(x=>x.id===state.editDoc):null;
+  const locs=state.locations.filter(l=>l.practice_id===pid);
   const val=(k)=>d?esc(d[k]):'';
   const ck=(k)=>(d&&d[k])?'checked':'';
+  const samep=d?(d.same_as_practice!==false):true;
   return `<div class="editbox"><h4>${d?'Edit provider':'Add provider'}</h4>
     <input type="hidden" id="pf-id" value="${d?d.id:''}"/>
     <div class="grid3">
       <div class="fld mb0"><label>Doctor name *</label><input id="pf-name" value="${val('doctor_name')}" placeholder="Dr. Jane Smith"/></div>
-      <div class="fld mb0"><label>Specialty</label><input id="pf-spec" value="${val('specialty')}"/></div>
-      <div class="fld mb0"><label>Provider type</label><input id="pf-type" value="${val('provider_type')}" placeholder="MD, DC, PT, imaging…"/></div>
+      <div class="fld mb0"><label>Specialty</label><select id="pf-spec">${selOpts(SPECIALTIES,d?d.specialty:'')}</select></div>
+      <div class="fld mb0"><label>Provider type</label><select id="pf-type">${selOpts(PROVIDER_TYPES,d?d.provider_type:'')}</select></div>
     </div>
     <div class="grid4" style="margin-top:8px;">
       <div class="fld mb0"><label>State(s)</label><input id="pf-states" value="${val('states')}" placeholder="PA, NJ"/></div>
@@ -190,10 +211,16 @@ function docForm(pid){
       <div class="fld mb0"><label>Fax</label><input id="pf-fax" value="${val('fax')}"/></div>
       <div class="fld mb0"><label>Monthly capacity</label><input id="pf-cap" type="number" value="${d&&d.monthly_capacity!=null?d.monthly_capacity:''}"/></div>
     </div>
-    <div class="fld mb0" style="margin-top:8px;"><label>Location / address</label><input id="pf-addr" value="${val('location_address')}"/></div>
+    <div class="fld mb0" style="margin-top:10px;"><label>Office location</label>
+      <label class="chk" style="margin-bottom:6px;"><input type="checkbox" id="pf-samep" ${samep?'checked':''} onchange="document.getElementById('pf-loc').disabled=this.checked"/> Same as practice (all offices)</label>
+      <select id="pf-loc" ${samep?'disabled':''}><option value="">— pick an office —</option>${locs.map(l=>`<option value="${l.id}" ${d&&d.location_id===l.id?'selected':''}>${esc(l.label||l.address||('Location '+l.id))}</option>`).join('')}</select>
+    </div>
     <div class="grid2" style="margin-top:8px;">
       <div class="fld mb0"><label>Languages</label><input id="pf-lang" value="${val('languages')}" placeholder="English, Spanish"/></div>
       <div class="fld mb0"><label>EHR system</label><input id="pf-ehr" value="${val('ehr_system')}"/></div>
+    </div>
+    <div class="fld mb0" style="margin-top:10px;"><label>Body parts / areas treated</label>
+      <div class="bpgrid">${BODY_PARTS.map(bp=>`<label class="chk"><input type="checkbox" class="bp" value="${esc(bp)}" ${(d&&Array.isArray(d.body_parts)&&d.body_parts.includes(bp))?'checked':''}/> ${bp}</label>`).join('')}</div>
     </div>
     <div style="display:flex;gap:18px;margin-top:12px;flex-wrap:wrap;">
       <label class="chk"><input type="checkbox" id="pf-active" ${d?ck('active'):'checked'}/> Active</label>
@@ -218,19 +245,24 @@ function contactRow(c){
 async function newPractice(){const {data,error}=await sb.from('practices').insert({name:'New practice'}).select().single();if(error){toast('Error: '+error.message);return;}await loadAll();sel(data.id);}
 async function savePractice(id){
   let mso=v('f-mso');if(mso==='__new'){toast('Pick or create the MSO first');return;}
-  const patch={name:v('f-name'),specialty:v('f-spec'),states:v('f-states'),status:v('f-status'),website:v('f-web'),address:v('f-addr'),notes:v('f-notes'),mso_id:mso?parseInt(mso,10):null};
+  const patch={name:v('f-name'),specialty:v('f-spec'),states:v('f-states'),status:v('f-status'),website:v('f-web'),notes:v('f-notes'),mso_id:mso?parseInt(mso,10):null};
   const {error}=await sb.from('practices').update(patch).eq('id',id);if(error){toast('Error: '+error.message);return;}
   await loadAll();toast('Practice saved');
 }
-async function delPractice(id){if(!confirm('Delete this practice and all its providers/contacts? Cannot be undone.'))return;const {error}=await sb.from('practices').delete().eq('id',id);if(error){toast('Error: '+error.message);return;}state.sel=null;await loadAll();toast('Practice deleted');}
+async function delPractice(id){if(!confirm('Delete this practice and all its locations, providers and contacts? Cannot be undone.'))return;const {error}=await sb.from('practices').delete().eq('id',id);if(error){toast('Error: '+error.message);return;}state.sel=null;await loadAll();toast('Practice deleted');}
 async function msoChange(selEl){if(selEl.value!=='__new')return;const name=prompt('New MSO name:');if(!name){selEl.value='';return;}const {data,error}=await sb.from('msos').insert({name:name.trim()}).select().single();if(error){toast('Error: '+error.message);selEl.value='';return;}state.msos.push(data);selEl.innerHTML=msoOptions(data.id);}
+
+async function addLocation(pid){const label=v('nl-label');const addr=v('nl-addr');if(!label&&!addr){toast('Enter a label or address');return;}const {error}=await sb.from('locations').insert({practice_id:pid,label,address:addr,phone:v('nl-phone')});if(error){toast('Error: '+error.message);return;}await loadAll();renderDetail();toast('Location added');}
+async function delLocation(id){if(!confirm('Remove this location?'))return;const {error}=await sb.from('locations').delete().eq('id',id);if(error){toast('Error: '+error.message);return;}await loadAll();renderDetail();}
 
 async function saveDoctor(pid){
   const name=v('pf-name');if(!name){toast('Enter the doctor name');return;}
-  const cap=v('pf-cap');
+  const cap=v('pf-cap');const samep=chk('pf-samep');const locVal=v('pf-loc');
   const rec={practice_id:pid,doctor_name:name,specialty:v('pf-spec'),provider_type:v('pf-type'),states:v('pf-states'),
-    phone:v('pf-phone'),fax:v('pf-fax'),location_address:v('pf-addr'),languages:v('pf-lang'),ehr_system:v('pf-ehr'),
-    monthly_capacity:cap?parseInt(cap,10):null,active:chk('pf-active'),lien_acceptance:chk('pf-lien'),ncp_required:chk('pf-ncp'),litigation_acceptance:chk('pf-lit')};
+    phone:v('pf-phone'),fax:v('pf-fax'),languages:v('pf-lang'),ehr_system:v('pf-ehr'),
+    monthly_capacity:cap?parseInt(cap,10):null,active:chk('pf-active'),lien_acceptance:chk('pf-lien'),ncp_required:chk('pf-ncp'),litigation_acceptance:chk('pf-lit'),
+    same_as_practice:samep,location_id:samep?null:(locVal?parseInt(locVal,10):null),
+    body_parts:Array.from(document.querySelectorAll('.bp:checked')).map(x=>x.value)};
   const id=v('pf-id');
   const res=id?await sb.from('providers').update(rec).eq('id',parseInt(id,10)):await sb.from('providers').insert(rec);
   if(res.error){toast('Error: '+res.error.message);return;}
