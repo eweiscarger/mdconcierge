@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MDconcierge — Refer a Client</title>
+<style>
+  :root{--ink:#1a2230;--muted:#6b7583;--line:#e3e6ea;--gold:#c8922a;--bg:#f6f7f9;--card:#fff;--err:#c0392b;--ok:#1e9e6a;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);font-family:'DM Sans',system-ui,Segoe UI,sans-serif;color:var(--ink);line-height:1.5;}
+  .wrap{max-width:720px;margin:0 auto;padding:32px 18px 60px;}
+  .head{margin-bottom:24px;}
+  .brand{font-size:22px;font-weight:800;letter-spacing:-.3px;}
+  .brand span{color:var(--gold);}
+  .sub{color:var(--muted);font-size:14px;margin-top:4px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .sec{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--gold);margin:22px 0 12px;}
+  .sec:first-of-type{margin-top:4px;}
+  label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 4px;}
+  .req:after{content:" *";color:var(--err);}
+  input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:inherit;color:var(--ink);background:#fff;outline:none;}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold);}
+  textarea{resize:vertical;min-height:80px;}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .row3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px;}
+  .fld{margin-bottom:12px;}
+  .needs{display:flex;flex-wrap:wrap;gap:10px;}
+  .needs label{display:flex;align-items:center;gap:7px;font-weight:500;color:var(--ink);font-size:13px;cursor:pointer;margin:0;}
+  .needs input{width:auto;}
+  .btn{margin-top:22px;width:100%;padding:13px;background:var(--gold);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;}
+  .btn:disabled{opacity:.6;cursor:default;}
+  .err{color:var(--err);font-size:13px;margin-top:12px;display:none;}
+  .note{color:var(--muted);font-size:12px;margin-top:14px;}
+  .ok-card{text-align:center;padding:36px 24px;}
+  .ok-ic{font-size:42px;}
+  .ok-h{font-size:20px;font-weight:800;margin:10px 0 6px;}
+  @media(max-width:560px){.row,.row3{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div class="brand">MD<span>concierge</span></div>
+    <div class="sub">Attorney &amp; Provider Referral — refer a client for medical/vendor coordination</div>
+  </div>
+
+  <div class="card" id="form-card">
+    <div class="sec">Your information (referring party)</div>
+    <div class="fld"><label class="req">Firm / organization</label><input id="r-firm" type="text" placeholder="e.g. Smith &amp; Associates"/></div>
+    <div class="row">
+      <div class="fld"><label class="req">Your name</label><input id="r-name" type="text" placeholder="First Last"/></div>
+      <div class="fld"><label class="req">Your role</label><select id="r-role"><option value="">Select…</option><option>Attorney</option><option>Paralegal</option><option>Medical coordinator</option><option>Case manager</option><option>Other</option></select></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label class="req">Your work email</label><input id="r-email" type="email" placeholder="you@firm.com"/></div>
+      <div class="fld"><label>Your phone</label><input id="r-phone" type="tel" placeholder="(555) 555-0100"/></div>
+    </div>
+
+    <div class="sec">Client being referred</div>
+    <div class="row">
+      <div class="fld"><label class="req">Client first name</label><input id="c-fn" type="text" placeholder="First"/></div>
+      <div class="fld"><label class="req">Client last name</label><input id="c-ln" type="text" placeholder="Last"/></div>
+    </div>
+    <div class="row">
+      <div class="fld"><label>Date of birth</label><input id="c-dob" type="text" placeholder="MM/DD/YYYY"/></div>
+      <div class="fld"><label class="req">Client phone</label><input id="c-ph" type="tel" placeholder="(555) 555-0100"/></div>
+    </div>
+    <div class="fld"><label>Client email</label><input id="c-em" type="email" placeholder="client@email.com"/></div>
+    <div class="row3">
+      <div class="fld"><label class="req">City</label><input id="c-city" type="text" placeholder="City"/></div>
+      <div class="fld"><label class="req">State</label><input id="c-st" type="text" placeholder="PA"/></div>
+      <div class="fld"><label class="req">ZIP</label><input id="c-zip" type="tel" placeholder="ZIP"/></div>
+    </div>
+
+    <div class="sec">Case &amp; what they need</div>
+    <div class="fld"><label class="req">Case type</label><select id="c-type"><option value="">Select…</option><option value="auto">Auto accident</option><option value="truck">Trucking accident</option><option value="wc">Work injury</option><option value="slip">Slip &amp; fall</option><option value="pi">Personal injury</option><option value="malpractice">Medical malpractice</option><option value="ssd">Social Security Disability</option><option value="ltd">Long-term disability</option><option value="other">Other</option></select></div>
+    <div class="fld"><label class="req">What does this client need?</label>
+      <div class="needs">
+        <label><input type="checkbox" class="need" value="Medical provider"/> Medical provider</label>
+        <label><input type="checkbox" class="need" value="Diagnostics / imaging"/> Diagnostics / imaging</label>
+        <label><input type="checkbox" class="need" value="Surgery referral"/> Surgery referral</label>
+        <label><input type="checkbox" class="need" value="Litigation funding / vendor"/> Funding / vendor</label>
+        <label><input type="checkbox" class="need" value="Other"/> Other</label>
+      </div>
+    </div>
+    <div class="fld"><label>Injury / case details</label><textarea id="c-desc" maxlength="600" placeholder="Brief summary of the injury and any treatment so far…"></textarea></div>
+
+    <button class="btn" id="submit-btn" onclick="submitReferral()">Submit referral</button>
+    <div class="err" id="form-err"></div>
+    <div class="note">This client is recorded as <strong>already represented</strong> by your firm — MDconcierge will coordinate medical providers and vendors only, never another attorney.</div>
+  </div>
+
+  <div class="card ok-card" id="ok-card" style="display:none;">
+    <div class="ok-ic">✓</div>
+    <div class="ok-h">Referral received</div>
+    <div class="sub" id="ok-msg">Thank you. Your client has been added to the MDconcierge portal for provider coordination. Reference: <strong id="ok-ref"></strong></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
+const SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+function title(s){return (s||'').toLowerCase().replace(/\b[a-z]/g,m=>m.toUpperCase()).replace(/\s+/g,' ').trim();}
+function fmtPhone(raw){var d=(raw||'').replace(/\D/g,'');if(d.length===11&&d[0]==='1')d=d.slice(1);if(d.length!==10)return null;return '('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6);}
+function livePhone(v){var d=v.replace(/\D/g,'');if(d.length===11&&d[0]==='1')d=d.slice(1);d=d.slice(0,10);if(d.length>6)return '('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6);if(d.length>3)return '('+d.slice(0,3)+') '+d.slice(3);if(d.length>0)return '('+d;return '';}
+function liveDob(v){var d=v.replace(/\D/g,'').slice(0,8);var o=d.slice(0,2);if(d.length>2)o+='/'+d.slice(2,4);if(d.length>4)o+='/'+d.slice(4,8);return o;}
+function fmtZip(raw){var d=(raw||'').replace(/\D/g,'');return d.length===5?d:null;}
+function fmtDob(raw){var m=(raw||'').trim().match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);if(!m)return null;var mo=+m[1],da=+m[2],yr=+m[3];if(m[3].length===2)yr+=(yr>30?1900:2000);if(mo<1||mo>12||da<1||da>31)return null;var dt=new Date(yr,mo-1,da);if(dt.getFullYear()!==yr||dt.getMonth()!==mo-1||dt.getDate()!==da||yr<1900||dt>new Date())return null;return ('0'+mo).slice(-2)+'/'+('0'+da).slice(-2)+'/'+yr;}
+function fmtEmail(raw){var e=(raw||'').trim().toLowerCase();return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)?e:null;}
+function val(id){return (document.getElementById(id).value||'').trim();}
+
+// live formatting
+document.addEventListener('input',e=>{var t=e.target;if(!t.id)return;
+  if(t.id==='r-phone'||t.id==='c-ph')t.value=livePhone(t.value);
+  else if(t.id==='c-zip')t.value=t.value.replace(/\D/g,'').slice(0,5);
+  else if(t.id==='c-st')t.value=t.value.replace(/[^a-zA-Z]/g,'').toUpperCase().slice(0,2);
+  else if(t.id==='c-dob')t.value=liveDob(t.value);
+});
+
+async function submitReferral(){
+  const firm=val('r-firm'), rname=val('r-name'), role=val('r-role'), remail=fmtEmail(val('r-email')), rphone=val('r-phone');
+  const fn=val('c-fn'), ln=val('c-ln'), dobR=val('c-dob'), cphone=fmtPhone(val('c-ph')), cemail=val('c-em');
+  const city=val('c-city'), st=val('c-st').toUpperCase(), zip=fmtZip(val('c-zip'));
+  const ctype=val('c-type'), desc=val('c-desc');
+  const needs=Array.from(document.querySelectorAll('.need:checked')).map(x=>x.value);
+  const dob=dobR?fmtDob(dobR):''; // optional, but if provided must be valid
+
+  const errs=[];
+  if(!firm)errs.push('Firm');
+  if(!rname)errs.push('Your name');
+  if(!role)errs.push('Your role');
+  if(!remail)errs.push('Your work email');
+  if(!fn)errs.push('Client first name');
+  if(!ln)errs.push('Client last name');
+  if(!cphone)errs.push('Client phone (10 digits)');
+  if(!city)errs.push('City');
+  if(!/^[A-Z]{2}$/.test(st))errs.push('State (2 letters)');
+  if(!zip)errs.push('ZIP (5 digits)');
+  if(!ctype)errs.push('Case type');
+  if(!needs.length)errs.push('What the client needs');
+  if(dobR&&!dob)errs.push('Date of birth (MM/DD/YYYY)');
+  if(cemail&&!fmtEmail(cemail))errs.push('Client email (valid)');
+  const errEl=document.getElementById('form-err');
+  if(errs.length){errEl.textContent='Please complete/fix: '+errs.join(', ');errEl.style.display='block';return;}
+  errEl.style.display='none';
+
+  const firmDomain=(remail.split('@')[1]||'');
+  const freeDomains=['gmail.com','yahoo.com','hotmail.com','outlook.com','aol.com','icloud.com','live.com'];
+  const flagged=freeDomains.indexOf(firmDomain)>=0; // free domain -> needs manual firm confirm
+  const refId='MDC-A-'+new Date().getFullYear()+'-'+Math.floor(100000+Math.random()*900000);
+  const notes=[
+    'Represented: YES',
+    'Referring firm: '+firm,
+    'Referring contact: '+title(rname)+' ('+role+')',
+    'Referring email: '+remail,
+    rphone?('Referring phone: '+(fmtPhone(rphone)||rphone)):'',
+    'Firm domain: '+firmDomain+(flagged?' [FREE DOMAIN — confirm firm]':''),
+    'Needs: '+needs.join(', '),
+    cemail?('Client email: '+fmtEmail(cemail)):'',
+    dob?('Client DOB: '+dob):'',
+    'Location: '+title(city)+', '+st,
+    desc?('Details: '+desc):'',
+    'Raw: '+JSON.stringify({firm,referrer:{name:title(rname),role,email:remail,phone:rphone},client:{firstName:title(fn),lastName:title(ln),dob,phone:cphone,email:cemail?fmtEmail(cemail):'',city:title(city),state:st,zip},caseType:ctype,needs,description:desc,represented:true,refId})
+  ].filter(Boolean).join(' | ');
+
+  const payload={
+    case_id:refId,
+    patient_first:title(fn), patient_last:title(ln),
+    patient_phone:cphone, patient_zip:zip,
+    injury_type:(desc?desc.slice(0,80):needs.join(', ')),
+    case_type:ctype,
+    status:'new',
+    lead_source:'attorney_referral',
+    notes:notes
+  };
+  const btn=document.getElementById('submit-btn'); btn.disabled=true; btn.textContent='Submitting…';
+  const {error}=await sb.from('cases').insert(payload);
+  btn.disabled=false; btn.textContent='Submit referral';
+  if(error){errEl.textContent='Could not submit: '+(error.message||'error')+'. Please try again or email referrals@mdconcierge.net.';errEl.style.display='block';return;}
+  document.getElementById('ok-ref').textContent=refId;
+  document.getElementById('form-card').style.display='none';
+  document.getElementById('ok-card').style.display='block';
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
