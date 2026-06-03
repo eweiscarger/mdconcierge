@@ -194,8 +194,20 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 </style>
 </head>
 <body>
+<div id="auth-gate" style="position:fixed;inset:0;z-index:1000;background:#0b0f14;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;">
+  <div style="width:360px;max-width:90vw;background:#111720;border:1px solid rgba(255,255,255,0.13);border-radius:12px;padding:30px;">
+    <div style="font-family:'Playfair Display',serif;font-size:25px;color:#e8b84b;">MDconcierge</div>
+    <div style="font-size:13px;color:#6b7583;margin-bottom:22px;">Admin Portal — sign in to view leads</div>
+    <label style="font-size:11px;color:#6b7583;text-transform:uppercase;letter-spacing:.06em;">Email</label>
+    <input id="auth-email" type="email" autocomplete="username" style="width:100%;box-sizing:border-box;background:#171e28;border:1px solid rgba(255,255,255,0.13);color:#e8e4dc;padding:10px 12px;border-radius:8px;font-size:13px;margin:4px 0 12px;outline:none;"/>
+    <label style="font-size:11px;color:#6b7583;text-transform:uppercase;letter-spacing:.06em;">Password</label>
+    <input id="auth-pass" type="password" autocomplete="current-password" style="width:100%;box-sizing:border-box;background:#171e28;border:1px solid rgba(255,255,255,0.13);color:#e8e4dc;padding:10px 12px;border-radius:8px;font-size:13px;margin:4px 0 18px;outline:none;"/>
+    <button id="auth-btn" onclick="doLogin()" style="width:100%;padding:11px;background:#c8922a;color:#1a1305;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Sign in</button>
+    <div id="auth-err" style="color:#ff6b6b;font-size:12px;margin-top:12px;display:none;"></div>
+  </div>
+</div>
 <nav class="sidebar">
-  <div class="sb-logo"><div class="wm">Injury<span>Right</span></div><div class="tag">Admin Portal</div></div>
+  <div class="sb-logo"><div class="wm">MD<span>concierge</span></div><div class="tag">Admin Portal</div></div>
   <div class="sb-nav">
     <button class="ni active" onclick="showView('leads',this)"><span class="ni-ic">📋</span> Lead Queue <span class="nb" id="new-count">6</span></button>
     <button class="ni" onclick="showView('network',this)"><span class="ni-ic">🌐</span> Network</button>
@@ -204,7 +216,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ns">Settings</div>
     <button class="ni" onclick="showView('settings',this)"><span class="ni-ic">⚙️</span> Settings</button>
   </div>
-  <div class="sb-foot"><div class="u-chip"><div class="u-av">A</div><div><div style="font-size:13px;">Admin</div><div style="font-size:11px;color:var(--muted);">MDconcierge Owner</div></div></div></div>
+  <div class="sb-foot"><div class="u-chip"><div class="u-av">A</div><div><div style="font-size:13px;">Admin</div><div style="font-size:11px;color:var(--muted);">MDconcierge Owner</div></div></div><button onclick="doLogout()" style="margin-top:10px;width:100%;padding:8px;background:transparent;border:1px solid var(--border2);color:var(--muted2);border-radius:8px;font-size:12px;cursor:pointer;">Sign out</button></div>
 </nav>
 <main class="main">
   <div class="topbar">
@@ -350,6 +362,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const CT={ssdi:{l:'SSDI / SSI',c:'ct-ssdi'},truck:{l:'Trucking',c:'ct-truck'},construct:{l:'Construction',c:'ct-construct'},malpractice:{l:'Malpractice',c:'ct-malpractice'}};
 const ATTORNEYS=[
@@ -537,9 +550,10 @@ function exportCSV(){
 ['modal-route','modal-add'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))closeModal(id);});});
 renderSparkline();renderTable();renderActivity();
 
-// ── Live leads from the InjuredGuide funnel (Supabase) ──
+// ── Secure leads: Supabase Auth + RLS-protected reads (only a logged-in admin can read) ──
 const SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
 const SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
+const sbClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 function _timeAgo(ts){if(!ts)return'';const t=new Date(ts).getTime();if(isNaN(t))return'';const s=Math.floor((Date.now()-t)/1000);if(s<60)return Math.max(1,s)+'s ago';const m=Math.floor(s/60);if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';const dd=Math.floor(h/24);return dd===1?'Yesterday':dd+'d ago';}
 function _nf(notes,re){const m=(notes||'').match(re);return m?m[1].trim():'';}
 function mapSupaCase(r){
@@ -553,21 +567,34 @@ function mapSupaCase(r){
     zip:r.patient_zip||'',employer:'',injury:r.injury_type||'',reported:'',claimFiled:r.claim_status||'',
     treatment:'',priorInjury:'',attorney:'None',caseId:r.case_id||'',_supa:true};
 }
-function loadPortalLeads(){
-  fetch(SUPABASE_URL+'/rest/v1/cases?select=*&order=created_at.desc',{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}})
-    .then(r=>r.ok?r.json():[])
-    .then(rows=>{
-      if(!Array.isArray(rows)||!rows.length)return;
-      const mapped=rows.map(mapSupaCase);
-      for(let i=LEADS.length-1;i>=0;i--){if(LEADS[i]._supa)LEADS.splice(i,1);}
+async function loadPortalLeads(){
+  try{
+    const {data,error}=await sbClient.from('cases').select('*').order('created_at',{ascending:false});
+    if(error){console.warn('Lead load error',error.message);return;}
+    for(let i=LEADS.length-1;i>=0;i--){if(LEADS[i]._supa)LEADS.splice(i,1);}
+    if(Array.isArray(data)&&data.length){
+      const mapped=data.map(mapSupaCase);
       LEADS.unshift(...mapped);
-      renderTable();
       const newest=mapped.slice(0,3).map(l=>({t:'new',ic:'📥',tx:'New lead: <strong>'+l.name+'</strong> — '+(CT[l.caseType]?.l||l.caseType||'Lead')+(l.state?' '+l.state:''),time:l.timeAgo||'Just now'}));
       if(newest.length){ACTIVITY.unshift(...newest);renderActivity();}
-    })
-    .catch(e=>console.warn('Portal lead load failed',e));
+    }
+    renderTable();
+  }catch(e){console.warn('Lead load exception',e);}
 }
-loadPortalLeads();
+function showGate(show){const g=document.getElementById('auth-gate');if(g)g.style.display=show?'flex':'none';}
+async function doLogin(){
+  const email=(document.getElementById('auth-email').value||'').trim();
+  const password=document.getElementById('auth-pass').value||'';
+  const errEl=document.getElementById('auth-err');errEl.style.display='none';
+  const btn=document.getElementById('auth-btn');btn.disabled=true;btn.textContent='Signing in…';
+  const {error}=await sbClient.auth.signInWithPassword({email,password});
+  btn.disabled=false;btn.textContent='Sign in';
+  if(error){errEl.textContent=error.message||'Sign-in failed';errEl.style.display='block';return;}
+  showGate(false);loadPortalLeads();
+}
+async function doLogout(){try{await sbClient.auth.signOut();}catch(e){}for(let i=LEADS.length-1;i>=0;i--){if(LEADS[i]._supa)LEADS.splice(i,1);}renderTable();showGate(true);}
+(function(){const pe=document.getElementById('auth-pass');if(pe)pe.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});})();
+(async function(){try{const {data:{session}}=await sbClient.auth.getSession();if(session){showGate(false);loadPortalLeads();}else{showGate(true);}}catch(e){showGate(true);}})();
 </script>
 </body>
 </html>
