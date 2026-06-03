@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MDconcierge — Referral</title>
+<style>
+  body{margin:0;background:#f4f5f7;font-family:'Segoe UI',system-ui,Arial,sans-serif;color:#1a2230;}
+  .wrap{max-width:620px;margin:0 auto;padding:24px 16px 60px;}
+  .hdr{background:#0b0f14;border-radius:12px 12px 0 0;padding:18px 24px;}
+  .hdr .b{font-size:20px;font-weight:800;color:#fff;}.hdr .b span{color:#c8922a;}
+  .hdr .t{color:#8e97a3;font-size:12px;margin-top:2px;}
+  .card{background:#fff;border:1px solid #e3e6ea;border-top:none;border-radius:0 0 12px 12px;padding:24px;}
+  h2{margin:0 0 6px;font-size:19px;}h3{font-size:14px;margin:0 0 8px;}
+  .muted{color:#6b7583;font-size:13px;}
+  .btn{display:inline-block;padding:12px 20px;margin:8px 10px 8px 0;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;}
+  .accept{background:#2ecc8a;color:#06351f;}.decline{background:#fff;border:1px solid #e0556b;color:#e0556b;}
+  .navy{background:#1a2230;color:#fff;}
+  .row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eef0f2;font-size:14px;}
+  .row .k{color:#6b7583;}.row .v{font-weight:600;text-align:right;}
+  .box{border:1px solid #e3e6ea;border-radius:10px;padding:16px;margin-top:16px;}
+  .pill{display:inline-block;background:#eef7f1;color:#1e9e6a;border:1px solid #2ecc8a;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0;}
+  .tile{padding:12px 6px;border:2px solid #e3e6ea;border-radius:9px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;background:#fff;}
+  .tile:hover{border-color:#c8922a;}
+  .tile.sel{border-color:#c8922a;background:#fdf6e8;color:#8a5a00;}
+  .tile .ic{font-size:18px;display:block;margin-bottom:3px;}
+  @media(max-width:560px){.grid{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr"><div class="b">MD<span>concierge</span></div><div class="t">Medical-Legal Coordination · Referral</div></div>
+  <div class="card" id="card"><div class="muted">Loading…</div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
+const SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const params=new URLSearchParams(location.search);
+const token=params.get('t')||'', action=params.get('a')||'';
+const card=document.getElementById('card');
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function nf(notes,re){const m=(notes||'').match(re);return m?m[1].trim():'';}
+function dl(filename,text,mime){const a=document.createElement('a');a.href='data:'+(mime||'text/plain')+';charset=utf-8,'+encodeURIComponent(text);a.download=filename;document.body.appendChild(a);a.click();a.remove();}
+function cc(s){return '"'+String(s==null?'':s).replace(/"/g,'""')+'"';}
+let CASE=null, ehrSel=null, cmSel=null;
+const EHR=['Epic','athenahealth','eClinicalWorks','DrChrono','Kareo','Jane App','Email Packet','Download PDF'];
+const EHR_IC={Epic:'🏥',athenahealth:'⚕️',eClinicalWorks:'📋',DrChrono:'🩺',Kareo:'📊','Jane App':'💚','Email Packet':'📧','Download PDF':'⬇️'};
+const CM=['Clio','Filevine','CASEpeer','SmartAdvocate','MyCase','CSV / other'];
+
+function vcard(){const d=CASE;const name=((d.first||'')+' '+(d.last||'')).trim();
+  return ['BEGIN:VCARD','VERSION:3.0','N:'+(d.last||'')+';'+(d.first||''),'FN:'+name,d.phone?('TEL;TYPE=CELL:'+d.phone):'',d.email?('EMAIL:'+d.email):'',d.zip?('ADR;TYPE=HOME:;;;;;'+d.zip+';'):'','NOTE:MDconcierge '+(d.case_id||'')+' — '+(d.case_type||'')+' — '+(d.injury||''),'END:VCARD'].filter(Boolean).join('\r\n');}
+function patientCsv(){const d=CASE;const h=['LastName','FirstName','DOB','Phone','Email','ZIP','Reason','Reference'];const r=[d.last,d.first,d.dob,d.phone,d.email,d.zip,(d.case_type||'')+' — '+(d.injury||''),d.case_id];return h.map(cc).join(',')+'\r\n'+r.map(cc).join(',')+'\r\n';}
+function caseCsv(){const d=CASE;const h=['Reference','FirstName','LastName','Phone','Email','Location','DOB','CaseType','Injury','ReferringFirm','Represented'];const r=[d.case_id,d.first,d.last,d.phone,d.email,d.location,d.dob,d.case_type,d.injury,d.firm,'Yes'];return h.map(cc).join(',')+'\r\n'+r.map(cc).join(',')+'\r\n';}
+function packetText(){const d=CASE;return `MDconcierge referral ${d.case_id}\n\nPatient: ${d.first||''} ${d.last||''}\nDOB: ${d.dob||''}\nPhone: ${d.phone||''}\nEmail: ${d.email||''}\nLocation: ${d.location||''} ${d.zip||''}\nCase type: ${d.case_type||''}\nInjury/area: ${d.injury||''}\nReferring firm: ${d.firm||''}\nRepresented: Yes\n\n— MDconcierge Coordination`;}
+
+function selEhr(el,name){ehrSel=name;document.querySelectorAll('#ehr-grid .tile').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');const b=document.getElementById('ehr-go');b.disabled=false;b.style.opacity=1;b.textContent='⬆ Import to '+name;}
+function selCm(el,name){cmSel=name;document.querySelectorAll('#cm-grid .tile').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');const b=document.getElementById('cm-go');b.disabled=false;b.style.opacity=1;b.textContent='⬆ Import to '+name;}
+function ehrImport(){const d=CASE;if(!ehrSel)return;
+  if(ehrSel==='Download PDF'){window.print();return;}
+  if(ehrSel==='Email Packet'){location.href='mailto:?subject='+encodeURIComponent('MDconcierge case '+(d.case_id||''))+'&body='+encodeURIComponent(packetText());return;}
+  // Epic/athena/eCW/DrChrono/Kareo/Jane → universal patient files
+  dl('MDconcierge-'+ehrSel.replace(/\W+/g,'')+'-'+(d.case_id||'patient')+'.csv',patientCsv(),'text/csv');
+  dl('MDconcierge-'+(d.case_id||'patient')+'.vcf',vcard(),'text/vcard');
+  document.getElementById('ehr-done').textContent='✓ Downloaded for '+ehrSel+' — import the file(s) into your system.';
+}
+function cmImport(){const d=CASE;if(!cmSel)return;dl('MDconcierge-Case-'+(d.case_id||'case')+'.csv',caseCsv(),'text/csv');document.getElementById('cm-done').textContent='✓ Downloaded — import into '+cmSel+'.';}
+
+function renderAccepted(c){
+  const notes=c.notes||'';
+  CASE={case_id:c.case_id,first:c.first,last:c.last,phone:c.phone,zip:c.zip,injury:c.injury,case_type:c.case_type,
+    email:nf(notes,/(?:Client email|Email):\s*([^|]+)/),dob:nf(notes,/(?:Client )?DOB:\s*([^|]+)/),
+    location:nf(notes,/Location:\s*([^|]+)/),firm:nf(notes,/Referring firm:\s*([^|]+)/)};
+  const d=CASE;
+  card.innerHTML=`<span class="pill">✓ Referral accepted — contact revealed</span>
+    <h2 style="margin-top:14px;">${esc((d.first||'')+' '+(d.last||''))}</h2>
+    <div class="muted">Reference ${esc(d.case_id||'')} · patient is represented by counsel</div>
+    <div class="box">
+      <div class="row"><span class="k">Phone</span><span class="v">${esc(d.phone||'—')}</span></div>
+      <div class="row"><span class="k">Email</span><span class="v">${esc(d.email||'—')}</span></div>
+      <div class="row"><span class="k">Location</span><span class="v">${esc(d.location||'—')} ${esc(d.zip||'')}</span></div>
+      <div class="row"><span class="k">DOB</span><span class="v">${esc(d.dob||'—')}</span></div>
+      <div class="row"><span class="k">Case type</span><span class="v">${esc(d.case_type||'—')}</span></div>
+      <div class="row"><span class="k">Injury / area</span><span class="v">${esc(d.injury||'—')}</span></div>
+      <div class="row"><span class="k">Referring firm</span><span class="v">${esc(d.firm||'—')}</span></div>
+    </div>
+    <div class="box">
+      <h3>Import to your EHR</h3>
+      <div class="muted">Pick your system — works with any (downloads a ready-to-import file).</div>
+      <div class="grid" id="ehr-grid">${EHR.map(s=>`<div class="tile" onclick="selEhr(this,'${s}')"><span class="ic">${EHR_IC[s]}</span>${s}</div>`).join('')}</div>
+      <button class="btn navy" id="ehr-go" onclick="ehrImport()" disabled style="opacity:.4;">⬆ Select a system</button>
+      <div class="muted" id="ehr-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
+    </div>
+    <div class="box">
+      <h3>Import to case management</h3>
+      <div class="muted">For the attorney / case manager — pick the system (downloads a CSV).</div>
+      <div class="grid" id="cm-grid">${CM.map(s=>`<div class="tile" onclick="selCm(this,'${s}')"><span class="ic">📁</span>${s}</div>`).join('')}</div>
+      <button class="btn navy" id="cm-go" onclick="cmImport()" disabled style="opacity:.4;">⬆ Select a system</button>
+      <div class="muted" id="cm-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
+    </div>
+    <p class="muted" style="margin-top:16px;">Our coordination team will follow up to help with scheduling. Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a> anytime.</p>`;
+}
+async function doAccept(){card.innerHTML='<div class="muted">Accepting…</div>';
+  const {data,error}=await sb.rpc('accept_referral',{p_token:token});
+  if(error||!data||!data.ok){card.innerHTML='<h2>Link not valid</h2><p class="muted">This referral link is invalid or expired. Please contact referrals@mdconcierge.net.</p>';return;}
+  renderAccepted(data.case);}
+async function doDecline(){card.innerHTML='<div class="muted">Submitting…</div>';await sb.rpc('decline_referral',{p_token:token});
+  card.innerHTML='<h2>Thank you</h2><p class="muted">You\'ve declined this referral — no further action needed. We appreciate you letting us know.<br><br>— The MDconcierge Coordination Team</p>';}
+function renderChoice(){card.innerHTML=`<h2>New patient referral</h2><p class="muted">Accept to unlock the full patient details and one-click EHR / case-management import. The patient is represented by counsel.</p><a class="btn accept" onclick="doAccept()">✅ Accept &amp; view case</a><a class="btn decline" onclick="doDecline()">Decline</a>`;}
+if(!token){card.innerHTML='<h2>Invalid link</h2><p class="muted">Missing referral token.</p>';}
+else if(action==='accept'){doAccept();}else if(action==='decline'){doDecline();}else{renderChoice();}
+</script>
+</body>
+</html>
