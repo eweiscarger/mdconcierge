@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>InjuryRight — Admin Dashboard</title>
+<title>MDconcierge — Admin Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
 :root{
@@ -204,7 +204,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ns">Settings</div>
     <button class="ni" onclick="showView('settings',this)"><span class="ni-ic">⚙️</span> Settings</button>
   </div>
-  <div class="sb-foot"><div class="u-chip"><div class="u-av">A</div><div><div style="font-size:13px;">Admin</div><div style="font-size:11px;color:var(--muted);">InjuryRight Owner</div></div></div></div>
+  <div class="sb-foot"><div class="u-chip"><div class="u-av">A</div><div><div style="font-size:13px;">Admin</div><div style="font-size:11px;color:var(--muted);">MDconcierge Owner</div></div></div></div>
 </nav>
 <main class="main">
   <div class="topbar">
@@ -307,7 +307,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 <div class="modal-bg" id="modal-route">
   <div class="modal">
     <h2>Route Lead</h2>
-    <p id="m-desc">Attorney and provider will receive the full case profile with InjuryRight attribution immediately upon routing.</p>
+    <p id="m-desc">Attorney and provider will receive the full case profile with MDconcierge attribution immediately upon routing.</p>
     <select class="ms" id="m-atty"><option value="">— Select attorney —</option></select>
     <select class="ms" id="m-prov"><option value="">— Select provider —</option></select>
     <textarea class="mn" id="m-note" placeholder="Internal routing notes (optional)…"></textarea>
@@ -458,7 +458,7 @@ function renderActivity(){
 
 function openRouteModal(){
   if(!selLead)return;
-  document.getElementById('m-desc').textContent=`Routing ${selLead.name} — ${CT[selLead.caseType]?.l}, ${selLead.state}. Score ${selLead.score}/10. Both parties receive full case profile attributed to InjuryRight.`;
+  document.getElementById('m-desc').textContent=`Routing ${selLead.name} — ${CT[selLead.caseType]?.l}, ${selLead.state}. Score ${selLead.score}/10. Both parties receive full case profile attributed to MDconcierge.`;
   document.getElementById('m-atty').innerHTML=document.getElementById('ra').innerHTML;
   document.getElementById('m-prov').innerHTML=document.getElementById('rp').innerHTML;
   document.getElementById('m-note').value='';
@@ -531,7 +531,7 @@ function exportCSV(){
   const rows=[['Name','Phone','Email','State','Case Type','Score','Status','Injury']];
   LEADS.forEach(l=>rows.push([l.name,l.phone,l.email,l.state,CT[l.caseType]?.l||l.caseType,l.score,l.status,l.injury]));
   const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='injuryright_leads.csv';a.click();
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='mdconcierge_leads.csv';a.click();
   showToast('CSV exported');
 }
 ['modal-route','modal-add'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))closeModal(id);});});
