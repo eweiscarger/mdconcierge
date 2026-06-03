@@ -222,7 +222,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="sb-logo"><div class="wm">MD<span>concierge</span></div><div class="tag">Admin Portal</div></div>
   <div class="sb-nav">
     <button class="ni active" onclick="showView('leads',this)"><span class="ni-ic">📋</span> Lead Queue <span class="nb" id="new-count">6</span></button>
-    <a class="ni" href="providers.html" style="text-decoration:none;display:block;"><span class="ni-ic">🏥</span> Provider Network</a>
+    <button class="ni" onclick="showView('network',this)"><span class="ni-ic">🏥</span> Provider Network</button>
     <div class="ns">Analytics</div>
     <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
     <div class="ns">Settings</div>
@@ -371,6 +371,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="mbtns"><button class="btn-cancel" onclick="closeModal('modal-add')">Cancel</button><button class="btn-ok" onclick="addMember()">Add to network</button></div>
   </div>
 </div>
+
+<!-- PROVIDER MODAL (real, detailed) -->
+<div class="modal-bg" id="modal-prov"><div class="modal" id="mp-inner" style="max-height:88vh;overflow:auto;"></div></div>
 
 <div class="toast" id="toast"></div>
 
@@ -566,11 +569,106 @@ function vendCard(v){
   return`<div class="mc-card"><div class="mc-top"><div class="mc-av av-v">${v.name.charAt(0)}</div><div><div class="mc-name">${v.name}</div><div class="mc-role">${v.role}</div><div class="mc-st"><div class="dot-on"></div><span style="color:var(--muted2);font-size:11px;">Active</span></div></div></div><div class="dp-f" style="margin-bottom:4px;"><span class="dp-fk" style="font-size:11px;">Contact</span><span class="dp-fv" style="font-size:11px;">${v.contact}</span></div><div class="dp-f" style="margin-bottom:12px;"><span class="dp-fk" style="font-size:11px;">Monthly fee</span><span class="dp-fv" style="color:var(--green);">$${v.fee}/mo</span></div><div class="mc-acts"><button class="btn-sm" onclick="showToast('Edit: ${v.name}')">Edit</button><button class="btn-sm" onclick="showToast('${v.phone}')">Call</button><button class="btn-sm danger" onclick="showToast('Removed (demo)')">Remove</button></div></div>`;
 }
 
-function renderNetwork(){
-  document.getElementById('atty-grid').innerHTML=ATTORNEYS.map(attyCard).join('')+`<div class="add-card" onclick="openAddModal()"><div class="add-ic">+</div><div style="font-size:13px;color:var(--muted2);">Add attorney</div></div>`;
-  document.getElementById('prov-grid').innerHTML=PROVIDERS.map(provCard).join('')+`<div class="add-card" onclick="openAddModal()"><div class="add-ic">+</div><div style="font-size:13px;color:var(--muted2);">Add provider</div></div>`;
-  document.getElementById('vend-grid').innerHTML=VENDORS.map(vendCard).join('')+`<div class="add-card" onclick="openAddModal()"><div class="add-ic">+</div><div style="font-size:13px;color:var(--muted2);">Add vendor</div></div>`;
+// ── Real provider network (cards + detailed add/edit, solo or group) ──
+const SPECIALTIES=['Orthopedic Surgery','Orthopedics (non-surgical)','Neurosurgery','Spine Surgery','Neurospine','Neurology','Pain Management','Physical Medicine & Rehab (PM&R)','Chiropractic','Physical Therapy','Podiatry','Radiology / Imaging','Psychology / Psychiatry','Internal Medicine','Primary Care','Other'];
+const PROVIDER_TYPES=['MD','DO','DC (Chiropractor)','PT (Physical Therapist)','DPM (Podiatrist)','PA-C','NP','Imaging Center','Surgery Center','Facility','Other'];
+const BODY_PARTS=['Spine / Back','Neck / Cervical','Shoulder','Elbow','Hand / Wrist','Upper extremity','Hip','Knee','Ankle / Foot','Lower extremity','Head / TBI','Pain management','Other'];
+const PROV_ROLES=['Physician / Provider','Office Manager / Administrator','Medical Assistant','Work-Comp Coordinator','Billing Contact','Scheduler','MSO Contact','Other'];
+function ehtml(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function selOpts(list,cur){const arr=(cur&&!list.includes(cur))?[cur,...list]:list;return '<option value=""></option>'+arr.map(x=>`<option ${x===cur?'selected':''}>${ehtml(x)}</option>`).join('');}
+function addCard(lbl,fn){return `<div class="add-card" onclick="${fn}"><div class="add-ic">+</div><div style="font-size:13px;color:var(--muted2);">${lbl}</div></div>`;}
+function provCardReal(p){
+  const pr=NET_PRACTICES.find(x=>x.id===p.practice_id);
+  const aff=p.practice_id?(pr?ehtml(pr.name):'Group'):'Independent';
+  const bp=(p.body_parts||[]).slice(0,5).map(b=>`<span class="ct-chip on">${ehtml(b)}</span>`).join('');
+  const states=(p.states||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="stag">${ehtml(s)}</span>`).join('');
+  const refs=NET_CONTACTS.filter(c=>c.provider_id===p.id&&c.receives_referrals).length;
+  return `<div class="mc-card" style="cursor:pointer;" onclick="openProvModal(${p.id})"><div class="mc-top"><div class="mc-av av-p">${ehtml((p.doctor_name||'?').charAt(0))}</div><div><div class="mc-name">${ehtml(p.doctor_name||'(unnamed)')}</div><div class="mc-role">${ehtml(p.specialty||p.provider_type||'—')} · ${aff}</div><div class="mc-st"><div class="${p.active?'dot-on':'dot-full'}"></div><span style="color:var(--muted2);font-size:11px;">${p.active?'Active':'Inactive'}</span></div></div></div><div class="stags">${states}</div><div class="ct-checks">${bp||'<span style="font-size:11px;color:var(--muted);">No areas set</span>'}</div><div class="dp-f" style="margin:6px 0 10px;"><span class="dp-fk" style="font-size:11px;">Referral contacts</span><span class="dp-fv" style="font-size:12px;">${refs}</span></div><div class="mc-acts"><button class="btn-sm" onclick="event.stopPropagation();openProvModal(${p.id})">Edit</button><button class="btn-sm danger" onclick="event.stopPropagation();delProv(${p.id})">Remove</button></div></div>`;
 }
+function renderNetwork(){
+  document.getElementById('atty-grid').innerHTML=ATTORNEYS.map(attyCard).join('')+addCard('Add attorney','openAddModal()');
+  document.getElementById('prov-grid').innerHTML=NET_PROVIDERS.map(provCardReal).join('')+addCard('Add provider','openProvModal(null)');
+  document.getElementById('vend-grid').innerHTML=VENDORS.map(vendCard).join('')+addCard('Add vendor','openAddModal()');
+  const tabs=document.querySelectorAll('.net-tab'); if(tabs[1])tabs[1].textContent=`Medical Providers (${NET_PROVIDERS.length})`;
+}
+let mpEditId=null, mpContacts=[];
+function mpPracticeOptions(cur){return '<option value="">— select group —</option>'+NET_PRACTICES.map(pr=>`<option value="${pr.id}" ${pr.id===cur?'selected':''}>${ehtml(pr.name)}</option>`).join('')+'<option value="__new">+ New group…</option>';}
+function mpOfficeOptions(practiceId,curLoc){const locs=NET_LOCATIONS.filter(l=>l.practice_id===practiceId);return '<option value="">Same as group (all offices)</option>'+locs.map(l=>`<option value="${l.id}" ${l.id===curLoc?'selected':''}>${ehtml(l.label||l.address||('Office '+l.id))}</option>`).join('')+'<option value="__new">+ New office…</option>';}
+function openProvModal(id){
+  mpEditId=id;
+  const p=id?NET_PROVIDERS.find(x=>x.id===id):null;
+  mpContacts=id?NET_CONTACTS.filter(c=>c.provider_id===id).map(c=>({role:c.role||PROV_ROLES[0],name:c.name||'',email:c.email||'',phone:c.phone||'',receives_referrals:!!c.receives_referrals})):[];
+  const isGroup=p?!!p.practice_id:false;
+  document.getElementById('mp-inner').innerHTML=`
+   <h2>${id?'Edit provider':'Add provider'}</h2>
+   <div class="fgroup"><label class="flabel">Setup</label>
+     <label class="ct-chk"><input type="radio" name="mp-setup" value="solo" ${!isGroup?'checked':''} onclick="mpToggle()"/> Independent / solo</label>
+     <label class="ct-chk" style="margin-left:16px;"><input type="radio" name="mp-setup" value="group" ${isGroup?'checked':''} onclick="mpToggle()"/> Part of a group / practice</label>
+   </div>
+   <div id="mp-group-wrap" style="display:${isGroup?'block':'none'};"><div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">Group / practice</label><select class="ms" id="mp-practice" onchange="mpPracticeChange()">${mpPracticeOptions(p?p.practice_id:null)}</select></div>
+     <div class="fgroup"><label class="flabel">Office</label><select class="ms" id="mp-office" onchange="mpOfficeChange()">${mpOfficeOptions(p?p.practice_id:null,p?p.location_id:null)}</select></div>
+   </div></div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">Provider / doctor name</label><input class="finput" id="mp-name" value="${p?ehtml(p.doctor_name):''}"/></div>
+     <div class="fgroup"><label class="flabel">Specialty</label><select class="ms" id="mp-spec">${selOpts(SPECIALTIES,p?p.specialty:'')}</select></div>
+   </div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">Provider type</label><select class="ms" id="mp-type">${selOpts(PROVIDER_TYPES,p?p.provider_type:'')}</select></div>
+     <div class="fgroup"><label class="flabel">State(s)</label><input class="finput" id="mp-states" value="${p?ehtml(p.states):''}" placeholder="PA, NJ"/></div>
+   </div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">Phone</label><input class="finput" id="mp-phone" value="${p?ehtml(p.phone):''}"/></div>
+     <div class="fgroup"><label class="flabel">Fax</label><input class="finput" id="mp-fax" value="${p?ehtml(p.fax):''}"/></div>
+   </div>
+   <div class="fgroup" id="mp-addr-wrap" style="margin-bottom:12px;display:${isGroup?'none':'block'};"><label class="flabel">Office address</label><input class="finput" id="mp-addr" value="${p?ehtml(p.location_address):''}"/></div>
+   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Body parts / areas treated</label><div class="ct-check-grid">${BODY_PARTS.map(b=>`<label class="ct-chk"><input type="checkbox" class="mp-bp" value="${ehtml(b)}" ${(p&&Array.isArray(p.body_parts)&&p.body_parts.includes(b))?'checked':''}/> ${b}</label>`).join('')}</div></div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">Monthly capacity</label><input class="finput" id="mp-cap" type="number" value="${p&&p.monthly_capacity!=null?p.monthly_capacity:''}"/></div>
+     <div class="fgroup"><label class="flabel">Languages</label><input class="finput" id="mp-lang" value="${p?ehtml(p.languages):''}"/></div>
+   </div>
+   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Options</label><div class="ct-check-grid">
+     <label class="ct-chk"><input type="checkbox" id="mp-active" ${(!p||p.active)?'checked':''}/> Active</label>
+     <label class="ct-chk"><input type="checkbox" id="mp-lien" ${p&&p.lien_acceptance?'checked':''}/> Accepts liens</label>
+     <label class="ct-chk"><input type="checkbox" id="mp-ncp" ${p&&p.ncp_required?'checked':''}/> NCP required</label>
+     <label class="ct-chk"><input type="checkbox" id="mp-lit" ${p&&p.litigation_acceptance?'checked':''}/> Litigation OK</label>
+   </div></div>
+   <div class="fgroup" style="margin-bottom:8px;"><label class="flabel">Contacts — check “receives referrals” for who gets the referral email</label><div id="mp-contacts"></div>
+     <button class="btn-sm" onclick="mpAddContactRow()">+ Add contact</button></div>
+   <div class="mbtns"><button class="btn-cancel" onclick="closeModal('modal-prov')">Cancel</button><button class="btn-ok" onclick="saveProv()">${id?'Save changes':'Add provider'}</button></div>`;
+  mpRenderContacts();
+  document.getElementById('modal-prov').classList.add('open');
+}
+function mpToggle(){const g=document.querySelector('input[name=mp-setup]:checked')?.value==='group';document.getElementById('mp-group-wrap').style.display=g?'block':'none';document.getElementById('mp-addr-wrap').style.display=g?'none':'block';}
+async function mpPracticeChange(){const sel=document.getElementById('mp-practice');if(sel.value==='__new'){const name=prompt('New group / practice name:');if(!name){sel.value='';return;}const {data,error}=await sbClient.from('practices').insert({name:name.trim()}).select().single();if(error){showToast('Error: '+error.message);sel.value='';return;}NET_PRACTICES.push(data);sel.innerHTML=mpPracticeOptions(data.id);}document.getElementById('mp-office').innerHTML=mpOfficeOptions(parseInt(sel.value,10)||null,null);}
+async function mpOfficeChange(){const off=document.getElementById('mp-office');if(off.value!=='__new')return;const pid=parseInt(document.getElementById('mp-practice').value,10);if(!pid){showToast('Pick a group first');off.value='';return;}const label=prompt('Office label (e.g. North Office):');if(label===null){off.value='';return;}const addr=prompt('Office address:')||'';const {data,error}=await sbClient.from('locations').insert({practice_id:pid,label:label||'Office',address:addr}).select().single();if(error){showToast('Error: '+error.message);off.value='';return;}NET_LOCATIONS.push(data);off.innerHTML=mpOfficeOptions(pid,data.id);}
+function mpRenderContacts(){const box=document.getElementById('mp-contacts');box.innerHTML=mpContacts.map((c,i)=>`<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;"><select class="ms" style="max-width:180px;" onchange="mpContacts[${i}].role=this.value">${PROV_ROLES.map(r=>`<option ${r===c.role?'selected':''}>${r}</option>`).join('')}</select><input class="finput" placeholder="Name" value="${ehtml(c.name)}" oninput="mpContacts[${i}].name=this.value"/><input class="finput" placeholder="Email" value="${ehtml(c.email)}" oninput="mpContacts[${i}].email=this.value"/><input class="finput" placeholder="Phone" value="${ehtml(c.phone)}" style="max-width:130px;" oninput="mpContacts[${i}].phone=this.value"/><label class="ct-chk" style="white-space:nowrap;"><input type="checkbox" ${c.receives_referrals?'checked':''} onchange="mpContacts[${i}].receives_referrals=this.checked"/> referrals</label><button class="btn-sm danger" onclick="mpRemoveContact(${i})">✕</button></div>`).join('')||'<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">No contacts yet.</div>';}
+function mpAddContactRow(){mpContacts.push({role:PROV_ROLES[0],name:'',email:'',phone:'',receives_referrals:false});mpRenderContacts();}
+function mpRemoveContact(i){mpContacts.splice(i,1);mpRenderContacts();}
+async function saveProv(){
+  const name=(document.getElementById('mp-name').value||'').trim();if(!name){showToast('Provider name required');return;}
+  const isGroup=document.querySelector('input[name=mp-setup]:checked')?.value==='group';
+  let practice_id=null,location_id=null,same_as_practice=true,location_address=null;
+  if(isGroup){const pv=document.getElementById('mp-practice').value;practice_id=(pv&&pv!=='__new')?parseInt(pv,10):null;if(!practice_id){showToast('Select or create the group');return;}const ov=document.getElementById('mp-office').value;if(ov&&ov!=='__new'){location_id=parseInt(ov,10);same_as_practice=false;}}
+  else{location_address=(document.getElementById('mp-addr').value||'').trim();}
+  const cap=document.getElementById('mp-cap').value;
+  const rec={doctor_name:name,practice_id,location_id,same_as_practice,location_address,
+    specialty:document.getElementById('mp-spec').value,provider_type:document.getElementById('mp-type').value,
+    states:(document.getElementById('mp-states').value||'').trim(),phone:(document.getElementById('mp-phone').value||'').trim(),
+    fax:(document.getElementById('mp-fax').value||'').trim(),languages:(document.getElementById('mp-lang').value||'').trim(),
+    monthly_capacity:cap?parseInt(cap,10):null,active:document.getElementById('mp-active').checked,
+    lien_acceptance:document.getElementById('mp-lien').checked,ncp_required:document.getElementById('mp-ncp').checked,
+    litigation_acceptance:document.getElementById('mp-lit').checked,
+    body_parts:Array.from(document.querySelectorAll('.mp-bp:checked')).map(x=>x.value)};
+  let provId=mpEditId;
+  if(mpEditId){const {error}=await sbClient.from('providers').update(rec).eq('id',mpEditId);if(error){showToast('Error: '+error.message);return;}}
+  else{const {data,error}=await sbClient.from('providers').insert(rec).select().single();if(error){showToast('Error: '+error.message);return;}provId=data.id;}
+  await sbClient.from('contacts').delete().eq('provider_id',provId);
+  const rows=mpContacts.filter(c=>(c.name&&c.name.trim())||(c.email&&c.email.trim())).map(c=>({provider_id:provId,practice_id:practice_id,role:c.role,name:(c.name||'').trim(),email:(c.email||'').trim(),phone:(c.phone||'').trim(),receives_referrals:!!c.receives_referrals}));
+  if(rows.length){const {error}=await sbClient.from('contacts').insert(rows);if(error)showToast('Saved provider; contact error: '+error.message);}
+  closeModal('modal-prov');await loadProviders();renderNetwork();showToast(mpEditId?'Provider updated':'Provider added');
+}
+async function delProv(id){const p=NET_PROVIDERS.find(x=>x.id===id);if(!confirm('Remove provider "'+(p?p.doctor_name:'')+'"?'))return;await sbClient.from('contacts').delete().eq('provider_id',id);const {error}=await sbClient.from('providers').delete().eq('id',id);if(error){showToast('Error: '+error.message);return;}await loadProviders();renderNetwork();showToast('Provider removed');}
 function switchTab(tab,btn){
   document.querySelectorAll('.net-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
   ['attorneys','providers','vendors'].forEach(t=>document.getElementById('tab-'+t).style.display=t===tab?'block':'none');
@@ -624,15 +722,22 @@ function mapSupaCase(r){
     zip:r.patient_zip||'',employer:'',injury:r.injury_type||'',reported:'',claimFiled:r.claim_status||'',
     treatment:'',priorInjury:'',attorney:represented?(firm||'Represented'):'None',represented:represented,referringFirm:firm,leadSource:r.lead_source||'',caseId:r.case_id||'',supaId:r.id,_supa:true};
 }
-let REAL_PROVIDERS=[];
+let REAL_PROVIDERS=[], NET_PROVIDERS=[], NET_PRACTICES=[], NET_LOCATIONS=[], NET_CONTACTS=[];
 async function loadProviders(){
   try{
-    const {data,error}=await sbClient.from('providers').select('id,doctor_name,specialty,active,practices(name)').eq('active',true).order('doctor_name');
-    if(!error)REAL_PROVIDERS=data||[];
-  }catch(e){console.warn('provider load failed',e);}
+    const [pr,pa,lo,co]=await Promise.all([
+      sbClient.from('providers').select('*').order('doctor_name'),
+      sbClient.from('practices').select('*').order('name'),
+      sbClient.from('locations').select('*').order('label'),
+      sbClient.from('contacts').select('*').order('name'),
+    ]);
+    NET_PROVIDERS=pr.data||[];NET_PRACTICES=pa.data||[];NET_LOCATIONS=lo.data||[];NET_CONTACTS=co.data||[];
+    REAL_PROVIDERS=NET_PROVIDERS.filter(p=>p.active);
+    const nv=document.getElementById('view-network'); if(nv&&nv.classList.contains('active'))renderNetwork();
+  }catch(e){console.warn('network load failed',e);}
 }
 function providerOptions(){
-  return '<option value="">— Assign provider —</option>'+REAL_PROVIDERS.map(p=>`<option value="${p.id}">${p.doctor_name}${p.practices&&p.practices.name?(' — '+p.practices.name):''}${p.specialty?(' · '+p.specialty):''}</option>`).join('');
+  return '<option value="">— Assign provider —</option>'+REAL_PROVIDERS.map(p=>{const pr=NET_PRACTICES.find(x=>x.id===p.practice_id);return `<option value="${p.id}">${ehtml(p.doctor_name)}${pr?(' — '+ehtml(pr.name)):''}${p.specialty?(' · '+ehtml(p.specialty)):''}</option>`;}).join('');
 }
 async function loadPortalLeads(){
   try{
