@@ -536,6 +536,38 @@ function exportCSV(){
 }
 ['modal-route','modal-add'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))closeModal(id);});});
 renderSparkline();renderTable();renderActivity();
+
+// ── Live leads from the InjuredGuide funnel (Supabase) ──
+const SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
+const SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
+function _timeAgo(ts){if(!ts)return'';const t=new Date(ts).getTime();if(isNaN(t))return'';const s=Math.floor((Date.now()-t)/1000);if(s<60)return Math.max(1,s)+'s ago';const m=Math.floor(s/60);if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';const dd=Math.floor(h/24);return dd===1?'Yesterday':dd+'d ago';}
+function _nf(notes,re){const m=(notes||'').match(re);return m?m[1].trim():'';}
+function mapSupaCase(r){
+  const notes=r.notes||'';
+  const loc=_nf(notes,/Location:\s*([^|]+)/);let city='',state='';
+  if(loc){const p=loc.split(',');city=(p[0]||'').trim();state=(p[1]||'').trim();}
+  const sm=notes.match(/Score:\s*(\d+)/);
+  return {id:100000+(r.id||0),name:((r.patient_first||'')+' '+(r.patient_last||'')).trim()||(r.case_id||('Case '+(r.id||''))),
+    phone:r.patient_phone||'',state:state,city:city,caseType:r.case_type||'',score:sm?parseInt(sm[1],10):0,
+    status:r.status||'new',timeAgo:_timeAgo(r.created_at||r.intake_date),email:_nf(notes,/Email:\s*([^|]+)/),
+    zip:r.patient_zip||'',employer:'',injury:r.injury_type||'',reported:'',claimFiled:r.claim_status||'',
+    treatment:'',priorInjury:'',attorney:'None',caseId:r.case_id||'',_supa:true};
+}
+function loadPortalLeads(){
+  fetch(SUPABASE_URL+'/rest/v1/cases?select=*&order=created_at.desc',{headers:{'apikey':SUPABASE_KEY,'Authorization':'Bearer '+SUPABASE_KEY}})
+    .then(r=>r.ok?r.json():[])
+    .then(rows=>{
+      if(!Array.isArray(rows)||!rows.length)return;
+      const mapped=rows.map(mapSupaCase);
+      for(let i=LEADS.length-1;i>=0;i--){if(LEADS[i]._supa)LEADS.splice(i,1);}
+      LEADS.unshift(...mapped);
+      renderTable();
+      const newest=mapped.slice(0,3).map(l=>({t:'new',ic:'📥',tx:'New lead: <strong>'+l.name+'</strong> — '+(CT[l.caseType]?.l||l.caseType||'Lead')+(l.state?' '+l.state:''),time:l.timeAgo||'Just now'}));
+      if(newest.length){ACTIVITY.unshift(...newest);renderActivity();}
+    })
+    .catch(e=>console.warn('Portal lead load failed',e));
+}
+loadPortalLeads();
 </script>
 </body>
 </html>
