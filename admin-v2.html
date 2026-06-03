@@ -427,7 +427,7 @@ let selLead=null,filterMode='all',searchQ='';
 
 function ctTag(t){const c=CT[t]||{l:t,c:''};return`<span class="ct ${c.c}">${c.l}</span>`;}
 function scorePill(s){const cls=s>=7?'hi':s>=5?'md':'lo';return`<span class="sp ${cls}">${s>=7?'●':s>=5?'◐':'○'} ${s}/10</span>`;}
-function statusBadge(s){const m={new:{c:'s-new',l:'New'},review:{c:'s-review',l:'In Review'},routed:{c:'s-routed',l:'Routed'},disqualified:{c:'s-disq',l:'Disqualified'}}[s]||{c:'s-new',l:s};return`<span class="sd ${m.c}"></span><span style="font-size:12px;">${m.l}</span>`;}
+function statusBadge(s){const m={new:{c:'s-new',l:'New'},review:{c:'s-review',l:'In Review'},routed:{c:'s-routed',l:'Routed'},scheduled:{c:'s-routed',l:'Scheduled'},closed:{c:'s-disq',l:'Closed'},declined:{c:'s-disq',l:'Declined'},disqualified:{c:'s-disq',l:'Disqualified'}}[s]||{c:'s-new',l:s};return`<span class="sd ${m.c}"></span><span style="font-size:12px;">${m.l}</span>`;}
 function capCls(u,c){if(!c)return'';const r=u/c;return r>=1?'full':r>=.8?'warn':'';}
 
 function renderSparkline(){
@@ -464,7 +464,8 @@ function selL(id){
     <div><div class="dp-st">Case details</div><div class="dp-f"><span class="dp-fk">Injury</span><span class="dp-fv" style="font-size:11px;line-height:1.4;">${l.injury}</span></div><div class="dp-f"><span class="dp-fk">Employer</span><span class="dp-fv">${l.employer}</span></div><div class="dp-f"><span class="dp-fk">Reported</span><span class="dp-fv">${l.reported}</span></div><div class="dp-f"><span class="dp-fk">Claim filed</span><span class="dp-fv">${l.claimFiled}</span></div></div>
     <div><div class="dp-st">Medical</div><div class="dp-f"><span class="dp-fk">Treatment</span><span class="dp-fv" style="font-size:11px;line-height:1.4;">${l.treatment}</span></div><div class="dp-f"><span class="dp-fk">Prior atty</span><span class="dp-fv">${l.attorney}</span></div></div>
     ${rB}${dB}
-    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;"><button onclick="deleteLead(${l.id})" style="width:100%;padding:9px;background:transparent;border:1px solid var(--red);color:var(--red);border-radius:8px;font-size:12px;cursor:pointer;">Delete lead</button></div>`;
+    ${(l.status==='routed'||l.status==='scheduled')?`<div style="margin-top:14px;display:flex;gap:8px;">${l.status==='routed'?`<button onclick="markStatus(${l.id},'scheduled')" style="flex:1;padding:9px;background:transparent;border:1px solid var(--green);color:var(--green);border-radius:8px;font-size:12px;cursor:pointer;">✓ Mark scheduled</button>`:''}<button onclick="markStatus(${l.id},'closed')" style="flex:1;padding:9px;background:transparent;border:1px solid var(--muted2);color:var(--muted2);border-radius:8px;font-size:12px;cursor:pointer;">Mark closed</button></div>`:''}
+    <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:14px;"><button onclick="deleteLead(${l.id})" style="width:100%;padding:9px;background:transparent;border:1px solid var(--red);color:var(--red);border-radius:8px;font-size:12px;cursor:pointer;">Delete lead</button></div>`;
   const act=document.getElementById('dp-act');
   act.style.display=(l.status==='new'||l.status==='review')?'flex':'none';
   const mA=ATTORNEYS.filter(a=>a.types.includes(l.caseType)&&a.status!=='full'&&a.states.includes(l.state));
@@ -530,6 +531,17 @@ async function confirmRoute(){
   ACTIVITY.unshift({t:'rt',ic:'➤',tx:`<strong>${selLead.name}</strong> routed → ${pn}`,time:'Just now'});
   closeModal('modal-route');renderTable();selL(selLead.id);renderActivity();
   showToast(`✓ Routed to ${pn} — provider will be notified shortly`);
+}
+async function markStatus(id,status){
+  const l=LEADS.find(x=>x.id===id); if(!l)return;
+  if(l._supa){
+    const patch={status}; if(status==='scheduled'||status==='closed'||status==='declined')patch.next_checkin=null;
+    const {error}=await sbClient.from('cases').update(patch).eq('id',l.supaId);
+    if(error){showToast('Failed: '+error.message);return;}
+  }
+  l.status=status; renderTable(); selL(id);
+  ACTIVITY.unshift({t:'rt',ic:status==='scheduled'?'✓':'■',tx:`<strong>${l.name}</strong> marked ${status}`,time:'Just now'}); renderActivity();
+  showToast('Marked '+status+(status!=='routed'?' — follow-ups stopped':''));
 }
 function disqualify(){
   if(!selLead)return;
