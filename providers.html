@@ -14,7 +14,7 @@
   .brand{font-weight:800;font-size:18px;}.brand span{color:var(--gold);}
   .top .sub{font-size:12px;color:var(--muted);}
   .top .actions{display:flex;gap:10px;align-items:center;}
-  .wrap{display:grid;grid-template-columns:320px 1fr;gap:0;min-height:calc(100vh - 56px);}
+  .wrap{display:grid;grid-template-columns:320px 1fr;min-height:calc(100vh - 56px);}
   .list{border-right:1px solid var(--border);padding:14px;overflow:auto;}
   .detail{padding:18px 22px;overflow:auto;}
   .btn{background:var(--gold);color:#1a1305;border:none;border-radius:8px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer;}
@@ -24,29 +24,26 @@
   .pcard{padding:10px 12px;border:1px solid var(--border);border-radius:9px;margin-bottom:8px;cursor:pointer;background:var(--bg2);}
   .pcard:hover{border-color:var(--border2);}
   .pcard.sel{border-color:var(--gold);background:var(--bg3);}
-  .pcard .n{font-weight:600;}
-  .pcard .m{font-size:12px;color:var(--muted);}
+  .pcard .n{font-weight:600;}.pcard .m{font-size:12px;color:var(--muted);}
   label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 3px;}
   input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;outline:none;}
   input:focus,select:focus,textarea:focus{border-color:var(--gold);}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
-  .fld{margin-bottom:10px;}
+  .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;}
+  .fld{margin-bottom:10px;}.mb0{margin-bottom:0;}
   .sec{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);margin:22px 0 10px;border-top:1px solid var(--border);padding-top:16px;}
   .row{display:flex;gap:8px;align-items:center;padding:9px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:7px;background:var(--bg2);}
-  .row .grow{flex:1;}
-  .row .nm{font-weight:600;font-size:13px;}
-  .row .mt{font-size:12px;color:var(--muted);}
-  .pill{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--border2);color:var(--muted2);}
-  .pill.ref{border-color:var(--green);color:var(--green);}
-  .empty{color:var(--muted);font-size:13px;padding:20px 0;}
-  .chk{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);}
-  .chk input{width:auto;}
+  .row .grow{flex:1;}.row .nm{font-weight:600;font-size:13px;}.row .mt{font-size:12px;color:var(--muted);}
+  .pill{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--border2);color:var(--muted2);margin-left:4px;}
+  .pill.ref{border-color:var(--green);color:var(--green);}.pill.on{border-color:var(--gold);color:var(--gold2);}
+  .empty{color:var(--muted);font-size:13px;padding:18px 0;}
+  .chk{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text);}.chk input{width:auto;}
   .gate{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;}
   .gate .card{width:340px;max-width:90vw;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:28px;}
   .toast{position:fixed;bottom:22px;right:22px;background:var(--bg3);border:1px solid var(--green);color:var(--green);padding:10px 16px;border-radius:8px;font-size:13px;display:none;z-index:200;}
-  .muted{color:var(--muted);} .mb0{margin-bottom:0;}
-  .editbox{border:1px solid var(--border2);border-radius:9px;padding:12px;margin:8px 0 14px;background:var(--bg2);}
+  .editbox{border:1px solid var(--border2);border-radius:9px;padding:13px;margin:8px 0 14px;background:var(--bg2);}
+  .editbox h4{margin:0 0 10px;font-size:13px;color:var(--gold2);}
 </style>
 </head>
 <body>
@@ -64,10 +61,7 @@
 <div id="app" style="display:none;">
   <div class="top">
     <div><span class="brand">MD<span>concierge</span></span> &nbsp;<span class="sub">Provider Network</span></div>
-    <div class="actions">
-      <a href="admin-v2.html" class="sub">← Dashboard</a>
-      <button class="btn ghost sm" onclick="logout()">Sign out</button>
-    </div>
+    <div class="actions"><a href="admin-v2.html" class="sub">← Dashboard</a><button class="btn ghost sm" onclick="logout()">Sign out</button></div>
   </div>
   <div class="wrap">
     <div class="list">
@@ -86,15 +80,16 @@ const SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
 const SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const ROLES=['Physician / Provider','Office Manager / Administrator','Medical Assistant','Work-Comp Coordinator','Billing Contact','Scheduler','MSO Contact','Other'];
-let state={msos:[],practices:[],providers:[],contacts:[],sel:null};
+let state={msos:[],practices:[],providers:[],contacts:[],sel:null,editDoc:null};
 
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2600);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function gate(show){document.getElementById('gate').style.display=show?'flex':'none';document.getElementById('app').style.display=show?'none':'block';}
+function v(id){const e=document.getElementById(id);return e?(e.value||'').trim():'';}
+function chk(id){const e=document.getElementById(id);return e?!!e.checked:false;}
 
 async function login(){
-  const email=(document.getElementById('g-email').value||'').trim();
-  const password=document.getElementById('g-pass').value||'';
+  const email=v('g-email');const password=document.getElementById('g-pass').value||'';
   const err=document.getElementById('g-err');err.style.display='none';
   const btn=document.getElementById('g-btn');btn.disabled=true;btn.textContent='Signing in…';
   const {error}=await sb.auth.signInWithPassword({email,password});
@@ -108,37 +103,31 @@ async function loadAll(){
   const [m,p,pr,c]=await Promise.all([
     sb.from('msos').select('*').order('name'),
     sb.from('practices').select('*').order('name'),
-    sb.from('providers').select('*').order('name'),
+    sb.from('providers').select('*').order('doctor_name'),
     sb.from('contacts').select('*').order('name'),
   ]);
   state.msos=m.data||[];state.practices=p.data||[];state.providers=pr.data||[];state.contacts=c.data||[];
   renderList();
-  if(state.sel){const still=state.practices.find(x=>x.id===state.sel);state.sel=still?state.sel:null;}
+  if(state.sel&&!state.practices.find(x=>x.id===state.sel))state.sel=null;
   if(state.sel)renderDetail();else document.getElementById('detail').innerHTML='<div class="empty">Select a practice on the left, or add one to get started.</div>';
 }
-
 function renderList(){
-  const q=(document.getElementById('search').value||'').toLowerCase();
+  const q=v('search').toLowerCase();
   const rows=state.practices.filter(p=>!q||(p.name||'').toLowerCase().includes(q)||(p.specialty||'').toLowerCase().includes(q));
   document.getElementById('plist').innerHTML=rows.length?rows.map(p=>{
     const docs=state.providers.filter(d=>d.practice_id===p.id).length;
     const cts=state.contacts.filter(c=>c.practice_id===p.id).length;
-    return `<div class="pcard ${state.sel===p.id?'sel':''}" onclick="select(${p.id})"><div class="n">${esc(p.name)}</div><div class="m">${esc(p.specialty||'—')} · ${docs} provider(s) · ${cts} contact(s)</div></div>`;
+    return `<div class="pcard ${state.sel===p.id?'sel':''}" onclick="sel(${p.id})"><div class="n">${esc(p.name)}</div><div class="m">${esc(p.specialty||'—')} · ${docs} provider(s) · ${cts} contact(s)</div></div>`;
   }).join(''):'<div class="empty">No practices yet. Click “Add practice” above.</div>';
 }
-
-function select(id){state.sel=id;renderList();renderDetail();}
-
-function msoOptions(sel){
-  return `<option value="">— none —</option>`+state.msos.map(m=>`<option value="${m.id}" ${m.id===sel?'selected':''}>${esc(m.name)}</option>`).join('')+`<option value="__new">+ Add new MSO…</option>`;
-}
+function sel(id){state.sel=id;state.editDoc=null;renderList();renderDetail();}
+function msoOptions(s){return `<option value="">— none —</option>`+state.msos.map(m=>`<option value="${m.id}" ${m.id===s?'selected':''}>${esc(m.name)}</option>`).join('')+`<option value="__new">+ Add new MSO…</option>`;}
 
 function renderDetail(){
-  const p=state.practices.find(x=>x.id===state.sel);if(!p){return;}
+  const p=state.practices.find(x=>x.id===state.sel);if(!p)return;
   const docs=state.providers.filter(d=>d.practice_id===p.id);
   const cts=state.contacts.filter(c=>c.practice_id===p.id);
-  const d=document.getElementById('detail');
-  d.innerHTML=`
+  document.getElementById('detail').innerHTML=`
     <div style="display:flex;justify-content:space-between;align-items:center;">
       <h2 style="margin:0;font-size:20px;">${esc(p.name)}</h2>
       <button class="btn danger sm" onclick="delPractice(${p.id})">Delete practice</button>
@@ -148,10 +137,11 @@ function renderDetail(){
         <div class="fld"><label>Practice / group name</label><input id="f-name" value="${esc(p.name)}"/></div>
         <div class="fld"><label>Specialty</label><input id="f-spec" value="${esc(p.specialty)}" placeholder="Ortho, Neuro, Imaging…"/></div>
       </div>
-      <div class="grid3">
-        <div class="fld"><label>State(s) served</label><input id="f-states" value="${esc(p.states)}" placeholder="PA, NJ"/></div>
+      <div class="grid4">
+        <div class="fld"><label>State(s)</label><input id="f-states" value="${esc(p.states)}" placeholder="PA, NJ"/></div>
         <div class="fld"><label>Status</label><select id="f-status"><option ${p.status==='active'?'selected':''}>active</option><option ${p.status==='paused'?'selected':''}>paused</option><option ${p.status==='prospect'?'selected':''}>prospect</option></select></div>
         <div class="fld"><label>MSO</label><select id="f-mso" onchange="msoChange(this)">${msoOptions(p.mso_id)}</select></div>
+        <div class="fld"><label>Website</label><input id="f-web" value="${esc(p.website)}"/></div>
       </div>
       <div class="fld"><label>Address</label><input id="f-addr" value="${esc(p.address)}"/></div>
       <div class="fld"><label>Notes</label><textarea id="f-notes" rows="2">${esc(p.notes)}</textarea></div>
@@ -159,18 +149,14 @@ function renderDetail(){
     </div>
 
     <div class="sec">Providers (doctors) — ${docs.length}</div>
-    <div id="doclist">${docs.map(docRow).join('')||'<div class="empty mb0">No providers added yet.</div>'}</div>
-    <div class="editbox"><div class="grid3">
-      <div class="fld mb0"><label>Add provider — name</label><input id="nd-name" placeholder="Dr. Jane Smith"/></div>
-      <div class="fld mb0"><label>Specialty</label><input id="nd-spec" placeholder="Orthopedics"/></div>
-      <div class="fld mb0"><label>NPI (optional)</label><input id="nd-npi"/></div>
-    </div><button class="btn sm" style="margin-top:8px;" onclick="addDoctor(${p.id})">+ Add provider</button></div>
+    <div id="doclist">${docs.map(docRow).join('')||'<div class="empty mb0">No providers yet.</div>'}</div>
+    ${docForm(p.id)}
 
     <div class="sec">Contacts — ${cts.length} <span class="muted" style="text-transform:none;font-weight:400;">(check “receives referrals” for everyone who should get the referral email)</span></div>
-    <div id="ctlist">${cts.map(contactRow).join('')||'<div class="empty mb0">No contacts added yet.</div>'}</div>
-    <div class="editbox">
+    <div id="ctlist">${cts.map(contactRow).join('')||'<div class="empty mb0">No contacts yet.</div>'}</div>
+    <div class="editbox"><h4>Add contact</h4>
       <div class="grid3">
-        <div class="fld mb0"><label>Attach to</label><select id="nc-attach">${attachOptions(p.id,docs)}</select></div>
+        <div class="fld mb0"><label>Attach to</label><select id="nc-attach"><option value="practice">Practice (whole)</option>${docs.map(d=>`<option value="d${d.id}">${esc(d.doctor_name)}</option>`).join('')}</select></div>
         <div class="fld mb0"><label>Role</label><select id="nc-role">${ROLES.map(r=>`<option>${r}</option>`).join('')}</select></div>
         <div class="fld mb0"><label>Name</label><input id="nc-name" placeholder="Full name"/></div>
       </div>
@@ -179,90 +165,86 @@ function renderDetail(){
         <div class="fld mb0"><label>Phone</label><input id="nc-phone"/></div>
         <div class="fld mb0" style="display:flex;align-items:flex-end;"><label class="chk"><input type="checkbox" id="nc-ref"/> Receives referrals</label></div>
       </div>
-      <button class="btn sm" style="margin-top:8px;" onclick="addContact(${p.id})">+ Add contact</button>
+      <button class="btn sm" style="margin-top:9px;" onclick="addContact(${p.id})">+ Add contact</button>
     </div>`;
 }
 function docRow(d){
-  return `<div class="row"><div class="grow"><div class="nm">${esc(d.name)}</div><div class="mt">${esc(d.specialty||'—')}${d.npi?(' · NPI '+esc(d.npi)):''}</div></div><button class="btn danger sm" onclick="delDoctor(${d.id})">Remove</button></div>`;
+  const flags=[d.active?'<span class="pill on">active</span>':'<span class="pill">inactive</span>',d.lien_acceptance?'<span class="pill">lien</span>':'',d.ncp_required?'<span class="pill">NCP req</span>':'',d.litigation_acceptance?'<span class="pill">litigation</span>':''].join('');
+  return `<div class="row"><div class="grow"><div class="nm">${esc(d.doctor_name)} ${flags}</div><div class="mt">${esc(d.specialty||d.provider_type||'—')}${d.states?(' · '+esc(d.states)):''}${d.location_address?(' · '+esc(d.location_address)):''}</div></div>
+    <button class="btn ghost sm" onclick="editDoc(${d.id})">Edit</button><button class="btn danger sm" onclick="delDoctor(${d.id})">Remove</button></div>`;
 }
-function attachOptions(pid,docs){
-  return `<option value="practice">Practice (whole)</option>`+docs.map(d=>`<option value="d${d.id}">${esc(d.name)}</option>`).join('');
+function docForm(pid){
+  const d=state.editDoc?state.providers.find(x=>x.id===state.editDoc):null;
+  const val=(k)=>d?esc(d[k]):'';
+  const ck=(k)=>(d&&d[k])?'checked':'';
+  return `<div class="editbox"><h4>${d?'Edit provider':'Add provider'}</h4>
+    <input type="hidden" id="pf-id" value="${d?d.id:''}"/>
+    <div class="grid3">
+      <div class="fld mb0"><label>Doctor name *</label><input id="pf-name" value="${val('doctor_name')}" placeholder="Dr. Jane Smith"/></div>
+      <div class="fld mb0"><label>Specialty</label><input id="pf-spec" value="${val('specialty')}"/></div>
+      <div class="fld mb0"><label>Provider type</label><input id="pf-type" value="${val('provider_type')}" placeholder="MD, DC, PT, imaging…"/></div>
+    </div>
+    <div class="grid4" style="margin-top:8px;">
+      <div class="fld mb0"><label>State(s)</label><input id="pf-states" value="${val('states')}" placeholder="PA, NJ"/></div>
+      <div class="fld mb0"><label>Phone</label><input id="pf-phone" value="${val('phone')}"/></div>
+      <div class="fld mb0"><label>Fax</label><input id="pf-fax" value="${val('fax')}"/></div>
+      <div class="fld mb0"><label>Monthly capacity</label><input id="pf-cap" type="number" value="${d&&d.monthly_capacity!=null?d.monthly_capacity:''}"/></div>
+    </div>
+    <div class="fld mb0" style="margin-top:8px;"><label>Location / address</label><input id="pf-addr" value="${val('location_address')}"/></div>
+    <div class="grid2" style="margin-top:8px;">
+      <div class="fld mb0"><label>Languages</label><input id="pf-lang" value="${val('languages')}" placeholder="English, Spanish"/></div>
+      <div class="fld mb0"><label>EHR system</label><input id="pf-ehr" value="${val('ehr_system')}"/></div>
+    </div>
+    <div style="display:flex;gap:18px;margin-top:12px;flex-wrap:wrap;">
+      <label class="chk"><input type="checkbox" id="pf-active" ${d?ck('active'):'checked'}/> Active</label>
+      <label class="chk"><input type="checkbox" id="pf-lien" ${ck('lien_acceptance')}/> Accepts liens</label>
+      <label class="chk"><input type="checkbox" id="pf-ncp" ${ck('ncp_required')}/> NCP required</label>
+      <label class="chk"><input type="checkbox" id="pf-lit" ${ck('litigation_acceptance')}/> Litigation OK</label>
+    </div>
+    <div style="margin-top:12px;"><button class="btn sm" onclick="saveDoctor(${pid})">${d?'Save changes':'+ Add provider'}</button>
+      ${d?`<button class="btn ghost sm" style="margin-left:8px;" onclick="cancelDoc()">Cancel</button>`:''}</div>
+  </div>`;
 }
+function editDoc(id){state.editDoc=id;renderDetail();document.getElementById('pf-name')?.scrollIntoView({block:'center'});}
+function cancelDoc(){state.editDoc=null;renderDetail();}
 function contactRow(c){
-  const who=c.provider_id?(state.providers.find(d=>d.id===c.provider_id)?.name||'Provider'):'Practice';
-  return `<div class="row">
-    <div class="grow"><div class="nm">${esc(c.name||'(no name)')} <span class="pill">${esc(c.role||'—')}</span> ${c.receives_referrals?'<span class="pill ref">✓ referrals</span>':''}</div>
+  const who=c.provider_id?(state.providers.find(d=>d.id===c.provider_id)?.doctor_name||'Provider'):'Practice';
+  return `<div class="row"><div class="grow"><div class="nm">${esc(c.name||'(no name)')}<span class="pill">${esc(c.role||'—')}</span>${c.receives_referrals?'<span class="pill ref">✓ referrals</span>':''}</div>
     <div class="mt">${esc(c.email||'—')}${c.phone?(' · '+esc(c.phone)):''} · ${esc(who)}</div></div>
     <button class="btn ghost sm" onclick="toggleRef(${c.id},${c.receives_referrals?0:1})">${c.receives_referrals?'Unset':'Set'} referrals</button>
     <button class="btn danger sm" onclick="delContact(${c.id})">Remove</button></div>`;
 }
 
-async function newPractice(){
-  const {data,error}=await sb.from('practices').insert({name:'New practice'}).select().single();
-  if(error){toast('Error: '+error.message);return;}
-  await loadAll();select(data.id);
-}
+async function newPractice(){const {data,error}=await sb.from('practices').insert({name:'New practice'}).select().single();if(error){toast('Error: '+error.message);return;}await loadAll();sel(data.id);}
 async function savePractice(id){
-  let mso=document.getElementById('f-mso').value;
-  if(mso==='__new'){toast('Pick or create the MSO first');return;}
-  const patch={name:document.getElementById('f-name').value.trim(),specialty:document.getElementById('f-spec').value.trim(),
-    states:document.getElementById('f-states').value.trim(),status:document.getElementById('f-status').value,
-    address:document.getElementById('f-addr').value.trim(),notes:document.getElementById('f-notes').value.trim(),
-    mso_id:mso?parseInt(mso,10):null};
-  const {error}=await sb.from('practices').update(patch).eq('id',id);
-  if(error){toast('Error: '+error.message);return;}
+  let mso=v('f-mso');if(mso==='__new'){toast('Pick or create the MSO first');return;}
+  const patch={name:v('f-name'),specialty:v('f-spec'),states:v('f-states'),status:v('f-status'),website:v('f-web'),address:v('f-addr'),notes:v('f-notes'),mso_id:mso?parseInt(mso,10):null};
+  const {error}=await sb.from('practices').update(patch).eq('id',id);if(error){toast('Error: '+error.message);return;}
   await loadAll();toast('Practice saved');
 }
-async function delPractice(id){
-  if(!confirm('Delete this practice and all its providers/contacts? This cannot be undone.'))return;
-  const {error}=await sb.from('practices').delete().eq('id',id);
-  if(error){toast('Error: '+error.message);return;}
-  state.sel=null;await loadAll();toast('Practice deleted');
+async function delPractice(id){if(!confirm('Delete this practice and all its providers/contacts? Cannot be undone.'))return;const {error}=await sb.from('practices').delete().eq('id',id);if(error){toast('Error: '+error.message);return;}state.sel=null;await loadAll();toast('Practice deleted');}
+async function msoChange(selEl){if(selEl.value!=='__new')return;const name=prompt('New MSO name:');if(!name){selEl.value='';return;}const {data,error}=await sb.from('msos').insert({name:name.trim()}).select().single();if(error){toast('Error: '+error.message);selEl.value='';return;}state.msos.push(data);selEl.innerHTML=msoOptions(data.id);}
+
+async function saveDoctor(pid){
+  const name=v('pf-name');if(!name){toast('Enter the doctor name');return;}
+  const cap=v('pf-cap');
+  const rec={practice_id:pid,doctor_name:name,specialty:v('pf-spec'),provider_type:v('pf-type'),states:v('pf-states'),
+    phone:v('pf-phone'),fax:v('pf-fax'),location_address:v('pf-addr'),languages:v('pf-lang'),ehr_system:v('pf-ehr'),
+    monthly_capacity:cap?parseInt(cap,10):null,active:chk('pf-active'),lien_acceptance:chk('pf-lien'),ncp_required:chk('pf-ncp'),litigation_acceptance:chk('pf-lit')};
+  const id=v('pf-id');
+  const res=id?await sb.from('providers').update(rec).eq('id',parseInt(id,10)):await sb.from('providers').insert(rec);
+  if(res.error){toast('Error: '+res.error.message);return;}
+  state.editDoc=null;await loadAll();renderDetail();toast(id?'Provider updated':'Provider added');
 }
-async function msoChange(selEl){
-  if(selEl.value!=='__new')return;
-  const name=prompt('New MSO name:');if(!name){selEl.value='';return;}
-  const {data,error}=await sb.from('msos').insert({name:name.trim()}).select().single();
-  if(error){toast('Error: '+error.message);selEl.value='';return;}
-  state.msos.push(data);selEl.innerHTML=msoOptions(data.id);
-}
-async function addDoctor(pid){
-  const name=document.getElementById('nd-name').value.trim();
-  if(!name){toast('Enter the provider name');return;}
-  const {error}=await sb.from('providers').insert({practice_id:pid,name,specialty:document.getElementById('nd-spec').value.trim(),npi:document.getElementById('nd-npi').value.trim()});
-  if(error){toast('Error: '+error.message);return;}
-  await loadAll();renderDetail();toast('Provider added');
-}
-async function delDoctor(id){
-  if(!confirm('Remove this provider?'))return;
-  const {error}=await sb.from('providers').delete().eq('id',id);
-  if(error){toast('Error: '+error.message);return;}
-  await loadAll();renderDetail();
-}
+async function delDoctor(id){if(!confirm('Remove this provider?'))return;const {error}=await sb.from('providers').delete().eq('id',id);if(error){toast('Error: '+error.message);return;}if(state.editDoc===id)state.editDoc=null;await loadAll();renderDetail();}
 async function addContact(pid){
-  const attach=document.getElementById('nc-attach').value;
-  const provider_id=attach.startsWith('d')?parseInt(attach.slice(1),10):null;
-  const name=document.getElementById('nc-name').value.trim();
-  const email=document.getElementById('nc-email').value.trim();
-  if(!name&&!email){toast('Enter at least a name or email');return;}
-  const {error}=await sb.from('contacts').insert({practice_id:pid,provider_id,
-    role:document.getElementById('nc-role').value,name,email,
-    phone:document.getElementById('nc-phone').value.trim(),
-    receives_referrals:document.getElementById('nc-ref').checked});
-  if(error){toast('Error: '+error.message);return;}
-  await loadAll();renderDetail();toast('Contact added');
+  const attach=v('nc-attach');const provider_id=attach.startsWith('d')?parseInt(attach.slice(1),10):null;
+  const name=v('nc-name');const email=v('nc-email');if(!name&&!email){toast('Enter at least a name or email');return;}
+  const {error}=await sb.from('contacts').insert({practice_id:pid,provider_id,role:v('nc-role'),name,email,phone:v('nc-phone'),receives_referrals:chk('nc-ref')});
+  if(error){toast('Error: '+error.message);return;}await loadAll();renderDetail();toast('Contact added');
 }
-async function delContact(id){
-  if(!confirm('Remove this contact?'))return;
-  const {error}=await sb.from('contacts').delete().eq('id',id);
-  if(error){toast('Error: '+error.message);return;}
-  await loadAll();renderDetail();
-}
-async function toggleRef(id,val){
-  const {error}=await sb.from('contacts').update({receives_referrals:!!val}).eq('id',id);
-  if(error){toast('Error: '+error.message);return;}
-  await loadAll();renderDetail();
-}
+async function delContact(id){if(!confirm('Remove this contact?'))return;const {error}=await sb.from('contacts').delete().eq('id',id);if(error){toast('Error: '+error.message);return;}await loadAll();renderDetail();}
+async function toggleRef(id,val){const {error}=await sb.from('contacts').update({receives_referrals:!!val}).eq('id',id);if(error){toast('Error: '+error.message);return;}await loadAll();renderDetail();}
 
 document.getElementById('g-pass').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
 (async()=>{const {data:{session}}=await sb.auth.getSession();if(session){gate(false);await loadAll();}else{gate(true);}})();
