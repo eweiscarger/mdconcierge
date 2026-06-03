@@ -478,7 +478,7 @@ function selL(id){
     if(rest.length)el.innerHTML+=`<optgroup label="Other available">${rest.map(x=>`<option value="${x.id}">${x.name}</option>`).join('')}</optgroup>`;
   }
   mkOpts(document.getElementById('ra'),mA,aA,'Select attorney');
-  mkOpts(document.getElementById('rp'),mP,aP,'Select provider');
+  document.getElementById('rp').innerHTML=providerOptions();
 }
 async function deleteLead(id){
   const l=LEADS.find(x=>x.id===id);
@@ -515,17 +515,21 @@ function openRouteModal(){
   document.getElementById('m-note').value='';
   document.getElementById('modal-route').classList.add('open');
 }
-function confirmRoute(){
+async function confirmRoute(){
   const rep=selLead&&selLead.represented;
   const av=document.getElementById('m-atty').value,pv=document.getElementById('m-prov').value;
   if(!pv){showToast('Select a provider');return;}
-  if(!rep&&!av){showToast('Select both attorney and provider');return;}
-  const an=rep?(selLead.referringFirm||'Existing attorney'):(ATTORNEYS.find(a=>a.id===av)?.name||av);
-  const pn=PROVIDERS.find(p=>p.id===pv)?.name||pv;
+  const prov=REAL_PROVIDERS.find(p=>String(p.id)===String(pv));
+  const pn=prov?(prov.doctor_name+(prov.practices&&prov.practices.name?(' — '+prov.practices.name):'')):('Provider '+pv);
+  const an=rep?(selLead.referringFirm||'Existing attorney'):(ATTORNEYS.find(a=>a.id===av)?.name||av||'—');
+  if(selLead._supa){
+    const {error}=await sbClient.from('cases').update({status:'routed',routed_provider_id:parseInt(pv,10),provider_notified:false,placement_date:new Date().toISOString()}).eq('id',selLead.supaId);
+    if(error){showToast('Route failed: '+error.message);return;}
+  }
   selLead.status='routed';selLead.routedTo={attorney:an,provider:pn};
-  ACTIVITY.unshift({t:'rt',ic:'➤',tx:`<strong>${selLead.name}</strong> routed → ${pn}${rep?' (represented by '+an+')':' + '+an}`,time:'Just now'});
+  ACTIVITY.unshift({t:'rt',ic:'➤',tx:`<strong>${selLead.name}</strong> routed → ${pn}`,time:'Just now'});
   closeModal('modal-route');renderTable();selL(selLead.id);renderActivity();
-  showToast(`✓ ${selLead.name} routed to ${pn}`);
+  showToast(`✓ Routed to ${pn} — provider will be notified shortly`);
 }
 function disqualify(){
   if(!selLead)return;
@@ -609,6 +613,16 @@ function mapSupaCase(r){
     zip:r.patient_zip||'',employer:'',injury:r.injury_type||'',reported:'',claimFiled:r.claim_status||'',
     treatment:'',priorInjury:'',attorney:represented?(firm||'Represented'):'None',represented:represented,referringFirm:firm,leadSource:r.lead_source||'',caseId:r.case_id||'',supaId:r.id,_supa:true};
 }
+let REAL_PROVIDERS=[];
+async function loadProviders(){
+  try{
+    const {data,error}=await sbClient.from('providers').select('id,doctor_name,specialty,active,practices(name)').eq('active',true).order('doctor_name');
+    if(!error)REAL_PROVIDERS=data||[];
+  }catch(e){console.warn('provider load failed',e);}
+}
+function providerOptions(){
+  return '<option value="">— Assign provider —</option>'+REAL_PROVIDERS.map(p=>`<option value="${p.id}">${p.doctor_name}${p.practices&&p.practices.name?(' — '+p.practices.name):''}${p.specialty?(' · '+p.specialty):''}</option>`).join('');
+}
 async function loadPortalLeads(){
   try{
     const {data,error}=await sbClient.from('cases').select('*').order('created_at',{ascending:false});
@@ -632,7 +646,7 @@ async function doLogin(){
   const {error}=await sbClient.auth.signInWithPassword({email,password});
   btn.disabled=false;btn.textContent='Sign in';
   if(error){errEl.textContent=error.message||'Sign-in failed';errEl.style.display='block';return;}
-  showGate(false);loadPortalLeads();
+  showGate(false);loadPortalLeads();loadProviders();
 }
 async function doLogout(){try{await sbClient.auth.signOut();}catch(e){}for(let i=LEADS.length-1;i>=0;i--){if(LEADS[i]._supa)LEADS.splice(i,1);}renderTable();showGate(true);}
 function openPw(){const m=document.getElementById('pw-msg');m.style.display='none';document.getElementById('pw-new').value='';document.getElementById('pw-modal').style.display='flex';}
@@ -647,7 +661,7 @@ async function doChangePw(){
   setTimeout(closePw,1800);
 }
 (function(){const pe=document.getElementById('auth-pass');if(pe)pe.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});})();
-(async function(){try{const {data:{session}}=await sbClient.auth.getSession();if(session){showGate(false);loadPortalLeads();}else{showGate(true);}}catch(e){showGate(true);}})();
+(async function(){try{const {data:{session}}=await sbClient.auth.getSession();if(session){showGate(false);loadPortalLeads();loadProviders();}else{showGate(true);}}catch(e){showGate(true);}})();
 </script>
 </body>
 </html>
