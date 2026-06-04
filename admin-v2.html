@@ -286,7 +286,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       <div class="ph">
         <div class="pt">Network management</div>
         <div class="ps">Attorneys · Providers · Vendors</div>
-        <button class="ib" style="margin-left:12px;" onclick="openAddModal()">+ Add member</button>
+        <span style="margin-left:12px;font-size:12px;color:var(--muted);">Use the “+ Add” card in each tab</span>
       </div>
       <div class="net-tabs">
         <button class="net-tab active" onclick="switchTab('attorneys',this)">Attorneys (6)</button>
@@ -374,6 +374,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 <!-- PROVIDER MODAL (real, detailed) -->
 <div class="modal-bg" id="modal-prov"><div class="modal" id="mp-inner" style="max-height:88vh;overflow:auto;"></div></div>
+<div class="modal-bg" id="modal-atty"><div class="modal" id="ma-inner" style="max-height:88vh;overflow:auto;"></div></div>
+<div class="modal-bg" id="modal-vend"><div class="modal" id="mv-inner" style="max-height:88vh;overflow:auto;"></div></div>
 
 <div class="toast" id="toast"></div>
 
@@ -586,10 +588,23 @@ function provCardReal(p){
   return `<div class="mc-card" style="cursor:pointer;" onclick="openProvModal(${p.id})"><div class="mc-top"><div class="mc-av av-p">${ehtml((p.doctor_name||'?').charAt(0))}</div><div><div class="mc-name">${ehtml(p.doctor_name||'(unnamed)')}</div><div class="mc-role">${ehtml(p.specialty||p.provider_type||'—')} · ${aff}</div><div class="mc-st"><div class="${p.active?'dot-on':'dot-full'}"></div><span style="color:var(--muted2);font-size:11px;">${p.active?'Active':'Inactive'}</span></div></div></div><div class="stags">${states}</div><div class="ct-checks">${bp||'<span style="font-size:11px;color:var(--muted);">No areas set</span>'}</div><div class="dp-f" style="margin:6px 0 10px;"><span class="dp-fk" style="font-size:11px;">Referral contacts</span><span class="dp-fv" style="font-size:12px;">${refs}</span></div><div class="mc-acts"><button class="btn-sm" onclick="event.stopPropagation();openProvModal(${p.id})">Edit</button><button class="btn-sm danger" onclick="event.stopPropagation();delProv(${p.id})">Remove</button></div></div>`;
 }
 function renderNetwork(){
-  document.getElementById('atty-grid').innerHTML=ATTORNEYS.map(attyCard).join('')+addCard('Add attorney','openAddModal()');
+  document.getElementById('atty-grid').innerHTML=NET_ATTORNEYS.map(attyCardReal).join('')+addCard('Add attorney','openAttyModal(null)');
   document.getElementById('prov-grid').innerHTML=NET_PROVIDERS.map(provCardReal).join('')+addCard('Add provider','openProvModal(null)');
-  document.getElementById('vend-grid').innerHTML=VENDORS.map(vendCard).join('')+addCard('Add vendor','openAddModal()');
-  const tabs=document.querySelectorAll('.net-tab'); if(tabs[1])tabs[1].textContent=`Medical Providers (${NET_PROVIDERS.length})`;
+  document.getElementById('vend-grid').innerHTML=NET_VENDORS.map(vendCardReal).join('')+addCard('Add vendor','openVendModal(null)');
+  const tabs=document.querySelectorAll('.net-tab');
+  if(tabs[0])tabs[0].textContent=`Attorneys (${NET_ATTORNEYS.length})`;
+  if(tabs[1])tabs[1].textContent=`Medical Providers (${NET_PROVIDERS.length})`;
+  if(tabs[2])tabs[2].textContent=`Vendors (${NET_VENDORS.length})`;
+}
+function attyCardReal(a){
+  const firm=NET_FIRMS.find(f=>f.id===a.firm_id);
+  const name=((a.first_name||'')+' '+(a.last_name||'')).trim()||'(unnamed)';
+  const states=(a.states||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="stag">${ehtml(s)}</span>`).join('');
+  const poc=a.paralegal_name?(' · POC: '+ehtml(a.paralegal_name)):'';
+  return `<div class="mc-card" style="cursor:pointer;" onclick="openAttyModal(${a.id})"><div class="mc-top"><div class="mc-av av-a">${ehtml(name.charAt(0))}</div><div><div class="mc-name">${ehtml(name)}</div><div class="mc-role">${firm?ehtml(firm.name):'Independent'}${poc}</div><div class="mc-st"><div class="${a.active?'dot-on':'dot-full'}"></div><span style="color:var(--muted2);font-size:11px;">${a.active?'Active':'Inactive'}</span></div></div></div><div class="stags">${states}</div><div class="ct-checks" style="font-size:11px;color:var(--muted2);">${ehtml(a.case_types||'')}</div><div class="dp-f" style="margin:6px 0 10px;"><span class="dp-fk" style="font-size:11px;">Email</span><span class="dp-fv" style="font-size:11px;">${ehtml(a.email||'—')}</span></div><div class="mc-acts"><button class="btn-sm" onclick="event.stopPropagation();openAttyModal(${a.id})">Edit</button><button class="btn-sm danger" onclick="event.stopPropagation();delAtty(${a.id})">Remove</button></div></div>`;
+}
+function vendCardReal(v){
+  return `<div class="mc-card" style="cursor:pointer;" onclick="openVendModal(${v.id})"><div class="mc-top"><div class="mc-av av-v">${ehtml((v.company_name||'?').charAt(0))}</div><div><div class="mc-name">${ehtml(v.company_name||'(unnamed)')}</div><div class="mc-role">${ehtml(v.vendor_type||'Vendor')}${v.poc_name?(' · POC: '+ehtml(v.poc_name)):''}</div><div class="mc-st"><div class="${v.active?'dot-on':'dot-full'}"></div><span style="color:var(--muted2);font-size:11px;">${v.active?'Active':'Inactive'}</span></div></div></div><div class="dp-f" style="margin:4px 0;"><span class="dp-fk" style="font-size:11px;">Intake</span><span class="dp-fv" style="font-size:11px;">${ehtml(v.intake_email||v.poc_email||'—')}</span></div><div class="dp-f" style="margin-bottom:10px;"><span class="dp-fk" style="font-size:11px;">Liens</span><span class="dp-fv" style="font-size:11px;">${v.lien_acceptance?'Yes':'—'}</span></div><div class="mc-acts"><button class="btn-sm" onclick="event.stopPropagation();openVendModal(${v.id})">Edit</button><button class="btn-sm danger" onclick="event.stopPropagation();delVend(${v.id})">Remove</button></div></div>`;
 }
 let mpEditId=null, mpContacts=[];
 function mpPracticeOptions(cur){return '<option value="">— select group —</option>'+NET_PRACTICES.map(pr=>`<option value="${pr.id}" ${pr.id===cur?'selected':''}>${ehtml(pr.name)}</option>`).join('')+'<option value="__new">+ New group…</option>';}
@@ -669,6 +684,108 @@ async function saveProv(){
   closeModal('modal-prov');await loadProviders();renderNetwork();showToast(mpEditId?'Provider updated':'Provider added');
 }
 async function delProv(id){const p=NET_PROVIDERS.find(x=>x.id===id);if(!confirm('Remove provider "'+(p?p.doctor_name:'')+'"?'))return;await sbClient.from('contacts').delete().eq('provider_id',id);const {error}=await sbClient.from('providers').delete().eq('id',id);if(error){showToast('Error: '+error.message);return;}await loadProviders();renderNetwork();showToast('Provider removed');}
+
+// ── Attorneys (real: attorneys + firms, with firm POC) ──
+let maEditId=null;
+function maFirmOptions(cur){return '<option value="">— independent / no firm —</option>'+NET_FIRMS.map(f=>`<option value="${f.id}" ${f.id===cur?'selected':''}>${ehtml(f.name)}</option>`).join('')+'<option value="__new">+ New firm…</option>';}
+function openAttyModal(id){
+  maEditId=id; const a=id?NET_ATTORNEYS.find(x=>x.id===id):null;
+  document.getElementById('ma-inner').innerHTML=`
+   <h2>${id?'Edit attorney':'Add attorney'}</h2>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">First name</label><input class="finput" id="ma-first" value="${a?ehtml(a.first_name):''}"/></div>
+     <div class="fgroup"><label class="flabel">Last name</label><input class="finput" id="ma-last" value="${a?ehtml(a.last_name):''}"/></div>
+   </div>
+   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Firm</label><select class="ms" id="ma-firm" onchange="maFirmChange()">${maFirmOptions(a?a.firm_id:null)}</select></div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">Email</label><input class="finput" id="ma-email" value="${a?ehtml(a.email):''}"/></div>
+     <div class="fgroup"><label class="flabel">Phone</label><input class="finput" id="ma-phone" value="${a?ehtml(a.phone):''}"/></div>
+   </div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">State(s)</label><input class="finput" id="ma-states" value="${a?ehtml(a.states):''}" placeholder="PA, NJ"/></div>
+     <div class="fgroup"><label class="flabel">Case types</label><input class="finput" id="ma-ctypes" value="${a?ehtml(a.case_types):''}" placeholder="WC, Auto, PI"/></div>
+   </div>
+   <div style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px;">Firm point of contact (paralegal / case manager)</div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">POC name</label><input class="finput" id="ma-pname" value="${a?ehtml(a.paralegal_name):''}"/></div>
+     <div class="fgroup"><label class="flabel">POC email</label><input class="finput" id="ma-pemail" value="${a?ehtml(a.paralegal_email):''}"/></div>
+   </div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">POC phone</label><input class="finput" id="ma-pphone" value="${a?ehtml(a.paralegal_phone):''}"/></div>
+     <div class="fgroup"><label class="flabel">CC emails</label><input class="finput" id="ma-cc" value="${a?ehtml(a.cc_emails):''}" placeholder="comma-separated"/></div>
+   </div>
+   <div style="display:flex;gap:18px;margin-bottom:12px;"><label class="ct-chk" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="ma-active" ${(!a||a.active)?'checked':''}/> Active</label></div>
+   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Notes</label><textarea class="finput" id="ma-notes" rows="2">${a?ehtml(a.notes):''}</textarea></div>
+   <div class="mbtns"><button class="btn-cancel" onclick="closeModal('modal-atty')">Cancel</button><button class="btn-ok" onclick="saveAtty()">${id?'Save changes':'Add attorney'}</button></div>`;
+  document.getElementById('modal-atty').classList.add('open');
+}
+async function maFirmChange(){const sel=document.getElementById('ma-firm');if(sel.value!=='__new')return;const name=prompt('New firm name:');if(!name){sel.value='';return;}const {data,error}=await sbClient.from('firms').insert({name:name.trim()}).select().single();if(error){showToast('Error: '+error.message);sel.value='';return;}NET_FIRMS.push(data);sel.innerHTML=maFirmOptions(data.id);}
+async function saveAtty(){
+  const first=(document.getElementById('ma-first').value||'').trim(), last=(document.getElementById('ma-last').value||'').trim();
+  if(!first&&!last){showToast('Enter the attorney name');return;}
+  const fv=document.getElementById('ma-firm').value;
+  const rec={firm_id:(fv&&fv!=='__new')?parseInt(fv,10):null,first_name:first,last_name:last,
+    email:(document.getElementById('ma-email').value||'').trim(),phone:(document.getElementById('ma-phone').value||'').trim(),
+    states:(document.getElementById('ma-states').value||'').trim(),case_types:(document.getElementById('ma-ctypes').value||'').trim(),
+    paralegal_name:(document.getElementById('ma-pname').value||'').trim(),paralegal_email:(document.getElementById('ma-pemail').value||'').trim(),
+    paralegal_phone:(document.getElementById('ma-pphone').value||'').trim(),cc_emails:(document.getElementById('ma-cc').value||'').trim(),
+    active:document.getElementById('ma-active').checked,notes:(document.getElementById('ma-notes').value||'').trim()};
+  const res=maEditId?await sbClient.from('attorneys').update(rec).eq('id',maEditId):await sbClient.from('attorneys').insert(rec);
+  if(res.error){showToast('Error: '+res.error.message);return;}
+  closeModal('modal-atty');await loadProviders();renderNetwork();showToast(maEditId?'Attorney updated':'Attorney added');
+}
+async function delAtty(id){const a=NET_ATTORNEYS.find(x=>x.id===id);if(!confirm('Remove '+(((a&&a.first_name)||'')+' '+((a&&a.last_name)||'')).trim()+'?'))return;const {error}=await sbClient.from('attorneys').delete().eq('id',id);if(error){showToast('Error: '+error.message);return;}await loadProviders();renderNetwork();showToast('Attorney removed');}
+
+// ── Vendors (real) ──
+let mvEditId=null;
+const VENDOR_TYPES=['Imaging / Radiology','DME / Equipment','Pharmacy','Litigation funding','Transportation','Translation','Record retrieval','Surgical center','Other'];
+function openVendModal(id){
+  mvEditId=id; const v=id?NET_VENDORS.find(x=>x.id===id):null;
+  document.getElementById('mv-inner').innerHTML=`
+   <h2>${id?'Edit vendor':'Add vendor'}</h2>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">Company name</label><input class="finput" id="mv-name" value="${v?ehtml(v.company_name):''}"/></div>
+     <div class="fgroup"><label class="flabel">Vendor type</label><select class="ms" id="mv-type">${selOpts(VENDOR_TYPES,v?v.vendor_type:'')}</select></div>
+   </div>
+   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Address</label><input class="finput" id="mv-addr" value="${v?ehtml(v.address):''}"/></div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">Website</label><input class="finput" id="mv-web" value="${v?ehtml(v.website):''}"/></div>
+     <div class="fgroup"><label class="flabel">Intake method</label><input class="finput" id="mv-imethod" value="${v?ehtml(v.intake_method):''}" placeholder="email / fax / portal"/></div>
+   </div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">Intake email</label><input class="finput" id="mv-iemail" value="${v?ehtml(v.intake_email):''}"/></div>
+     <div class="fgroup"><label class="flabel">Intake fax</label><input class="finput" id="mv-ifax" value="${v?ehtml(v.intake_fax):''}"/></div>
+   </div>
+   <div style="font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 8px;">Point of contact</div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">POC name</label><input class="finput" id="mv-pname" value="${v?ehtml(v.poc_name):''}"/></div>
+     <div class="fgroup"><label class="flabel">POC email</label><input class="finput" id="mv-pemail" value="${v?ehtml(v.poc_email):''}"/></div>
+   </div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">POC phone</label><input class="finput" id="mv-pphone" value="${v?ehtml(v.poc_phone):''}"/></div>
+     <div class="fgroup"><label class="flabel">CC emails</label><input class="finput" id="mv-cc" value="${v?ehtml(v.cc_emails):''}"/></div>
+   </div>
+   <div style="display:flex;gap:18px;margin-bottom:12px;">
+     <label class="ct-chk" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="mv-active" ${(!v||v.active)?'checked':''}/> Active</label>
+     <label class="ct-chk" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="mv-lien" ${v&&v.lien_acceptance?'checked':''}/> Accepts liens</label>
+   </div>
+   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Notes</label><textarea class="finput" id="mv-notes" rows="2">${v?ehtml(v.notes):''}</textarea></div>
+   <div class="mbtns"><button class="btn-cancel" onclick="closeModal('modal-vend')">Cancel</button><button class="btn-ok" onclick="saveVend()">${id?'Save changes':'Add vendor'}</button></div>`;
+  document.getElementById('modal-vend').classList.add('open');
+}
+async function saveVend(){
+  const name=(document.getElementById('mv-name').value||'').trim();if(!name){showToast('Enter the company name');return;}
+  const rec={company_name:name,vendor_type:document.getElementById('mv-type').value,address:(document.getElementById('mv-addr').value||'').trim(),
+    website:(document.getElementById('mv-web').value||'').trim(),intake_method:(document.getElementById('mv-imethod').value||'').trim(),
+    intake_email:(document.getElementById('mv-iemail').value||'').trim(),intake_fax:(document.getElementById('mv-ifax').value||'').trim(),
+    poc_name:(document.getElementById('mv-pname').value||'').trim(),poc_email:(document.getElementById('mv-pemail').value||'').trim(),
+    poc_phone:(document.getElementById('mv-pphone').value||'').trim(),cc_emails:(document.getElementById('mv-cc').value||'').trim(),
+    active:document.getElementById('mv-active').checked,lien_acceptance:document.getElementById('mv-lien').checked,notes:(document.getElementById('mv-notes').value||'').trim()};
+  const res=mvEditId?await sbClient.from('vendors').update(rec).eq('id',mvEditId):await sbClient.from('vendors').insert(rec);
+  if(res.error){showToast('Error: '+res.error.message);return;}
+  closeModal('modal-vend');await loadProviders();renderNetwork();showToast(mvEditId?'Vendor updated':'Vendor added');
+}
+async function delVend(id){const v=NET_VENDORS.find(x=>x.id===id);if(!confirm('Remove '+(v?v.company_name:'')+'?'))return;const {error}=await sbClient.from('vendors').delete().eq('id',id);if(error){showToast('Error: '+error.message);return;}await loadProviders();renderNetwork();showToast('Vendor removed');}
 function switchTab(tab,btn){
   document.querySelectorAll('.net-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
   ['attorneys','providers','vendors'].forEach(t=>document.getElementById('tab-'+t).style.display=t===tab?'block':'none');
@@ -700,7 +817,7 @@ function exportCSV(){
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='mdconcierge_leads.csv';a.click();
   showToast('CSV exported');
 }
-['modal-route','modal-add'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))closeModal(id);});});
+['modal-route','modal-add','modal-prov','modal-atty','modal-vend'].forEach(id=>{document.getElementById(id).addEventListener('click',e=>{if(e.target===document.getElementById(id))closeModal(id);});});
 renderSparkline();renderTable();renderActivity();
 
 // ── Secure leads: Supabase Auth + RLS-protected reads (only a logged-in admin can read) ──
@@ -723,15 +840,21 @@ function mapSupaCase(r){
     treatment:'',priorInjury:'',attorney:represented?(firm||'Represented'):'None',represented:represented,referringFirm:firm,leadSource:r.lead_source||'',caseId:r.case_id||'',supaId:r.id,_supa:true};
 }
 let REAL_PROVIDERS=[], NET_PROVIDERS=[], NET_PRACTICES=[], NET_LOCATIONS=[], NET_CONTACTS=[];
+let NET_ATTORNEYS=[], NET_FIRMS=[], NET_VENDORS=[], NET_VENDOR_CONTACTS=[];
 async function loadProviders(){
   try{
-    const [pr,pa,lo,co]=await Promise.all([
+    const [pr,pa,lo,co,at,fi,ve,vc]=await Promise.all([
       sbClient.from('providers').select('*').order('doctor_name'),
       sbClient.from('practices').select('*').order('name'),
       sbClient.from('locations').select('*').order('label'),
       sbClient.from('contacts').select('*').order('name'),
+      sbClient.from('attorneys').select('*').order('last_name'),
+      sbClient.from('firms').select('*').order('name'),
+      sbClient.from('vendors').select('*').order('company_name'),
+      sbClient.from('vendor_contacts').select('*').order('last_name'),
     ]);
     NET_PROVIDERS=pr.data||[];NET_PRACTICES=pa.data||[];NET_LOCATIONS=lo.data||[];NET_CONTACTS=co.data||[];
+    NET_ATTORNEYS=at.data||[];NET_FIRMS=fi.data||[];NET_VENDORS=ve.data||[];NET_VENDOR_CONTACTS=vc.data||[];
     REAL_PROVIDERS=NET_PROVIDERS.filter(p=>p.active);
     const nv=document.getElementById('view-network'); if(nv&&nv.classList.contains('active'))renderNetwork();
   }catch(e){console.warn('network load failed',e);}
