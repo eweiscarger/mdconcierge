@@ -49,6 +49,8 @@ let CASE=null, ehrSel=null, cmSel=null;
 const EHR=['Epic','athenahealth','eClinicalWorks','DrChrono','Kareo','Jane App','Email Packet','Download PDF'];
 const EHR_IC={Epic:'🏥',athenahealth:'⚕️',eClinicalWorks:'📋',DrChrono:'🩺',Kareo:'📊','Jane App':'💚','Email Packet':'📧','Download PDF':'⬇️'};
 const CM=['Clio','Filevine','CASEpeer','SmartAdvocate','MyCase','CSV / other'];
+const ANCILLARY=[['🔬 Imaging / MRI','Imaging / MRI'],['🏃 Physical Therapy','Physical Therapy'],['🧠 Pain Management','Pain Management'],['🦴 Orthopaedic','Orthopaedic'],['🔄 Chiropractic','Chiropractic'],['💊 Pharmacy','Pharmacy'],['📋 Request records','Medical records'],['📄 Request bills','Billing'],['📡 Carrier relay','Carrier relay'],['➕ Other','Other ancillary service']];
+function pillsHtml(ref){return ANCILLARY.map(p=>`<a href="mailto:referrals@mdconcierge.net?subject=${encodeURIComponent('Request: '+p[1]+' — '+ref)}&body=${encodeURIComponent('Please coordinate '+p[1]+' for referral '+ref+'.\n\n')}" style="display:inline-block;font-size:12px;padding:6px 12px;margin:4px 6px 4px 0;background:#eef5fc;border:1px solid #b8d4ee;border-radius:14px;color:#1a2230;text-decoration:none;">${p[0]}</a>`).join('');}
 
 function vcard(){const d=CASE;const name=((d.first||'')+' '+(d.last||'')).trim();
   return ['BEGIN:VCARD','VERSION:3.0','N:'+(d.last||'')+';'+(d.first||''),'FN:'+name,d.phone?('TEL;TYPE=CELL:'+d.phone):'',d.email?('EMAIL:'+d.email):'',d.zip?('ADR;TYPE=HOME:;;;;;'+d.zip+';'):'','NOTE:MDconcierge '+(d.case_id||'')+' — '+(d.case_type||'')+' — '+(d.injury||''),'END:VCARD'].filter(Boolean).join('\r\n');}
@@ -99,6 +101,11 @@ function renderAccepted(c){
       <div class="grid" id="cm-grid">${CM.map(s=>`<div class="tile" onclick="selCm(this,'${s}')"><span class="ic">📁</span>${s}</div>`).join('')}</div>
       <button class="btn navy" id="cm-go" onclick="cmImport()" disabled style="opacity:.4;">⬆ Select a system</button>
       <div class="muted" id="cm-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
+    </div>
+    <div class="box">
+      <h3>Request ancillary services</h3>
+      <div class="muted" style="margin-bottom:8px;">One-click — we coordinate the rest.</div>
+      ${pillsHtml(d.case_id||'')}
     </div>
     <p class="muted" style="margin-top:16px;">Our coordination team will follow up to help with scheduling. Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a> anytime.</p>`;
 }
