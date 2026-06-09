@@ -523,8 +523,10 @@ async function loadGaps(supaId){
   if(!open.length){box.innerHTML='<div style="font-size:12px;color:var(--green);">✓ Nothing outstanding</div>';return;}
   box.innerHTML=open.map(g=>{
     const snoozed=g.snooze_until&&new Date(g.snooze_until)>new Date();
+    const esc=g.status==='escalated';
     const ownerTag=`<span style="font-size:10px;padding:2px 7px;border:1px solid var(--border2);border-radius:20px;color:var(--muted2);margin-left:5px;">${ehtml(g.owner||'')}</span>`;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><div style="flex:1;">${ehtml(g.label||g.field)}${ownerTag}${snoozed?'<span style="font-size:10px;color:var(--muted);"> · snoozed</span>':''}</div><button class="btn-sm" onclick="markGapReceived(${g.id},${supaId})">Received</button><button class="btn-sm" onclick="snoozeGap(${g.id},${supaId})">Snooze</button></div>`;
+    const flag=esc?'<span style="color:var(--red);font-size:10px;font-weight:700;"> ⚠ your call</span>':(snoozed?'<span style="font-size:10px;color:var(--muted);"> · snoozed</span>':(g.touches?` <span style="font-size:10px;color:var(--muted);">· chased ${g.touches}×</span>`:''));
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><div style="flex:1;">${ehtml(g.label||g.field)}${ownerTag}${flag}</div><button class="btn-sm" onclick="markGapReceived(${g.id},${supaId})">Received</button><button class="btn-sm" onclick="snoozeGap(${g.id},${supaId})">Snooze</button></div>`;
   }).join('');
 }
 async function markGapReceived(id,supaId){const {error}=await sbClient.from('case_gaps').update({status:'received',updated_at:new Date().toISOString()}).eq('id',id);if(error){showToast('Error: '+error.message);return;}loadGaps(supaId);showToast('Marked received');}
