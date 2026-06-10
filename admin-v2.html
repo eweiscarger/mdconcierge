@@ -224,6 +224,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="ni active" onclick="showView('leads',this)"><span class="ni-ic">📋</span> Lead Queue <span class="nb" id="new-count">6</span></button>
     <button class="ni" onclick="showView('network',this)"><span class="ni-ic">🏥</span> Provider Network</button>
     <button class="ni" onclick="showView('portal',this)"><span class="ni-ic">🔐</span> Portal Accounts <span class="nb" id="hold-count" style="display:none;">0</span></button>
+    <button class="ni" onclick="showView('signups',this)"><span class="ni-ic">📝</span> Sign-ups <span class="nb" id="signup-count" style="display:none;">0</span></button>
     <div class="ns">Analytics</div>
     <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
     <div class="ns">Settings</div>
@@ -315,6 +316,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <span style="margin-left:12px;font-size:12px;color:var(--muted);">Invites are sent automatically when a case is routed (business-domain emails) — you only review free-domain ones.</span>
       </div>
       <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Action</th></tr></thead><tbody id="portal-body"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- SIGN-UPS VIEW -->
+  <div class="view" id="view-signups">
+    <div class="panel" style="margin-bottom:0;">
+      <div class="ph">
+        <div class="pt">Self-serve sign-ups</div>
+        <div class="ps">Providers &amp; attorneys who submitted their own info — review &amp; approve</div>
+        <span style="margin-left:12px;font-size:12px;color:var(--muted);">Share: <code style="font-size:11px;">mdconcierge.net/signup.html?type=provider</code> · <code style="font-size:11px;">…?type=attorney</code></span>
+      </div>
+      <div class="filter-row">
+        <button class="fb active" onclick="filterSignups('pending',this)">Pending</button>
+        <button class="fb" onclick="filterSignups('all',this)">All</button>
+        <button class="fb" onclick="filterSignups('approved',this)">Approved</button>
+        <button class="fb" onclick="filterSignups('rejected',this)">Rejected</button>
+      </div>
+      <div id="signup-list" style="padding:4px 2px;"></div>
     </div>
   </div>
 
@@ -910,9 +929,10 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',revenue:'Revenue',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',revenue:'Revenue',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
+  if(v==='signups')loadSignups();
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2800);}
@@ -1029,6 +1049,115 @@ function emailInvite(id){const a=PORTAL_ACCTS.find(x=>x.id===id);if(!a||!a.setup
   const url=inviteLink(a);
   const body='Hello'+(a.name?(' '+a.name):'')+',\n\nYou can manage your MDconcierge cases from one secure portal. Set your password here (link expires in 14 days):\n\n'+url+'\n\nWith gratitude,\nThe MDconcierge Coordination Team';
   location.href='mailto:'+encodeURIComponent(a.email)+'?subject='+encodeURIComponent('Set up your MDconcierge portal login')+'&body='+encodeURIComponent(body);}
+// ── Self-serve sign-ups: review queue + 1-click approve (creates the real network records) ──
+let SIGNUPS=[], SIGNUP_FILTER='pending';
+async function loadSignups(){
+  try{
+    const {data,error}=await sbClient.from('signup_submissions').select('*').order('created_at',{ascending:false});
+    if(error){showToast('Sign-up load error: '+error.message);SIGNUPS=[];}else SIGNUPS=data||[];
+  }catch(e){console.warn('signup load failed',e);SIGNUPS=[];}
+  renderSignups();
+}
+function filterSignups(f,btn){SIGNUP_FILTER=f;document.querySelectorAll('#view-signups .fb').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderSignups();}
+function suRow(k,v){if(v===undefined||v===null||v==='')return'';return `<div style="display:flex;gap:8px;padding:3px 0;font-size:13px;"><span style="color:var(--muted);min-width:130px;">${ehtml(k)}</span><span style="font-weight:600;">${ehtml(String(v))}</span></div>`;}
+function suSec(title,rows){const body=rows.map(r=>suRow(r[0],r[1])).join('');if(!body.replace(/\s/g,''))return'';return `<div style="border:1px solid var(--border2);border-radius:9px;padding:11px 13px;margin-top:10px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:5px;">${ehtml(title)}</div>${body}</div>`;}
+function fmtSignup(s){
+  const p=s.payload||{};let h='';
+  if(s.type==='provider'){
+    const pr=p.practice||{};
+    h+=suSec('Practice',[['Name',pr.name],['Specialty',pr.specialty],['States',pr.states],['Phone',pr.phone],['Website',pr.website],['Address',pr.address]]);
+    (p.providers||[]).forEach((d,i)=>h+=suSec('Doctor '+(i+1),[['Name',d.doctor_name],['Specialty',d.specialty],['Type',d.provider_type],['Body parts',d.body_parts],['States',d.states],['Monthly capacity',d.monthly_capacity],['EHR',d.ehr_system],['Phone',d.phone],['Fax',d.fax],['Languages',d.languages],['Accepts liens',d.lien_acceptance?'Yes':'No'],['NCP required',d.ncp_required?'Yes':'No'],['Accepts litigation',d.litigation_acceptance?'Yes':'No']]));
+    (p.contacts||[]).forEach((c,i)=>h+=suSec('Contact '+(i+1),[['Name',c.name],['Role',c.role],['Email',c.email],['Phone',c.phone],['Receives referrals',c.receives_referrals?'Yes':'No']]));
+  }else{
+    const f=p.firm||{};
+    h+=suSec('Firm',[['Name',f.name],['Practice area',f.type],['Phone',f.phone],['Website',f.website],['Address',f.address]]);
+    (p.attorneys||[]).forEach((a,i)=>h+=suSec('Attorney '+(i+1),[['Name',((a.first_name||'')+' '+(a.last_name||'')).trim()],['Email',a.email],['Phone',a.phone],['States',a.states],['Case types',a.case_types]]));
+    (p.contacts||[]).forEach((c,i)=>h+=suSec('Contact '+(i+1),[['Name',c.name],['Role',c.role],['Email',c.email],['Phone',c.phone]]));
+  }
+  h+=suSec('Submitted by',[['Name',(p.submitter||{}).name],['Email',(p.submitter||{}).email]]);
+  return h;
+}
+function suStatusBadge(s){const m={pending:['#fff8e8','#9a6700','Pending review'],approved:['#eaf7f0','#1e9e6a','Approved'],rejected:['#fdeceb','#c0392b','Rejected']};const x=m[s]||['#eef0f2','#6b7583',s];return `<span style="display:inline-block;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700;background:${x[0]};color:${x[1]};">${x[2]}</span>`;}
+function renderSignups(){
+  const pend=SIGNUPS.filter(s=>s.status==='pending');
+  const sc=document.getElementById('signup-count');
+  if(sc){if(pend.length){sc.style.display='';sc.textContent=pend.length;}else sc.style.display='none';}
+  const list=SIGNUP_FILTER==='all'?SIGNUPS:SIGNUPS.filter(s=>s.status===SIGNUP_FILTER);
+  const box=document.getElementById('signup-list');if(!box)return;
+  if(!list.length){box.innerHTML='<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">Nothing here. Share your sign-up links to start collecting.</div>';return;}
+  box.innerHTML=list.map(s=>{
+    const flag=s.flagged_reason?`<div style="font-size:12px;color:#9a6700;background:#fff8e8;border:1px solid #f0c36d;border-radius:7px;padding:6px 10px;margin-top:8px;">⚠ ${ehtml(s.flagged_reason)}</div>`:'';
+    const actions=s.status==='pending'
+      ? `<div style="margin-top:12px;display:flex;gap:10px;"><button class="br" style="margin:0;" onclick="approveSignup(${s.id})">✓ Approve &amp; add to network</button><button class="bdq" style="margin:0;" onclick="rejectSignup(${s.id})">✕ Reject</button></div>`
+      : `<div style="margin-top:10px;font-size:12px;color:var(--muted);">${s.reviewed_at?('Reviewed '+_timeAgo(s.reviewed_at)):''}</div>`;
+    return `<div style="border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div><span style="font-size:15px;font-weight:700;">${ehtml(s.org_name||s.submitter_email||('Submission #'+s.id))}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:8px;text-transform:capitalize;">${ehtml(s.type)}</span></div>
+        <div>${suStatusBadge(s.status)} <span style="font-size:12px;color:var(--muted);margin-left:6px;">${_timeAgo(s.created_at)}</span></div>
+      </div>
+      ${flag}
+      ${fmtSignup(s)}
+      ${actions}
+    </div>`;
+  }).join('');
+}
+async function rejectSignup(id){
+  if(!confirm('Reject this sign-up? It will not be added to your network.'))return;
+  const {error}=await sbClient.from('signup_submissions').update({status:'rejected',reviewed_at:new Date().toISOString()}).eq('id',id);
+  if(error){showToast('Error: '+error.message);return;}
+  loadSignups();showToast('Rejected');
+}
+function splitList(s){return String(s||'').split(',').map(x=>x.trim()).filter(Boolean);}
+async function approveSignup(id){
+  const s=SIGNUPS.find(x=>x.id===id);if(!s)return;
+  if(!confirm('Approve and add to your network? (You can set their BAA-on-file flag afterward in the Network tab — records shouldn\'t flow until it\'s signed.)'))return;
+  const p=s.payload||{};
+  try{
+    if(s.type==='provider'){
+      const pr=p.practice||{};
+      const {data:prac,error:pe}=await sbClient.from('practices').insert({name:pr.name||p.submitter?.name||'New practice',specialty:pr.specialty||null,states:pr.states||null,address:pr.address||null,website:pr.website||null,status:'active'}).select().single();
+      if(pe)throw pe;
+      const provs=(p.providers||[]).filter(d=>d.doctor_name);
+      let firstProvId=null;
+      for(const d of provs){
+        const {data:pv,error:dve}=await sbClient.from('providers').insert({
+          doctor_name:d.doctor_name,practice_id:prac.id,same_as_practice:true,location_address:pr.address||null,
+          specialty:d.specialty||null,provider_type:d.provider_type||null,states:d.states||pr.states||null,
+          phone:d.phone||null,fax:d.fax||null,languages:d.languages||null,
+          monthly_capacity:d.monthly_capacity?parseInt(d.monthly_capacity,10):null,active:true,
+          lien_acceptance:!!d.lien_acceptance,ncp_required:!!d.ncp_required,litigation_acceptance:!!d.litigation_acceptance,
+          ehr_system:d.ehr_system||null,body_parts:splitList(d.body_parts),baa_on_file:false
+        }).select().single();
+        if(dve)throw dve;
+        if(!firstProvId)firstProvId=pv.id;
+      }
+      const contacts=(p.contacts||[]).filter(c=>c.name||c.email).map(c=>({practice_id:prac.id,provider_id:null,role:c.role||'Contact',name:c.name||'',email:(c.email||'').trim(),phone:c.phone||'',receives_referrals:!!c.receives_referrals}));
+      if(contacts.length){const {error:ce}=await sbClient.from('contacts').insert(contacts);if(ce)throw ce;}
+    }else{
+      const f=p.firm||{};
+      const {data:firm,error:fe}=await sbClient.from('firms').insert({name:f.name||'New firm',type:f.type||null,address:f.address||null,phone:f.phone||null,website:f.website||null}).select().single();
+      if(fe)throw fe;
+      const pocs=(p.contacts||[]).filter(c=>c.name||c.email);
+      const primary=pocs[0]||{};
+      const cc=pocs.slice(1).map(c=>c.email).filter(Boolean).join(', ');
+      const pocNotes=pocs.length>1?('Additional POCs: '+pocs.slice(1).map(c=>`${c.name||''} ${c.email||''} ${c.phone||''}`.trim()).join('; ')):'';
+      for(const a of (p.attorneys||[]).filter(a=>a.first_name||a.last_name)){
+        const {error:ae}=await sbClient.from('attorneys').insert({
+          firm_id:firm.id,first_name:a.first_name||'',last_name:a.last_name||'',email:(a.email||'').trim(),phone:a.phone||null,
+          states:a.states||null,case_types:a.case_types||null,
+          paralegal_name:primary.name||null,paralegal_email:(primary.email||'').trim()||null,paralegal_phone:primary.phone||null,
+          cc_emails:cc||null,active:true,baa_on_file:false,notes:pocNotes||null
+        });
+        if(ae)throw ae;
+      }
+    }
+    await sbClient.from('signup_submissions').update({status:'approved',reviewed_at:new Date().toISOString()}).eq('id',id);
+    await loadProviders();
+    loadSignups();
+    showToast('✓ Added to network — set their BAA flag in the Network tab. Portal login is offered automatically at first referral.');
+  }catch(e){showToast('Approve failed: '+(e.message||e));}
+}
 async function loadPortalLeads(){
   try{
     const {data,error}=await sbClient.from('cases').select('*').order('created_at',{ascending:false});
@@ -1052,7 +1181,7 @@ async function doLogin(){
   const {error}=await sbClient.auth.signInWithPassword({email,password});
   btn.disabled=false;btn.textContent='Sign in';
   if(error){errEl.textContent=error.message||'Sign-in failed';errEl.style.display='block';return;}
-  showGate(false);loadPortalLeads();loadProviders();loadPortalAccounts();
+  showGate(false);loadPortalLeads();loadProviders();loadPortalAccounts();loadSignups();
 }
 async function doLogout(){try{await sbClient.auth.signOut();}catch(e){}for(let i=LEADS.length-1;i>=0;i--){if(LEADS[i]._supa)LEADS.splice(i,1);}renderTable();showGate(true);}
 function openPw(){const m=document.getElementById('pw-msg');m.style.display='none';document.getElementById('pw-new').value='';document.getElementById('pw-modal').style.display='flex';}
@@ -1067,7 +1196,7 @@ async function doChangePw(){
   setTimeout(closePw,1800);
 }
 (function(){const pe=document.getElementById('auth-pass');if(pe)pe.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});})();
-(async function(){try{const {data:{session}}=await sbClient.auth.getSession();if(session){showGate(false);loadPortalLeads();loadProviders();loadPortalAccounts();}else{showGate(true);}}catch(e){showGate(true);}})();
+(async function(){try{const {data:{session}}=await sbClient.auth.getSession();if(session){showGate(false);loadPortalLeads();loadProviders();loadPortalAccounts();loadSignups();}else{showGate(true);}}catch(e){showGate(true);}})();
 </script>
 </body>
 </html>

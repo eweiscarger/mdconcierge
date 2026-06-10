@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MDconcierge — Join the Network</title>
+<style>
+  body{margin:0;background:#f4f5f7;font-family:'Segoe UI',system-ui,Arial,sans-serif;color:#1a2230;}
+  .wrap{max-width:720px;margin:0 auto;padding:24px 16px 70px;}
+  .hdr{background:#0b0f14;border-radius:12px 12px 0 0;padding:18px 24px;}
+  .hdr .b{font-size:20px;font-weight:800;color:#fff;}.hdr .b span{color:#c8922a;}
+  .hdr .t{color:#8e97a3;font-size:12px;margin-top:2px;}
+  .card{background:#fff;border:1px solid #e3e6ea;border-top:none;border-radius:0 0 12px 12px;padding:24px;}
+  h1{font-size:21px;margin:0 0 4px;}h2{font-size:14px;margin:0;text-transform:uppercase;letter-spacing:.5px;color:#6b7583;}
+  .muted{color:#6b7583;font-size:13px;}
+  .sec{border:1px solid #e3e6ea;border-radius:11px;padding:18px;margin-top:18px;}
+  .sec-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  label{display:block;font-size:12.5px;font-weight:600;margin:12px 0 4px;}
+  label .req{color:#c0392b;}
+  input,select,textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;font-family:inherit;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#c8922a;}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 14px;}
+  @media(max-width:560px){.g2,.g3{grid-template-columns:1fr;}}
+  .chkrow{display:flex;align-items:center;gap:8px;margin-top:12px;}
+  .chkrow input{width:auto;}.chkrow label{margin:0;font-weight:600;}
+  .rep{border:1px dashed #cdd3da;border-radius:9px;padding:14px;margin-top:12px;position:relative;}
+  .rep .rm{position:absolute;top:8px;right:10px;background:none;border:none;color:#c0392b;font-size:13px;cursor:pointer;font-weight:700;}
+  .add{background:#eef5fc;border:1px solid #b8d4ee;color:#1a4e8a;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-top:12px;}
+  .btn{display:inline-block;padding:13px 26px;margin-top:22px;border:none;border-radius:9px;font-size:16px;font-weight:700;cursor:pointer;}
+  .gold{background:#c8922a;color:#fff;}.gold:hover{background:#b07f1f;}
+  .err{color:#c0392b;font-size:13px;margin-top:12px;font-weight:600;min-height:16px;}
+  .hint{font-size:11.5px;color:#9aa3af;margin-top:3px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr"><div class="b">MD<span>concierge</span></div><div class="t">Medical-Legal Coordination · Network Onboarding</div></div>
+  <div class="card" id="card"><div class="muted">Loading…</div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
+const SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const TYPE=(new URLSearchParams(location.search).get('type')||'').toLowerCase();
+const card=document.getElementById('card');
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+const PROV_TYPES=['Orthopaedic Surgeon','Orthopaedics','Pain Management','Physical Therapy','Chiropractic','Neurology','Neurosurgery','Imaging / Radiology','Primary Care','Podiatry','Psychology / Psychiatry','Dental / Maxillofacial','Other'];
+const FIRM_TYPES=['Personal Injury','Workers’ Compensation','Auto / MVA','Social Security Disability','Mass Tort','Medical Malpractice','General Practice','Other'];
+
+function val(v){return v?esc(v):'';}
+function fieldsProvDoctor(){
+  return `<div class="rep row-doctor"><button type="button" class="rm" onclick="this.parentNode.remove()">✕ remove</button>
+    <label>Doctor / clinician name <span class="req">*</span></label><input data-f="doctor_name" placeholder="Dr. Jane Smith"/>
+    <div class="g2">
+      <div><label>Specialty</label><input data-f="specialty" placeholder="e.g. Orthopaedic spine"/></div>
+      <div><label>Provider type</label><select data-f="provider_type">${PROV_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+    </div>
+    <label>Body parts / areas treated</label><input data-f="body_parts" placeholder="e.g. Lumbar spine, Knee, Shoulder"/>
+    <div class="g3">
+      <div><label>States licensed</label><input data-f="states" placeholder="PA, NJ"/></div>
+      <div><label>Monthly capacity</label><input data-f="monthly_capacity" type="number" min="0" placeholder="# new patients"/></div>
+      <div><label>EHR system</label><input data-f="ehr_system" placeholder="Epic, eCW…"/></div>
+    </div>
+    <div class="g2">
+      <div><label>Direct phone</label><input data-f="phone"/></div>
+      <div><label>Fax</label><input data-f="fax"/></div>
+    </div>
+    <label>Languages</label><input data-f="languages" placeholder="English, Spanish"/>
+    <div class="g3">
+      <div class="chkrow"><input type="checkbox" data-f="lien_acceptance" id=""/><label>Accepts liens</label></div>
+      <div class="chkrow"><input type="checkbox" data-f="ncp_required"/><label>NCP required</label></div>
+      <div class="chkrow"><input type="checkbox" data-f="litigation_acceptance"/><label>Accepts litigation</label></div>
+    </div>
+  </div>`;
+}
+function fieldsContact(){
+  return `<div class="rep row-contact"><button type="button" class="rm" onclick="this.parentNode.remove()">✕ remove</button>
+    <div class="g2">
+      <div><label>Contact name <span class="req">*</span></label><input data-f="name" placeholder="Front-desk / referral coordinator"/></div>
+      <div><label>Role</label><input data-f="role" placeholder="Referral Coordinator"/></div>
+    </div>
+    <div class="g2">
+      <div><label>Email <span class="req">*</span></label><input data-f="email" type="email"/></div>
+      <div><label>Phone</label><input data-f="phone"/></div>
+    </div>
+    <div class="chkrow"><input type="checkbox" data-f="receives_referrals" checked/><label>Send new referrals to this contact</label></div>
+  </div>`;
+}
+function fieldsAttorney(){
+  return `<div class="rep row-attorney"><button type="button" class="rm" onclick="this.parentNode.remove()">✕ remove</button>
+    <div class="g2">
+      <div><label>First name <span class="req">*</span></label><input data-f="first_name"/></div>
+      <div><label>Last name <span class="req">*</span></label><input data-f="last_name"/></div>
+    </div>
+    <div class="g2">
+      <div><label>Email <span class="req">*</span></label><input data-f="email" type="email"/></div>
+      <div><label>Direct phone</label><input data-f="phone"/></div>
+    </div>
+    <div class="g2">
+      <div><label>States</label><input data-f="states" placeholder="PA, NJ"/></div>
+      <div><label>Case types handled</label><input data-f="case_types" placeholder="Auto, WC, slip & fall"/></div>
+    </div>
+  </div>`;
+}
+function fieldsPoc(){
+  return `<div class="rep row-poc"><button type="button" class="rm" onclick="this.parentNode.remove()">✕ remove</button>
+    <div class="g2">
+      <div><label>Name <span class="req">*</span></label><input data-f="name" placeholder="Paralegal / case manager"/></div>
+      <div><label>Role</label><input data-f="role" placeholder="Paralegal"/></div>
+    </div>
+    <div class="g2">
+      <div><label>Email <span class="req">*</span></label><input data-f="email" type="email"/></div>
+      <div><label>Phone</label><input data-f="phone"/></div>
+    </div>
+  </div>`;
+}
+function addRow(containerId,html){document.getElementById(containerId).insertAdjacentHTML('beforeend',html);}
+
+function renderProvider(){
+  card.innerHTML=`<h1>Join the MDconcierge provider network</h1>
+    <p class="muted">Tell us about your practice and how you'd like referrals routed. It takes a few minutes — and saves a lot of back-and-forth later. Fields marked <span style="color:#c0392b;">*</span> are required.</p>
+    <div class="sec">
+      <h2>Your practice / office</h2>
+      <label>Practice name <span class="req">*</span></label><input id="p_name"/>
+      <div class="g2">
+        <div><label>Primary specialty</label><input id="p_specialty" placeholder="e.g. Orthopaedics"/></div>
+        <div><label>States served <span class="req">*</span></label><input id="p_states" placeholder="PA, NJ"/></div>
+      </div>
+      <div class="g2">
+        <div><label>Main phone</label><input id="p_phone"/></div>
+        <div><label>Website</label><input id="p_website" placeholder="https://"/></div>
+      </div>
+      <label>Office address</label><input id="p_address"/>
+    </div>
+    <div class="sec">
+      <div class="sec-h"><h2>Doctors / clinicians</h2></div>
+      <p class="hint">Add every provider who should be available for referrals.</p>
+      <div id="doctors"></div>
+      <button type="button" class="add" onclick="addRow('doctors',fieldsProvDoctor())">＋ Add another doctor</button>
+    </div>
+    <div class="sec">
+      <div class="sec-h"><h2>Who should we contact?</h2></div>
+      <p class="hint">Front desk, referral coordinator, billing — add anyone who handles incoming cases. Check the box for whoever should receive new referrals.</p>
+      <div id="contacts"></div>
+      <button type="button" class="add" onclick="addRow('contacts',fieldsContact())">＋ Add another contact</button>
+    </div>
+    <div class="sec">
+      <h2>Your details (who's submitting)</h2>
+      <div class="g2">
+        <div><label>Your name <span class="req">*</span></label><input id="s_name"/></div>
+        <div><label>Your email <span class="req">*</span></label><input id="s_email" type="email"/></div>
+      </div>
+    </div>
+    <div class="err" id="e"></div>
+    <button class="btn gold" onclick="submitProvider()">Submit for review</button>
+    <p class="muted" style="margin-top:12px;">We'll review your information and follow up to finalize onboarding (including a Business Associate Agreement before any records are shared).</p>`;
+  addRow('doctors',fieldsProvDoctor());
+  addRow('contacts',fieldsContact());
+}
+function renderAttorney(){
+  card.innerHTML=`<h1>Join the MDconcierge attorney network</h1>
+    <p class="muted">Tell us about your firm and team so we can coordinate care for your clients smoothly. Fields marked <span style="color:#c0392b;">*</span> are required.</p>
+    <div class="sec">
+      <h2>Your firm</h2>
+      <label>Firm name <span class="req">*</span></label><input id="f_name"/>
+      <div class="g2">
+        <div><label>Practice area</label><select id="f_type">${FIRM_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+        <div><label>Main phone</label><input id="f_phone"/></div>
+      </div>
+      <div class="g2">
+        <div><label>Website</label><input id="f_website" placeholder="https://"/></div>
+        <div><label>Office address</label><input id="f_address"/></div>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-h"><h2>Attorney(s)</h2></div>
+      <p class="hint">Add each attorney who will refer clients.</p>
+      <div id="attorneys"></div>
+      <button type="button" class="add" onclick="addRow('attorneys',fieldsAttorney())">＋ Add another attorney</button>
+    </div>
+    <div class="sec">
+      <div class="sec-h"><h2>Points of contact</h2></div>
+      <p class="hint">Paralegals, case managers, intake staff — the people we'll coordinate with day to day.</p>
+      <div id="pocs"></div>
+      <button type="button" class="add" onclick="addRow('pocs',fieldsPoc())">＋ Add another contact</button>
+    </div>
+    <div class="sec">
+      <h2>Your details (who's submitting)</h2>
+      <div class="g2">
+        <div><label>Your name <span class="req">*</span></label><input id="s_name"/></div>
+        <div><label>Your email <span class="req">*</span></label><input id="s_email" type="email"/></div>
+      </div>
+    </div>
+    <div class="err" id="e"></div>
+    <button class="btn gold" onclick="submitAttorney()">Submit for review</button>
+    <p class="muted" style="margin-top:12px;">We'll review and follow up to finalize onboarding (including a Business Associate Agreement before any records are shared).</p>`;
+  addRow('attorneys',fieldsAttorney());
+  addRow('pocs',fieldsPoc());
+}
+
+function collect(rowClass,fields){
+  const out=[];
+  document.querySelectorAll('.'+rowClass).forEach(r=>{
+    const o={};
+    r.querySelectorAll('[data-f]').forEach(el=>{
+      const k=el.getAttribute('data-f');
+      o[k]= el.type==='checkbox' ? el.checked : (el.value||'').trim();
+    });
+    out.push(o);
+  });
+  return out;
+}
+function gv(id){const el=document.getElementById(id);return el?(el.value||'').trim():'';}
+function emailOk(s){return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);}
+function fail(msg){const e=document.getElementById('e');e.textContent=msg;e.scrollIntoView({behavior:'smooth',block:'center'});}
+
+async function send(type,payload){
+  const e=document.getElementById('e');e.textContent='Submitting…';
+  const {data,error}=await sb.rpc('submit_signup',{p_type:type,p_payload:payload});
+  if(error||!data||!data.ok){fail('Something went wrong submitting — please try again, or email referrals@mdconcierge.net.');return;}
+  card.innerHTML=`<h1>Thank you${payload.submitter&&payload.submitter.name?(', '+esc(payload.submitter.name.split(' ')[0])):''}! 🎉</h1>
+    <p class="muted" style="font-size:14px;">Your information has been received (reference #${esc(String(data.ref))}). Our team will review it and follow up shortly to finalize onboarding — including a Business Associate Agreement before any records are shared.</p>
+    <p class="muted">Questions in the meantime? Reach us at <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a>.</p>`;
+  window.scrollTo(0,0);
+}
+function submitProvider(){
+  const doctors=collect('row-doctor').filter(d=>d.doctor_name);
+  const contacts=collect('row-contact').filter(c=>c.name||c.email);
+  if(!gv('p_name'))return fail('Please enter your practice name.');
+  if(!gv('p_states'))return fail('Please list the states you serve.');
+  if(!doctors.length)return fail('Please add at least one doctor / clinician (with a name).');
+  if(!contacts.length||!contacts.some(c=>c.email&&emailOk(c.email)))return fail('Please add at least one contact with a valid email.');
+  for(const c of contacts){if(c.email&&!emailOk(c.email))return fail('A contact email looks invalid: '+c.email);}
+  if(!gv('s_name')||!emailOk(gv('s_email')))return fail('Please enter your name and a valid email.');
+  doctors.forEach(d=>{if(d.monthly_capacity)d.monthly_capacity=parseInt(d.monthly_capacity,10)||null;});
+  send('provider',{
+    practice:{name:gv('p_name'),specialty:gv('p_specialty'),states:gv('p_states'),phone:gv('p_phone'),website:gv('p_website'),address:gv('p_address')},
+    providers:doctors, contacts:contacts,
+    submitter:{name:gv('s_name'),email:gv('s_email').toLowerCase()}
+  });
+}
+function submitAttorney(){
+  const attorneys=collect('row-attorney').filter(a=>a.first_name||a.last_name||a.email);
+  const pocs=collect('row-poc').filter(c=>c.name||c.email);
+  if(!gv('f_name'))return fail('Please enter your firm name.');
+  if(!attorneys.length)return fail('Please add at least one attorney.');
+  for(const a of attorneys){if(!a.first_name||!a.last_name)return fail('Each attorney needs a first and last name.');if(!emailOk(a.email))return fail('Each attorney needs a valid email.');}
+  for(const c of pocs){if(c.email&&!emailOk(c.email))return fail('A contact email looks invalid: '+c.email);}
+  if(!gv('s_name')||!emailOk(gv('s_email')))return fail('Please enter your name and a valid email.');
+  send('attorney',{
+    firm:{name:gv('f_name'),type:gv('f_type'),phone:gv('f_phone'),website:gv('f_website'),address:gv('f_address')},
+    attorneys:attorneys, contacts:pocs,
+    submitter:{name:gv('s_name'),email:gv('s_email').toLowerCase()}
+  });
+}
+
+if(TYPE==='provider')renderProvider();
+else if(TYPE==='attorney')renderAttorney();
+else card.innerHTML=`<h1>Join the MDconcierge network</h1><p class="muted">Please choose how you'd like to join:</p>
+  <a class="btn gold" style="text-decoration:none;display:block;text-align:center;margin-top:14px;" href="?type=provider">I'm a medical provider</a>
+  <a class="btn" style="text-decoration:none;display:block;text-align:center;background:#1a2230;color:#fff;" href="?type=attorney">I'm an attorney / law firm</a>`;
+</script>
+</body>
+</html>
