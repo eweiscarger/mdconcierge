@@ -238,6 +238,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="pg-title" id="pg-title">Lead Queue</div>
     <div class="tb-right">
       <div class="live"><div class="ldot"></div> Live</div>
+      <div style="position:relative;display:inline-block;">
+        <button class="ib" onclick="toggleNotifs()">🔔<span id="notif-badge" style="display:none;background:#c8922a;color:#fff;border-radius:10px;padding:0 6px;font-size:11px;margin-left:4px;">0</span></button>
+        <div id="notif-panel" style="display:none;position:absolute;right:0;top:40px;width:330px;max-height:420px;overflow:auto;background:var(--card,#161b22);border:1px solid var(--border2,#30363d);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.45);z-index:80;padding:12px;text-align:left;"></div>
+      </div>
       <button class="ib" onclick="showToast('Refreshed')">↻ Refresh</button>
       <button class="ib" onclick="exportCSV()">⬇ Export</button>
     </div>
@@ -1060,6 +1064,36 @@ function emailInvite(id){const a=PORTAL_ACCTS.find(x=>x.id===id);if(!a||!a.setup
   const url=inviteLink(a);
   const body='Hello'+(a.name?(' '+a.name):'')+',\n\nYou can manage your MDconcierge cases from one secure portal. Set your password here (link expires in 14 days):\n\n'+url+'\n\nWith gratitude,\nThe MDconcierge Coordination Team';
   location.href='mailto:'+encodeURIComponent(a.email)+'?subject='+encodeURIComponent('Set up your MDconcierge portal login')+'&body='+encodeURIComponent(body);}
+// ── In-portal notifications: partner self-edits (no email to Eric, per his request) ──
+let NOTIFS=[];
+async function loadNotifs(){
+  try{
+    const {data,error}=await sbClient.from('profile_changes').select('*').order('created_at',{ascending:false}).limit(25);
+    NOTIFS=(error?[]:(data||[]));
+  }catch(e){NOTIFS=[];}
+  const unread=NOTIFS.filter(n=>!n.seen).length;
+  const b=document.getElementById('notif-badge');
+  if(b){if(unread){b.style.display='';b.textContent=unread;}else b.style.display='none';}
+  renderNotifs();
+}
+function renderNotifs(){
+  const p=document.getElementById('notif-panel');if(!p)return;
+  const unread=NOTIFS.filter(n=>!n.seen).length;
+  const items=NOTIFS.length?NOTIFS.map(n=>`<div style="padding:9px 4px;border-bottom:1px solid var(--border2,#30363d);font-size:12.5px;${n.seen?'opacity:.5;':''}">
+      <div style="font-weight:700;">${ehtml(n.editor_name||n.editor_email||'A partner')} <span style="font-weight:400;color:var(--muted);text-transform:capitalize;">· ${ehtml(n.role||'')}</span></div>
+      <div style="color:var(--muted2,#8b949e);">${ehtml(n.summary||'')}</div>
+      <div style="color:var(--muted);font-size:11px;margin-top:2px;">${ehtml(n.editor_email||'')} · ${_timeAgo(n.created_at)}</div>
+    </div>`).join(''):'<div style="padding:16px;color:var(--muted);font-size:12px;text-align:center;">No partner edits yet.</div>';
+  p.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <b style="font-size:13px;">Partner profile edits</b>${unread?`<a onclick="markNotifsSeen()" style="font-size:12px;color:#4a9eff;cursor:pointer;">Mark all read</a>`:''}
+    </div>${items}`;
+}
+function toggleNotifs(){const p=document.getElementById('notif-panel');if(p)p.style.display=(p.style.display==='none'||!p.style.display)?'block':'none';}
+async function markNotifsSeen(){
+  try{await sbClient.from('profile_changes').update({seen:true}).eq('seen',false);}catch(e){}
+  loadNotifs();
+}
+
 // ── Self-serve sign-ups: review queue + 1-click approve (creates the real network records) ──
 let SIGNUPS=[], SIGNUP_FILTER='pending';
 async function loadSignups(){
@@ -1216,7 +1250,7 @@ async function doLogin(){
   const {error}=await sbClient.auth.signInWithPassword({email,password});
   btn.disabled=false;btn.textContent='Sign in';
   if(error){errEl.textContent=error.message||'Sign-in failed';errEl.style.display='block';return;}
-  showGate(false);loadPortalLeads();loadProviders();loadPortalAccounts();loadSignups();
+  showGate(false);loadPortalLeads();loadProviders();loadPortalAccounts();loadSignups();loadNotifs();
 }
 async function doLogout(){try{await sbClient.auth.signOut();}catch(e){}for(let i=LEADS.length-1;i>=0;i--){if(LEADS[i]._supa)LEADS.splice(i,1);}renderTable();showGate(true);}
 function openPw(){const m=document.getElementById('pw-msg');m.style.display='none';document.getElementById('pw-new').value='';document.getElementById('pw-modal').style.display='flex';}
@@ -1231,7 +1265,7 @@ async function doChangePw(){
   setTimeout(closePw,1800);
 }
 (function(){const pe=document.getElementById('auth-pass');if(pe)pe.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});})();
-(async function(){try{const {data:{session}}=await sbClient.auth.getSession();if(session){showGate(false);loadPortalLeads();loadProviders();loadPortalAccounts();loadSignups();}else{showGate(true);}}catch(e){showGate(true);}})();
+(async function(){try{const {data:{session}}=await sbClient.auth.getSession();if(session){showGate(false);loadPortalLeads();loadProviders();loadPortalAccounts();loadSignups();loadNotifs();}else{showGate(true);}}catch(e){showGate(true);}})();
 </script>
 </body>
 </html>
