@@ -598,6 +598,7 @@ async function confirmRoute(){
   if(!pv){showToast('Select a provider');return;}
   const prov=REAL_PROVIDERS.find(p=>String(p.id)===String(pv));
   const pn=prov?(prov.doctor_name+(prov.practices&&prov.practices.name?(' — '+prov.practices.name):'')):('Provider '+pv);
+  if(prov&&!prov.baa_on_file){if(!confirm('⚠ '+(prov.doctor_name||'This provider')+' has NO BAA on file.\n\nDocuments cannot be coordinated through MDconcierge until a BAA is signed. You can still route the referral, but no records should flow until the BAA is in place.\n\nRoute anyway?'))return;}
   const an=rep?(selLead.referringFirm||'Existing attorney'):(ATTORNEYS.find(a=>a.id===av)?.name||av||'—');
   if(selLead._supa){
     const {error}=await sbClient.from('cases').update({status:'routed',routed_provider_id:parseInt(pv,10),provider_notified:false,placement_date:new Date().toISOString()}).eq('id',selLead.supaId);
@@ -657,8 +658,11 @@ function provCardReal(p){
   const bp=(p.body_parts||[]).slice(0,5).map(b=>`<span class="ct-chip on">${ehtml(b)}</span>`).join('');
   const states=(p.states||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="stag">${ehtml(s)}</span>`).join('');
   const refs=NET_CONTACTS.filter(c=>c.provider_id===p.id&&c.receives_referrals).length;
-  return `<div class="mc-card" style="cursor:pointer;" onclick="openProvModal(${p.id})"><div class="mc-top"><div class="mc-av av-p">${ehtml((p.doctor_name||'?').charAt(0))}</div><div><div class="mc-name">${ehtml(p.doctor_name||'(unnamed)')}</div><div class="mc-role">${ehtml(p.specialty||p.provider_type||'—')} · ${aff}</div><div class="mc-st"><div class="${p.active?'dot-on':'dot-full'}"></div><span style="color:var(--muted2);font-size:11px;">${p.active?'Active':'Inactive'}</span></div></div></div><div class="stags">${states}</div><div class="ct-checks">${bp||'<span style="font-size:11px;color:var(--muted);">No areas set</span>'}</div><div class="dp-f" style="margin:6px 0 10px;"><span class="dp-fk" style="font-size:11px;">Referral contacts</span><span class="dp-fv" style="font-size:12px;">${refs}</span></div><div class="mc-acts"><button class="btn-sm" onclick="event.stopPropagation();openProvModal(${p.id})">Edit</button><button class="btn-sm danger" onclick="event.stopPropagation();delProv(${p.id})">Remove</button></div></div>`;
+  return `<div class="mc-card" style="cursor:pointer;" onclick="openProvModal(${p.id})"><div class="mc-top"><div class="mc-av av-p">${ehtml((p.doctor_name||'?').charAt(0))}</div><div><div class="mc-name">${ehtml(p.doctor_name||'(unnamed)')}</div><div class="mc-role">${ehtml(p.specialty||p.provider_type||'—')} · ${aff}</div><div class="mc-st"><div class="${p.active?'dot-on':'dot-full'}"></div><span style="color:var(--muted2);font-size:11px;">${p.active?'Active':'Inactive'}</span></div></div></div><div class="stags">${states}</div>${baaBadge(p)}<div class="ct-checks">${bp||'<span style="font-size:11px;color:var(--muted);">No areas set</span>'}</div><div class="dp-f" style="margin:6px 0 10px;"><span class="dp-fk" style="font-size:11px;">Referral contacts</span><span class="dp-fv" style="font-size:12px;">${refs}</span></div><div class="mc-acts"><button class="btn-sm" onclick="event.stopPropagation();openProvModal(${p.id})">Edit</button><button class="btn-sm danger" onclick="event.stopPropagation();delProv(${p.id})">Remove</button></div></div>`;
 }
+function baaBadge(o){return (o&&o.baa_on_file)
+  ?`<div style="margin:6px 0;"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#10311f;color:#3ad07f;">✓ BAA on file${o.baa_date?(' · '+ehtml(o.baa_date)):''}</span></div>`
+  :`<div style="margin:6px 0;"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#3a1417;color:#ff6b81;">⚠ No BAA on file</span></div>`;}
 function renderNetwork(){
   document.getElementById('atty-grid').innerHTML=NET_ATTORNEYS.map(attyCardReal).join('')+addCard('Add attorney','openAttyModal(null)');
   document.getElementById('prov-grid').innerHTML=NET_PROVIDERS.map(provCardReal).join('')+addCard('Add provider','openProvModal(null)');
@@ -673,7 +677,7 @@ function attyCardReal(a){
   const name=((a.first_name||'')+' '+(a.last_name||'')).trim()||'(unnamed)';
   const states=(a.states||'').split(',').map(s=>s.trim()).filter(Boolean).map(s=>`<span class="stag">${ehtml(s)}</span>`).join('');
   const poc=a.paralegal_name?(' · POC: '+ehtml(a.paralegal_name)):'';
-  return `<div class="mc-card" style="cursor:pointer;" onclick="openAttyModal(${a.id})"><div class="mc-top"><div class="mc-av av-a">${ehtml(name.charAt(0))}</div><div><div class="mc-name">${ehtml(name)}</div><div class="mc-role">${firm?ehtml(firm.name):'Independent'}${poc}</div><div class="mc-st"><div class="${a.active?'dot-on':'dot-full'}"></div><span style="color:var(--muted2);font-size:11px;">${a.active?'Active':'Inactive'}</span></div></div></div><div class="stags">${states}</div><div class="ct-checks" style="font-size:11px;color:var(--muted2);">${ehtml(a.case_types||'')}</div><div class="dp-f" style="margin:6px 0 10px;"><span class="dp-fk" style="font-size:11px;">Email</span><span class="dp-fv" style="font-size:11px;">${ehtml(a.email||'—')}</span></div><div class="mc-acts"><button class="btn-sm" onclick="event.stopPropagation();openAttyModal(${a.id})">Edit</button><button class="btn-sm danger" onclick="event.stopPropagation();delAtty(${a.id})">Remove</button></div></div>`;
+  return `<div class="mc-card" style="cursor:pointer;" onclick="openAttyModal(${a.id})"><div class="mc-top"><div class="mc-av av-a">${ehtml(name.charAt(0))}</div><div><div class="mc-name">${ehtml(name)}</div><div class="mc-role">${firm?ehtml(firm.name):'Independent'}${poc}</div><div class="mc-st"><div class="${a.active?'dot-on':'dot-full'}"></div><span style="color:var(--muted2);font-size:11px;">${a.active?'Active':'Inactive'}</span></div></div></div><div class="stags">${states}</div>${baaBadge(a)}<div class="ct-checks" style="font-size:11px;color:var(--muted2);">${ehtml(a.case_types||'')}</div><div class="dp-f" style="margin:6px 0 10px;"><span class="dp-fk" style="font-size:11px;">Email</span><span class="dp-fv" style="font-size:11px;">${ehtml(a.email||'—')}</span></div><div class="mc-acts"><button class="btn-sm" onclick="event.stopPropagation();openAttyModal(${a.id})">Edit</button><button class="btn-sm danger" onclick="event.stopPropagation();delAtty(${a.id})">Remove</button></div></div>`;
 }
 function vendCardReal(v){
   return `<div class="mc-card" style="cursor:pointer;" onclick="openVendModal(${v.id})"><div class="mc-top"><div class="mc-av av-v">${ehtml((v.company_name||'?').charAt(0))}</div><div><div class="mc-name">${ehtml(v.company_name||'(unnamed)')}</div><div class="mc-role">${ehtml(v.vendor_type||'Vendor')}${v.poc_name?(' · POC: '+ehtml(v.poc_name)):''}</div><div class="mc-st"><div class="${v.active?'dot-on':'dot-full'}"></div><span style="color:var(--muted2);font-size:11px;">${v.active?'Active':'Inactive'}</span></div></div></div><div class="dp-f" style="margin:4px 0;"><span class="dp-fk" style="font-size:11px;">Intake</span><span class="dp-fv" style="font-size:11px;">${ehtml(v.intake_email||v.poc_email||'—')}</span></div><div class="dp-f" style="margin-bottom:10px;"><span class="dp-fk" style="font-size:11px;">Liens</span><span class="dp-fv" style="font-size:11px;">${v.lien_acceptance?'Yes':'—'}</span></div><div class="mc-acts"><button class="btn-sm" onclick="event.stopPropagation();openVendModal(${v.id})">Edit</button><button class="btn-sm danger" onclick="event.stopPropagation();delVend(${v.id})">Remove</button></div></div>`;
@@ -720,6 +724,7 @@ function openProvModal(id){
      <label class="ct-chk"><input type="checkbox" id="mp-ncp" ${p&&p.ncp_required?'checked':''}/> NCP required</label>
      <label class="ct-chk"><input type="checkbox" id="mp-lit" ${p&&p.litigation_acceptance?'checked':''}/> Litigation OK</label>
    </div></div>
+   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Compliance — required before any records are coordinated</label><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><label class="ct-chk"><input type="checkbox" id="mp-baa" ${p&&p.baa_on_file?'checked':''}/> BAA on file</label><input class="finput" id="mp-baa-date" value="${p&&p.baa_date?ehtml(p.baa_date):''}" placeholder="signed date (optional)" style="max-width:200px;"/></div></div>
    <div class="fgroup" style="margin-bottom:8px;"><label class="flabel">Contacts — check “receives referrals” for who gets the referral email</label><div id="mp-contacts"></div>
      <button class="btn-sm" onclick="mpAddContactRow()">+ Add contact</button></div>
    <div class="mbtns"><button class="btn-cancel" onclick="closeModal('modal-prov')">Cancel</button><button class="btn-ok" onclick="saveProv()">${id?'Save changes':'Add provider'}</button></div>`;
@@ -746,6 +751,7 @@ async function saveProv(){
     monthly_capacity:cap?parseInt(cap,10):null,active:document.getElementById('mp-active').checked,
     lien_acceptance:document.getElementById('mp-lien').checked,ncp_required:document.getElementById('mp-ncp').checked,
     litigation_acceptance:document.getElementById('mp-lit').checked,
+    baa_on_file:document.getElementById('mp-baa').checked,baa_date:(document.getElementById('mp-baa-date').value||'').trim()||null,
     body_parts:Array.from(document.querySelectorAll('.mp-bp:checked')).map(x=>x.value)};
   let provId=mpEditId;
   if(mpEditId){const {error}=await sbClient.from('providers').update(rec).eq('id',mpEditId);if(error){showToast('Error: '+error.message);return;}}
@@ -786,7 +792,7 @@ function openAttyModal(id){
      <div class="fgroup"><label class="flabel">POC phone</label><input class="finput" id="ma-pphone" value="${a?ehtml(a.paralegal_phone):''}"/></div>
      <div class="fgroup"><label class="flabel">CC emails</label><input class="finput" id="ma-cc" value="${a?ehtml(a.cc_emails):''}" placeholder="comma-separated"/></div>
    </div>
-   <div style="display:flex;gap:18px;margin-bottom:12px;"><label class="ct-chk" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="ma-active" ${(!a||a.active)?'checked':''}/> Active</label></div>
+   <div style="display:flex;gap:18px;margin-bottom:12px;align-items:center;flex-wrap:wrap;"><label class="ct-chk" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="ma-active" ${(!a||a.active)?'checked':''}/> Active</label><label class="ct-chk" style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="ma-baa" ${a&&a.baa_on_file?'checked':''}/> BAA on file</label><input class="finput" id="ma-baa-date" value="${a&&a.baa_date?ehtml(a.baa_date):''}" placeholder="BAA signed date (optional)" style="max-width:200px;"/></div>
    <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Notes</label><textarea class="finput" id="ma-notes" rows="2">${a?ehtml(a.notes):''}</textarea></div>
    <div class="mbtns"><button class="btn-cancel" onclick="closeModal('modal-atty')">Cancel</button><button class="btn-ok" onclick="saveAtty()">${id?'Save changes':'Add attorney'}</button></div>`;
   document.getElementById('modal-atty').classList.add('open');
@@ -801,7 +807,9 @@ async function saveAtty(){
     states:(document.getElementById('ma-states').value||'').trim(),case_types:(document.getElementById('ma-ctypes').value||'').trim(),
     paralegal_name:(document.getElementById('ma-pname').value||'').trim(),paralegal_email:(document.getElementById('ma-pemail').value||'').trim(),
     paralegal_phone:(document.getElementById('ma-pphone').value||'').trim(),cc_emails:(document.getElementById('ma-cc').value||'').trim(),
-    active:document.getElementById('ma-active').checked,notes:(document.getElementById('ma-notes').value||'').trim()};
+    active:document.getElementById('ma-active').checked,
+    baa_on_file:document.getElementById('ma-baa').checked,baa_date:(document.getElementById('ma-baa-date').value||'').trim()||null,
+    notes:(document.getElementById('ma-notes').value||'').trim()};
   const res=maEditId?await sbClient.from('attorneys').update(rec).eq('id',maEditId):await sbClient.from('attorneys').insert(rec);
   if(res.error){showToast('Error: '+res.error.message);return;}
   closeModal('modal-atty');await loadProviders();renderNetwork();showToast(maEditId?'Attorney updated':'Attorney added');
@@ -933,7 +941,7 @@ async function loadProviders(){
   }catch(e){console.warn('network load failed',e);}
 }
 function providerOptions(){
-  return '<option value="">— Assign provider —</option>'+REAL_PROVIDERS.map(p=>{const pr=NET_PRACTICES.find(x=>x.id===p.practice_id);return `<option value="${p.id}">${ehtml(p.doctor_name)}${pr?(' — '+ehtml(pr.name)):''}${p.specialty?(' · '+ehtml(p.specialty)):''}</option>`;}).join('');
+  return '<option value="">— Assign provider —</option>'+REAL_PROVIDERS.map(p=>{const pr=NET_PRACTICES.find(x=>x.id===p.practice_id);return `<option value="${p.id}">${ehtml(p.doctor_name)}${pr?(' — '+ehtml(pr.name)):''}${p.specialty?(' · '+ehtml(p.specialty)):''}${p.baa_on_file?'':'  ⚠ NO BAA'}</option>`;}).join('');
 }
 async function loadPortalLeads(){
   try{
