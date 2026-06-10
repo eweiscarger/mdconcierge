@@ -469,6 +469,7 @@ function selL(id){
       <div class="dp-f"><span class="dp-fk">Date of injury</span><span class="dp-fv">${ehtml(l.doi||'— awaiting')}</span></div>
       <div class="dp-f"><span class="dp-fk">First treatment</span><span class="dp-fv">${ehtml(l.firstTx||'— awaiting')}</span></div>
       <div class="dp-f"><span class="dp-fk">Adjuster</span><span class="dp-fv">${ehtml([l.adjusterName,l.adjusterPhone].filter(Boolean).join(' · ')||'— awaiting')}</span></div>
+      <div class="dp-f"><span class="dp-fk">Scheduling</span><span class="dp-fv">${ehtml(l.scheduleStatus||'—')}${l.appointmentAt?(' · '+ehtml(l.appointmentAt)):''}</span></div>
     </div>
     <div><div class="dp-st">Punch list — missing items</div><div id="gaps-box"><div style="font-size:12px;color:var(--muted);">Loading…</div></div></div>`:'';
   document.getElementById('dp-body').innerHTML=`
@@ -866,7 +867,7 @@ function mapSupaCase(r){
     status:r.status||'new',timeAgo:_timeAgo(r.created_at||r.intake_date),email:_nf(notes,/(?:Client email|Email):\s*([^|]+)/),
     zip:r.patient_zip||'',employer:'',injury:r.injury_type||'',reported:'',claimFiled:r.claim_status||'',
     treatment:'',priorInjury:'',attorney:represented?(firm||'Represented'):'None',represented:represented,referringFirm:firm,leadSource:r.lead_source||'',caseId:r.case_id||'',supaId:r.id,
-    billingPathway:r.billing_pathway||'',claimNumber:r.claim_number||'',claimStatus:r.claim_status||'',doi:r.date_of_injury||'',firstTx:r.date_first_treatment||'',adjusterName:r.adjuster_name||'',adjusterPhone:r.adjuster_phone||'',panelPosted:r.panel_posted||'',_supa:true};
+    billingPathway:r.billing_pathway||'',claimNumber:r.claim_number||'',claimStatus:r.claim_status||'',doi:r.date_of_injury||'',firstTx:r.date_first_treatment||'',adjusterName:r.adjuster_name||'',adjusterPhone:r.adjuster_phone||'',panelPosted:r.panel_posted||'',scheduleStatus:r.schedule_status||'',appointmentAt:r.appointment_at||'',_supa:true};
 }
 let REAL_PROVIDERS=[], NET_PROVIDERS=[], NET_PRACTICES=[], NET_LOCATIONS=[], NET_CONTACTS=[];
 let NET_ATTORNEYS=[], NET_FIRMS=[], NET_VENDORS=[], NET_VENDOR_CONTACTS=[];
