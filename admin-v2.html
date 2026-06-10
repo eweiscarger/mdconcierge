@@ -321,6 +321,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
   <!-- SIGN-UPS VIEW -->
   <div class="view" id="view-signups">
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="ph"><div class="pt">Invite someone to onboard</div><div class="ps">We'll email them the sign-up form from your coordination address (sends within a few minutes)</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding:6px 2px;">
+        <div><label class="flabel">Name</label><input class="finput" id="inv-name" placeholder="Dr. Jane Smith" style="min-width:180px;"/></div>
+        <div><label class="flabel">Email</label><input class="finput" id="inv-email" type="email" placeholder="name@practice.com" style="min-width:220px;"/></div>
+        <div><label class="flabel">Type</label><select class="finput" id="inv-type" style="min-width:140px;"><option value="provider">Provider</option><option value="attorney">Attorney</option></select></div>
+        <button class="br" style="margin:0;" onclick="sendOnboardInvite()">✉ Send invite</button>
+      </div>
+      <div id="inv-recent" style="margin-top:10px;"></div>
+    </div>
     <div class="panel" style="margin-bottom:0;">
       <div class="ph">
         <div class="pt">Self-serve sign-ups</div>
@@ -1057,6 +1067,30 @@ async function loadSignups(){
     if(error){showToast('Sign-up load error: '+error.message);SIGNUPS=[];}else SIGNUPS=data||[];
   }catch(e){console.warn('signup load failed',e);SIGNUPS=[];}
   renderSignups();
+  loadInvites();
+}
+function emailOk(s){return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(s||''));}
+async function sendOnboardInvite(){
+  const name=(document.getElementById('inv-name').value||'').trim();
+  const email=(document.getElementById('inv-email').value||'').trim().toLowerCase();
+  const type=document.getElementById('inv-type').value;
+  if(!emailOk(email)){showToast('Enter a valid email');return;}
+  const {error}=await sbClient.from('signup_invites').insert({type,email,name:name||null,invited_by:'eric',status:'pending'});
+  if(error){showToast('Error: '+error.message);return;}
+  document.getElementById('inv-name').value='';document.getElementById('inv-email').value='';
+  showToast('✓ Invite queued — it\'ll send within a few minutes.');
+  loadInvites();
+}
+async function loadInvites(){
+  try{
+    const {data,error}=await sbClient.from('signup_invites').select('*').order('created_at',{ascending:false}).limit(8);
+    const box=document.getElementById('inv-recent');if(!box)return;
+    if(error||!data||!data.length){box.innerHTML='';return;}
+    box.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Recent invites</div>'+data.map(i=>{
+      const st=i.status==='sent'?'<span style="color:var(--green);">✓ sent</span>':i.status==='failed'?'<span style="color:#c0392b;">failed</span>':'<span style="color:#9a6700;">queued</span>';
+      return `<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--border2);"><span>${ehtml(i.email)} <span style="color:var(--muted);">· ${ehtml(i.type)}</span></span><span>${st} <span style="color:var(--muted);">${_timeAgo(i.sent_at||i.created_at)}</span></span></div>`;
+    }).join('');
+  }catch(e){}
 }
 function filterSignups(f,btn){SIGNUP_FILTER=f;document.querySelectorAll('#view-signups .fb').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderSignups();}
 function suRow(k,v){if(v===undefined||v===null||v==='')return'';return `<div style="display:flex;gap:8px;padding:3px 0;font-size:13px;"><span style="color:var(--muted);min-width:130px;">${ehtml(k)}</span><span style="font-weight:600;">${ehtml(String(v))}</span></div>`;}
