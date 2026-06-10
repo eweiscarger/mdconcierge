@@ -336,6 +336,15 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
       </div>
       <div id="inv-recent" style="margin-top:10px;"></div>
     </div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="ph"><div class="pt">Import a practice from its website</div><div class="ps">Paste a URL — we read the site and draft a provider record into the queue below for you to review</div></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding:6px 2px;">
+        <div style="flex:1;min-width:260px;"><label class="flabel">Practice website URL</label><input class="finput" id="imp-url" placeholder="https://riversideortho.com" style="width:100%;"/></div>
+        <button class="br" style="margin:0;" onclick="queueImport()">🌐 Import</button>
+      </div>
+      <div class="ps" style="margin-top:6px;color:var(--muted);font-size:12px;">Takes a couple minutes; JS-heavy sites may extract partially. Drafts appear below as “Imported” — review and edit before approving.</div>
+      <div id="imp-recent" style="margin-top:10px;"></div>
+    </div>
     <div class="panel" style="margin-bottom:0;">
       <div class="ph">
         <div class="pt">Self-serve sign-ups</div>
@@ -1103,6 +1112,28 @@ async function loadSignups(){
   }catch(e){console.warn('signup load failed',e);SIGNUPS=[];}
   renderSignups();
   loadInvites();
+  loadImports();
+}
+async function queueImport(){
+  let url=(document.getElementById('imp-url').value||'').trim();
+  if(!url){showToast('Paste a website URL');return;}
+  if(!/^https?:\/\//i.test(url))url='https://'+url;
+  const {error}=await sbClient.from('import_jobs').insert({url,status:'pending',requested_by:'eric'});
+  if(error){showToast('Error: '+error.message);return;}
+  document.getElementById('imp-url').value='';
+  showToast('🌐 Reading the site — a draft will appear below in a couple minutes.');
+  loadImports();
+}
+async function loadImports(){
+  try{
+    const {data,error}=await sbClient.from('import_jobs').select('*').order('created_at',{ascending:false}).limit(6);
+    const box=document.getElementById('imp-recent');if(!box)return;
+    if(error||!data||!data.length){box.innerHTML='';return;}
+    box.innerHTML='<div style="font-size:12px;color:var(--muted);margin-bottom:4px;">Recent imports</div>'+data.map(j=>{
+      const st=j.status==='done'?'<span style="color:var(--green);">✓ drafted</span>':j.status==='error'?('<span style="color:#c0392b;" title="'+ehtml(j.error||'')+'">failed</span>'):'<span style="color:#9a6700;">reading…</span>';
+      return `<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;border-bottom:1px solid var(--border2);"><span style="overflow:hidden;text-overflow:ellipsis;max-width:60%;white-space:nowrap;">${ehtml(j.url)}</span><span>${st} <span style="color:var(--muted);">${_timeAgo(j.done_at||j.created_at)}</span></span></div>`;
+    }).join('');
+  }catch(e){}
 }
 function emailOk(s){return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(s||''));}
 async function sendOnboardInvite(){
@@ -1137,6 +1168,9 @@ function fmtSignup(s){
     h+=suSec('Practice',[['Name',pr.name],['Specialty',pr.specialty],['States',pr.states],['Phone',pr.phone],['Website',pr.website],['Address',pr.address]]);
     (p.providers||[]).forEach((d,i)=>h+=suSec('Doctor '+(i+1),[['Name',d.doctor_name],['Specialty',d.specialty],['Type',d.provider_type],['Body parts',d.body_parts],['States',d.states],['Monthly capacity',d.monthly_capacity],['EHR',d.ehr_system],['Phone',d.phone],['Fax',d.fax],['Languages',d.languages],['Accepts liens',d.lien_acceptance?'Yes':'No'],['NCP required',d.ncp_required?'Yes':'No'],['Accepts litigation',d.litigation_acceptance?'Yes':'No']]));
     (p.contacts||[]).forEach((c,i)=>h+=suSec('Contact '+(i+1),[['Name',c.name],['Role',c.role],['Email',c.email],['Phone',c.phone],['Receives referrals',c.receives_referrals?'Yes':'No']]));
+    if((p.services&&p.services.length)||(p.locations&&p.locations.length)||p.source_url){
+      h+=suSec('Imported details',[['Services / on-site',(p.services||[]).join(', ')],['Locations',(p.locations||[]).join(' | ')],['Source',p.source_url]]);
+    }
   }else{
     const f=p.firm||{};
     h+=suSec('Firm',[['Name',f.name],['Practice area',f.type],['Phone',f.phone],['Website',f.website],['Address',f.address]]);
@@ -1185,7 +1219,8 @@ async function approveSignup(id){
   try{
     if(s.type==='provider'){
       const pr=p.practice||{};
-      const {data:prac,error:pe}=await sbClient.from('practices').insert({name:pr.name||p.submitter?.name||'New practice',specialty:pr.specialty||null,states:pr.states||null,address:pr.address||null,website:pr.website||null,status:'active'}).select().single();
+      const impNotes=[(p.services&&p.services.length)?('Services: '+p.services.join(', ')):'',(p.locations&&p.locations.length)?('Locations: '+p.locations.join(' | ')):'',p.source_url?('Imported from '+p.source_url):''].filter(Boolean).join(' | ')||null;
+      const {data:prac,error:pe}=await sbClient.from('practices').insert({name:pr.name||p.submitter?.name||'New practice',specialty:pr.specialty||null,states:pr.states||null,address:pr.address||null,website:pr.website||null,status:'active',notes:impNotes}).select().single();
       if(pe)throw pe;
       const provs=(p.providers||[]).filter(d=>d.doctor_name);
       let firstProvId=null;
