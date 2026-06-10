@@ -103,6 +103,15 @@ function renderAccepted(c){
       <div class="muted" id="cm-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
     </div>
     <div class="box">
+      <h3>Update scheduling</h3>
+      <div class="muted" style="margin-bottom:8px;">One tap — we relay it to the attorney's office.</div>
+      <a class="btn accept" onclick="schedFromPage('scheduled')">✅ Scheduled</a>
+      <a class="btn" style="background:#eef5fc;color:#1a2230;" onclick="schedFromPage('pending')">Pending patient contact</a>
+      <a class="btn" style="background:#eef5fc;color:#1a2230;" onclick="schedFromPage('unable')">Unable to reach</a>
+      <a class="btn decline" onclick="schedFromPage('cannot')">Cannot accept</a>
+      <div class="muted" id="sched-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
+    </div>
+    <div class="box">
       <h3>Request ancillary services</h3>
       <div class="muted" style="margin-bottom:8px;">One-click — we coordinate the rest.</div>
       ${pillsHtml(d.case_id||'')}
@@ -115,9 +124,30 @@ async function doAccept(){card.innerHTML='<div class="muted">Accepting…</div>'
   renderAccepted(data.case);}
 async function doDecline(){card.innerHTML='<div class="muted">Submitting…</div>';await sb.rpc('decline_referral',{p_token:token});
   card.innerHTML='<h2>Thank you</h2><p class="muted">You\'ve declined this referral — no further action needed. We appreciate you letting us know.<br><br>— The MDconcierge Coordination Team</p>';}
+const SCHED_MSG={scheduled:'appointment recorded',pending:'pending patient contact',unable:'unable to reach the patient',cannot:'unable to take this referral'};
+async function schedFromPage(status){
+  let appt='';
+  if(status==='scheduled'){appt=prompt('Appointment date & time (e.g. 6/20 at 10:00am):')||'';if(!appt)return;}
+  const el=document.getElementById('sched-done'); if(el)el.textContent='Saving…';
+  const {data,error}=await sb.rpc('set_schedule_status',{p_token:token,p_status:status,p_appt:appt});
+  if(error||!data||!data.ok){if(el)el.textContent='Could not save — please try again.';return;}
+  if(el)el.textContent={scheduled:'✓ Scheduled'+(appt?(' for '+appt):'')+' — the attorney will be notified.',pending:'✓ Marked pending patient contact.',unable:'✓ Marked unable to reach — we\'ll follow up.',cannot:'✓ Noted — we\'ll re-route this one.'}[status]||'✓ Saved';
+}
+async function doSchedule(status){
+  let appt='';
+  if(status==='scheduled'){appt=prompt('Appointment date & time (e.g. 6/20 at 10:00am):')||'';}
+  card.innerHTML='<div class="muted">Saving…</div>';
+  const {data,error}=await sb.rpc('set_schedule_status',{p_token:token,p_status:status,p_appt:appt});
+  if(error||!data||!data.ok){card.innerHTML='<h2>Link not valid</h2><p class="muted">This link is invalid or expired. Please contact referrals@mdconcierge.net.</p>';return;}
+  const m={scheduled:'Thank you — appointment recorded'+(appt?(' for '+appt):'')+'. We\'ll let the attorney\'s office know.',pending:'Noted — pending patient contact. Thank you for the update.',unable:'Noted — unable to reach the patient. Our team will follow up.',cannot:'Understood — you\'re unable to take this one. We\'ll re-route it. Thank you.'}[status]||'Update saved.';
+  card.innerHTML='<span class="pill">✓ Updated</span><h2 style="margin-top:12px;font-size:18px;">'+m+'</h2><p class="muted">— The MDconcierge Coordination Team</p>';
+}
 function renderChoice(){card.innerHTML=`<h2>New patient referral</h2><p class="muted">Accept to unlock the full patient details and one-click EHR / case-management import. The patient is represented by counsel.</p><a class="btn accept" onclick="doAccept()">✅ Accept &amp; view case</a><a class="btn decline" onclick="doDecline()">Decline</a>`;}
 if(!token){card.innerHTML='<h2>Invalid link</h2><p class="muted">Missing referral token.</p>';}
-else if(action==='accept'){doAccept();}else if(action==='decline'){doDecline();}else{renderChoice();}
+else if(action==='accept'){doAccept();}
+else if(action==='decline'){doDecline();}
+else if(['scheduled','pending','unable','cannot'].includes(action)){doSchedule(action);}
+else{renderChoice();}
 </script>
 </body>
 </html>
