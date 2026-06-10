@@ -112,6 +112,14 @@ function renderAccepted(c){
       <div class="muted" id="sched-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
     </div>
     <div class="box">
+      <h3>Report a case event</h3>
+      <div class="muted" style="margin-bottom:8px;">Got a UR, IME, or IRE notice? One tap — we handle the deadline.</div>
+      <a class="btn navy" onclick="reportFromPage('UR')">Report UR</a>
+      <a class="btn navy" onclick="reportFromPage('IME')">Report IME</a>
+      <a class="btn navy" onclick="reportFromPage('IRE')">Report IRE</a>
+      <div class="muted" id="report-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
+    </div>
+    <div class="box">
       <h3>Request ancillary services</h3>
       <div class="muted" style="margin-bottom:8px;">One-click — we coordinate the rest.</div>
       ${pillsHtml(d.case_id||'')}
@@ -142,11 +150,30 @@ async function doSchedule(status){
   const m={scheduled:'Thank you — appointment recorded'+(appt?(' for '+appt):'')+'. We\'ll let the attorney\'s office know.',pending:'Noted — pending patient contact. Thank you for the update.',unable:'Noted — unable to reach the patient. Our team will follow up.',cannot:'Understood — you\'re unable to take this one. We\'ll re-route it. Thank you.'}[status]||'Update saved.';
   card.innerHTML='<span class="pill">✓ Updated</span><h2 style="margin-top:12px;font-size:18px;">'+m+'</h2><p class="muted">— The MDconcierge Coordination Team</p>';
 }
+async function reportFromPage(type){
+  let detail='', deadline='';
+  if(type==='UR'){deadline=prompt('UR records deadline (e.g. 6/20/2026):')||'';detail='Records due to reviewer';}
+  else{detail=prompt('Any detail or date for the '+type+'? (optional):')||'';}
+  const el=document.getElementById('report-done'); if(el)el.textContent='Saving…';
+  const {data,error}=await sb.rpc('report_case_event',{p_token:token,p_type:type,p_detail:detail,p_deadline:deadline});
+  if(error||!data||!data.ok){if(el)el.textContent='Could not save — please try again.';return;}
+  if(el)el.textContent='✓ '+type+' reported'+(deadline?(' (due '+deadline+')'):'')+' — thank you, we\'re on it.';
+}
+async function doReport(type){
+  let detail='', deadline='';
+  if(type==='UR'){deadline=prompt('UR records deadline (e.g. 6/20/2026):')||'';detail='Records due to reviewer';}
+  else{detail=prompt('Any detail or date for the '+type+'? (optional):')||'';}
+  card.innerHTML='<div class="muted">Saving…</div>';
+  const {data,error}=await sb.rpc('report_case_event',{p_token:token,p_type:type,p_detail:detail,p_deadline:deadline});
+  if(error||!data||!data.ok){card.innerHTML='<h2>Link not valid</h2><p class="muted">This link is invalid or expired. Please contact referrals@mdconcierge.net.</p>';return;}
+  card.innerHTML='<span class="pill">✓ Reported</span><h2 style="margin-top:12px;font-size:18px;">Thank you — the '+type+' is logged'+(deadline?(' (due '+deadline+')'):'')+'. Our team is on it.</h2><p class="muted">— The MDconcierge Coordination Team</p>';
+}
 function renderChoice(){card.innerHTML=`<h2>New patient referral</h2><p class="muted">Accept to unlock the full patient details and one-click EHR / case-management import. The patient is represented by counsel.</p><a class="btn accept" onclick="doAccept()">✅ Accept &amp; view case</a><a class="btn decline" onclick="doDecline()">Decline</a>`;}
 if(!token){card.innerHTML='<h2>Invalid link</h2><p class="muted">Missing referral token.</p>';}
 else if(action==='accept'){doAccept();}
 else if(action==='decline'){doDecline();}
 else if(['scheduled','pending','unable','cannot'].includes(action)){doSchedule(action);}
+else if(/^report_(ur|ime|ire)$/i.test(action)){doReport(action.split('_')[1].toUpperCase());}
 else{renderChoice();}
 </script>
 </body>

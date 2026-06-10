@@ -472,7 +472,8 @@ function selL(id){
       <div class="dp-f"><span class="dp-fk">Scheduling</span><span class="dp-fv">${ehtml(l.scheduleStatus||'—')}${l.appointmentAt?(' · '+ehtml(l.appointmentAt)):''}</span></div>
     </div>
     <div><div class="dp-st">Punch list — missing items</div><div id="gaps-box"><div style="font-size:12px;color:var(--muted);">Loading…</div></div></div>
-    <div><div class="dp-st">Artifacts — records / bills / narratives</div><div id="artifacts-box"><div style="font-size:12px;color:var(--muted);">Loading…</div></div></div>`:'';
+    <div><div class="dp-st">Artifacts — records / bills / narratives</div><div id="artifacts-box"><div style="font-size:12px;color:var(--muted);">Loading…</div></div></div>
+    <div><div class="dp-st">Case events — UR / IME / IRE</div><div id="events-box"><div style="font-size:12px;color:var(--muted);">Loading…</div></div></div>`:'';
   document.getElementById('dp-body').innerHTML=`
     ${repB}
     <div><div class="dp-st">Case score</div><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted2);margin-bottom:4px;"><span>${l.score>=7?'Strong':l.score>=5?'Solid':'Needs review'}</span><span style="font-family:var(--mono)">${l.score}/10</span></div><div class="sc-track"><div class="sc-fill" style="width:${l.score*10}%;background:${sc}"></div></div></div>
@@ -483,7 +484,7 @@ function selL(id){
     ${rB}${dB}
     ${(l.status==='routed'||l.status==='scheduled')?`<div style="margin-top:14px;display:flex;gap:8px;">${l.status==='routed'?`<button onclick="markStatus(${l.id},'scheduled')" style="flex:1;padding:9px;background:transparent;border:1px solid var(--green);color:var(--green);border-radius:8px;font-size:12px;cursor:pointer;">✓ Mark scheduled</button>`:''}<button onclick="markStatus(${l.id},'closed')" style="flex:1;padding:9px;background:transparent;border:1px solid var(--muted2);color:var(--muted2);border-radius:8px;font-size:12px;cursor:pointer;">Mark closed</button></div>`:''}
     <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:14px;"><button onclick="deleteLead(${l.id})" style="width:100%;padding:9px;background:transparent;border:1px solid var(--red);color:var(--red);border-radius:8px;font-size:12px;cursor:pointer;">Delete lead</button></div>`;
-  if(l._supa){loadGaps(l.supaId);loadArtifacts(l.supaId);}
+  if(l._supa){loadGaps(l.supaId);loadArtifacts(l.supaId);loadEvents(l.supaId);}
   const act=document.getElementById('dp-act');
   act.style.display=(l.status==='new'||l.status==='review')?'flex':'none';
   const mA=ATTORNEYS.filter(a=>a.types.includes(l.caseType)&&a.status!=='full'&&a.states.includes(l.state));
@@ -555,6 +556,25 @@ async function requestArtifact(supaId){
 }
 async function markTransmitted(id,supaId){const {error}=await sbClient.from('case_artifacts').update({status:'transmitted',transmitted_at:new Date().toISOString()}).eq('id',id);if(error){showToast('Error: '+error.message);return;}loadArtifacts(supaId);showToast('Marked transmitted');}
 async function delArtifact(id,supaId){if(!confirm('Remove this artifact?'))return;const {error}=await sbClient.from('case_artifacts').delete().eq('id',id);if(error){showToast('Error: '+error.message);return;}loadArtifacts(supaId);}
+async function loadEvents(supaId){
+  const box=document.getElementById('events-box'); if(!box)return;
+  const {data,error}=await sbClient.from('events').select('*').eq('case_id',supaId).order('created_at',{ascending:false});
+  if(error){box.innerHTML='<div style="font-size:12px;color:var(--red);">'+error.message+'</div>';return;}
+  const rows=(data||[]).map(e=>{
+    const open=e.status!=='resolved';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;"><div style="flex:1;"><strong>${ehtml(e.event_type||'')}</strong>${e.deadline?` <span style="color:var(--gold2);">due ${ehtml(e.deadline)}</span>`:''} <span style="font-size:10px;color:var(--muted2);">${ehtml(e.actor||'')}</span>${e.note?` · <span style="color:var(--muted);">${ehtml(e.note)}</span>`:''}</div>${open?`<button class="btn-sm" onclick="resolveEvent(${e.id},${supaId})">Resolve</button>`:'<span style="color:var(--green);font-size:11px;">resolved</span>'}</div>`;
+  }).join('');
+  box.innerHTML=(rows||'<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">No events reported.</div>')+`<div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
+    <select id="ev-type" class="finput" style="width:80px;"><option>UR</option><option>IME</option><option>IRE</option><option value="Other">Other</option></select>
+    <input id="ev-deadline" class="finput" placeholder="deadline (optional)" style="flex:1;"/>
+    <button class="btn-sm" onclick="reportEventDash(${supaId})">+ Log</button></div>`;
+}
+async function reportEventDash(supaId){
+  const type=document.getElementById('ev-type').value, dl=document.getElementById('ev-deadline').value.trim();
+  const {error}=await sbClient.from('events').insert({case_id:supaId,event_type:type,actor:'eric',deadline:dl||null,status:'open',notified:false});
+  if(error){showToast('Error: '+error.message);return;}loadEvents(supaId);showToast(type+' logged');
+}
+async function resolveEvent(id,supaId){const {error}=await sbClient.from('events').update({status:'resolved'}).eq('id',id);if(error){showToast('Error: '+error.message);return;}loadEvents(supaId);}
 function renderActivity(){
   document.getElementById('act-feed').innerHTML=ACTIVITY.map(a=>`<div class="ai"><div class="ai-ic ic-${a.t==='new'?'new':a.t==='rt'?'rt':'dq'}">${a.ic}</div><div><div class="ai-txt">${a.tx}</div><div class="ai-time">${a.time}</div></div></div>`).join('');
 }
