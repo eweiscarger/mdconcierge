@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MDconcierge — Admin Tutorial</title>
+<style>
+  :root{--gold:#c8922a;--navy:#0b0f14;--ink:#1a2230;--muted:#6b7583;--line:#e3e6ea;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#eef0f3;font-family:'Segoe UI',system-ui,Arial,sans-serif;color:var(--ink);}
+  .wrap{max-width:880px;margin:0 auto;padding:20px 16px 40px;}
+  .hdr{background:var(--navy);border-radius:12px 12px 0 0;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+  .hdr .b{font-size:19px;font-weight:800;color:#fff;}.hdr .b span{color:var(--gold);}
+  .hdr .t{color:#8e97a3;font-size:12px;margin-top:2px;}
+  .hdr .role{font-size:12px;font-weight:700;color:var(--gold);border:1px solid var(--gold);border-radius:20px;padding:4px 12px;}
+  .stage{background:#fff;border:1px solid var(--line);border-top:none;padding:0;}
+  .prog{height:5px;background:#eef0f2;}
+  .prog>div{height:100%;background:var(--gold);transition:width .4s;}
+  .step{padding:26px 30px 8px;}
+  .kicker{font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;}
+  h2{margin:4px 0 14px;font-size:23px;}
+  .visual{border:1px solid var(--line);border-radius:12px;background:#f7f8fa;padding:18px;min-height:210px;}
+  .cap{margin:16px 0 8px;font-size:15px;line-height:1.6;color:#2a3340;}
+  .try{display:inline-block;margin-top:6px;font-size:13px;font-weight:700;color:#1a4e8a;text-decoration:none;border:1px solid #b8d4ee;background:#eef5fc;border-radius:8px;padding:7px 13px;}
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding:14px 30px;background:#fcfcfd;border-radius:0 0 12px 12px;border:1px solid var(--line);border-top:none;}
+  .btn{border:none;border-radius:9px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;}
+  .btn.g{background:var(--gold);color:#fff;}.btn.n{background:var(--navy);color:#fff;}.btn.o{background:#fff;border:1px solid #cdd3da;color:var(--ink);}
+  .btn:disabled{opacity:.4;cursor:default;}
+  .spacer{flex:1;}
+  .toggle{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;}
+  .dots{display:flex;gap:6px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:#cdd3da;cursor:pointer;}
+  .dot.on{background:var(--gold);}
+  .stepno{font-size:12px;color:var(--muted);}
+  /* mock UI bits */
+  .mock{font-size:13px;}
+  .m-side{display:inline-block;width:150px;vertical-align:top;background:var(--navy);border-radius:8px;padding:10px;color:#cfd6df;}
+  .m-side .li{padding:7px 9px;border-radius:6px;margin-bottom:3px;font-size:12px;}
+  .m-side .li.on{background:rgba(200,146,42,.22);color:#fff;font-weight:700;}
+  .m-main{display:inline-block;width:calc(100% - 162px);vertical-align:top;margin-left:8px;}
+  .m-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-bottom:8px;}
+  .m-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f0f2f4;}
+  .m-row:last-child{border:none;}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:2px 9px;}
+  .pill.new{background:#eef5fc;color:#1a4e8a;}.pill.routed{background:#eef7f1;color:#1e7a52;}.pill.warn{background:#fff8e8;color:#9a6700;}.pill.ok{background:#eaf7f0;color:#1e9e6a;}
+  .hl{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px;}
+  .note{font-size:12px;color:#8a5a00;background:#fdf6e8;border:1px solid #f0d79a;border-radius:7px;padding:8px 11px;margin-top:10px;}
+  .btn-mock{display:inline-block;background:var(--gold);color:#fff;font-size:12px;font-weight:700;border-radius:7px;padding:6px 12px;margin-top:4px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div><div class="b">MD<span>concierge</span></div><div class="t">Interactive Tutorial</div></div>
+    <div class="role">👤 For You — the Administrator</div>
+  </div>
+  <div class="stage">
+    <div class="prog"><div id="bar" style="width:0;"></div></div>
+    <div class="step">
+      <div class="kicker" id="kicker">Step</div>
+      <h2 id="title">…</h2>
+      <div class="visual" id="visual"></div>
+      <div class="cap" id="cap"></div>
+      <div id="trywrap"></div>
+    </div>
+  </div>
+  <div class="bar">
+    <button class="btn o" id="back" onclick="go(I-1)">◀ Back</button>
+    <button class="btn n" id="next" onclick="go(I+1)">Next ▶</button>
+    <button class="btn g" id="mute" onclick="toggleMute()">🔊 Sound on</button>
+    <label class="toggle"><input type="checkbox" id="subs" checked onchange="toggleSubs(this.checked)"/> 💬 Subtitles</label>
+    <label class="toggle"><input type="checkbox" id="auto" checked onchange="AUTO=this.checked"/> ⏭ Auto-advance</label>
+    <div class="spacer"></div>
+    <span class="stepno" id="stepno"></span>
+    <div class="dots" id="dots"></div>
+  </div>
+</div>
+<script>
+const SITE='https://mdconcierge.net/';
+const STEPS=[
+ {k:'Welcome',t:'This is your whole platform, in one place',
+  v:`<div class="mock"><div class="m-side"><div style="color:#fff;font-weight:800;margin-bottom:8px;">MD<span style="color:#c8922a;">concierge</span></div>
+     <div class="li on">📋 Lead Queue</div><div class="li">🏥 Provider Network</div><div class="li">🔐 Portal Accounts</div><div class="li">📝 Sign-ups</div><div class="li">💰 Revenue</div><div class="li">⚙️ Settings</div></div>
+     <div class="m-main"><div class="m-card"><b>Your admin dashboard</b><div style="color:#6b7583;font-size:12px;margin-top:4px;">Everything you manage lives behind this one login.</div></div></div></div>`,
+  say:"Welcome. This is the only screen you really need to learn. It's your admin dashboard, and everything you manage lives behind this one login. On the left is the menu: Lead Queue, Provider Network, Portal Accounts, Sign-ups, and so on. Let's walk through what each one does and how a case flows through the system.",
+  try:['Open your dashboard','admin-v2.html']},
+
+ {k:'Leads arrive on their own',t:'Referrals land in your Lead Queue automatically',
+  v:`<div class="mock"><div class="m-side"><div class="li on">📋 Lead Queue</div><div class="li">🏥 Provider Network</div><div class="li">🔐 Portal Accounts</div><div class="li">📝 Sign-ups</div></div>
+     <div class="m-main">
+     <div class="m-card"><div class="m-row"><span><b>Maria Lopez</b> · auto</span><span class="pill new">New</span></div></div>
+     <div class="m-card"><div class="m-row"><span><b>James Carter</b> · workers' comp</span><span class="pill new">New</span></div></div>
+     <div class="m-card"><div class="m-row"><span><b>Referral MDC-A-2026-…</b> · slip & fall</span><span class="pill warn">Review</span></div></div>
+     </div></div>`,
+  say:"When an attorney emails a referral, or someone finishes the InjuredGuide intake, a new lead shows up here by itself. You don't enter anything. A green 'New' tag means it came in clean. A yellow 'Review' tag means the robot wasn't fully sure and wants your eyes on it. Click any lead to open its full details.",
+  try:['See your Lead Queue','admin-v2.html']},
+
+ {k:'Send it to a provider',t:'Routing a lead takes two clicks',
+  v:`<div class="mock"><div class="m-main" style="width:100%;margin:0;">
+     <div class="m-card"><b>Maria Lopez — auto injury</b>
+       <div class="m-row"><span>Assign provider</span><span class="hl">▼ Riverside Ortho — Dr. Lee</span></div>
+       <div class="btn-mock hl">➤ Route this lead</div>
+       <div class="note">⚠ If a provider has no BAA on file yet, you'll get a warning before routing.</div>
+     </div></div></div>`,
+  say:"To put a case in motion, open the lead, pick a provider from the dropdown, and click Route. That's it. If you try to route to a provider who hasn't signed a Business Associate Agreement yet, the system warns you first, so records never flow to someone who isn't covered.",
+  try:['Try routing a lead','admin-v2.html']},
+
+ {k:'The robot takes over',t:'After you route, the automation does the chasing',
+  v:`<div class="mock"><div class="m-main" style="width:100%;margin:0;">
+     <div class="m-card"><span class="pill ok">✓ Automatic</span> Provider notified — "new referral, accept to view"</div>
+     <div class="m-card"><span class="pill ok">✓ Automatic</span> Gentle follow-up if they don't respond (up to 3×)</div>
+     <div class="m-card"><span class="pill ok">✓ Automatic</span> Appointment relayed back to the attorney</div>
+     <div class="m-card"><span class="pill ok">✓ Automatic</span> Missing info chased; flagged to you only if stuck</div>
+     </div></div>`,
+  say:"Here's the part that saves you. Once you route, the engine emails the provider a privacy-safe notice, follows up if they go quiet, relays the appointment back to the attorney, and chases any missing paperwork — all on its own. It only pings you when something is genuinely stuck and needs a human. You route; it nags.",
+  try:null},
+
+ {k:'Your network',t:'Manage providers, attorneys & vendors',
+  v:`<div class="mock"><div class="m-side"><div class="li">📋 Lead Queue</div><div class="li on">🏥 Provider Network</div></div>
+     <div class="m-main">
+     <div class="m-card"><div class="m-row"><span><b>Riverside Ortho</b> — Dr. Lee</span><span class="pill ok">✓ BAA</span></div></div>
+     <div class="m-card"><div class="m-row"><span><b>Premier Pain Mgmt</b></span><span class="pill warn">⚠ No BAA</span></div></div>
+     <div class="btn-mock">＋ Add provider</div></div></div>`,
+  say:"The Provider Network tab is your roster — medical providers, attorneys, and vendors. Each card shows whether they have a signed agreement on file, in green or amber. You can add or edit anyone by hand here, but as you'll see next, you usually won't have to, because they fill in their own details.",
+  try:['Open Provider Network','admin-v2.html']},
+
+ {k:'Self-serve onboarding',t:'Let partners enter their own info',
+  v:`<div class="mock"><div class="m-side"><div class="li on">📝 Sign-ups <span style="background:#c8922a;color:#fff;border-radius:10px;padding:0 6px;font-size:10px;">2</span></div></div>
+     <div class="m-main">
+     <div class="m-card hl"><b>Invite someone to onboard</b><div style="font-size:12px;color:#6b7583;">name + email → ✉ Send — we email them the form</div></div>
+     <div class="m-card"><div class="m-row"><span><b>Harbor Law</b> · attorney</span><span class="pill warn">Pending review</span></div><div class="btn-mock">✓ Approve &amp; add</div></div>
+     </div></div>`,
+  say:"This is the headache-killer. Instead of you collecting practice details and contacts, you go to the Sign-ups tab, type a person's name and email, and hit Send — they get a form to fill in themselves. When they submit, it lands here as 'Pending.' You review it and click Approve, and the system creates their whole record for you. You never do the data entry.",
+  try:['Open Sign-ups','admin-v2.html']},
+
+ {k:'Who can log in',t:'Portal Accounts — your partners’ logins',
+  v:`<div class="mock"><div class="m-side"><div class="li on">🔐 Portal Accounts</div></div>
+     <div class="m-main">
+     <div class="m-card"><div class="m-row"><span>Riverside Ortho</span><span class="pill ok">Active</span></div></div>
+     <div class="m-card"><div class="m-row"><span>someone@gmail.com</span><span class="pill warn">Held — review</span></div><div class="btn-mock">✓ Approve</div></div>
+     </div></div>`,
+  say:"Providers and attorneys can log into their own portal to see their cases. Those logins are created automatically when their first case is routed. The only ones that wait for you are sign-ups from free email addresses like gmail — those sit here as 'Held' so you can confirm they're legit before granting access. One click approves them.",
+  try:['Open Portal Accounts','admin-v2.html']},
+
+ {k:'Every case is tracked',t:'Records, events & a full activity log',
+  v:`<div class="mock"><div class="m-main" style="width:100%;margin:0;">
+     <div class="m-card"><b>Artifacts</b><div class="m-row"><span>Medical records</span><span class="pill ok">Sent</span></div><div class="m-row"><span>Work-status note</span><span class="pill warn">Requested</span></div></div>
+     <div class="m-card"><b>Activity &amp; access log</b><div style="font-size:12px;color:#6b7583;">provider notified · records forwarded · portal login · status viewed</div></div>
+     </div></div>`,
+  say:"Inside each case you'll find what records have been requested or sent, any reported events like a Utilization Review, and a complete activity log — every email sent, every document forwarded, every time someone logged in or viewed a case. If you ever need to prove who saw what and when, it's all right there.",
+  try:null},
+
+ {k:'That’s it',t:'You route and approve — the system does the rest',
+  v:`<div class="mock"><div class="m-main" style="width:100%;margin:0;">
+     <div class="m-card" style="text-align:center;padding:22px;"><div style="font-size:30px;">🎉</div><b>You’ve got it.</b>
+     <div style="color:#6b7583;font-size:13px;margin-top:6px;">Two daily jobs: <b>route</b> new leads, and <b>approve</b> sign-ups.<br>Everything else runs itself.</div></div>
+     </div></div>`,
+  say:"And that's the whole job. Day to day, you really do just two things: route new leads to a provider, and approve new sign-ups. The automation handles the notifying, the chasing, the scheduling, and the record-passing in the background. When you're ready, open your dashboard and try routing a test lead. You've got this.",
+  try:['Open your dashboard','admin-v2.html']},
+];
+
+// ---- narration engine ----
+let I=0, AUTO=true, MUTED=false, SUBS=true, VOICE=null;
+const hasTTS=('speechSynthesis' in window);
+function pickVoice(){
+  const vs=speechSynthesis.getVoices()||[];
+  const pref=['Daniel','Google UK English Male','Microsoft Guy Online','Microsoft David','Microsoft Mark','Alex','Arthur','Google US English'];
+  for(const n of pref){const v=vs.find(v=>v.name&&v.name.includes(n));if(v)return v;}
+  return vs.find(v=>/^en/i.test(v.lang)&&/male/i.test(v.name||''))||vs.find(v=>/^en/i.test(v.lang))||vs[0]||null;
+}
+function speak(text){
+  if(!hasTTS){ AUTO=false; return; }   // no voice support → don't auto-advance into silence
+  speechSynthesis.cancel();
+  if(MUTED)return;
+  const u=new SpeechSynthesisUtterance(text);
+  if(VOICE)u.voice=VOICE;
+  u.rate=0.94;u.pitch=0.85;
+  u.onend=()=>{ if(AUTO && !MUTED && I<STEPS.length-1) setTimeout(()=>{ if(AUTO) go(I+1); },800); };
+  speechSynthesis.speak(u);
+}
+function renderDots(){
+  document.getElementById('dots').innerHTML=STEPS.map((s,n)=>`<div class="dot ${n===I?'on':''}" onclick="go(${n})" title="${s.k}"></div>`).join('');
+}
+function go(n){
+  I=Math.max(0,Math.min(STEPS.length-1,n));
+  const s=STEPS[I];
+  document.getElementById('kicker').textContent='Step '+(I+1)+' · '+s.k;
+  document.getElementById('title').textContent=s.t;
+  document.getElementById('visual').innerHTML=s.v;
+  const cap=document.getElementById('cap');
+  cap.textContent=s.say;
+  cap.style.display=SUBS?'block':'none';
+  document.getElementById('trywrap').innerHTML=s.try?`<a class="try" href="${SITE}${s.try[1]}" target="_blank" rel="noopener">${s.try[0]} ↗</a>`:'';
+  document.getElementById('bar').style.width=(I/(STEPS.length-1)*100)+'%';
+  document.getElementById('back').disabled=(I===0);
+  document.getElementById('next').disabled=(I===STEPS.length-1);
+  document.getElementById('stepno').textContent=(I+1)+' / '+STEPS.length;
+  renderDots();
+  speak(s.say);
+}
+function toggleMute(){
+  MUTED=!MUTED;
+  document.getElementById('mute').textContent=MUTED?'🔇 Muted':'🔊 Sound on';
+  if(MUTED){ if(hasTTS)speechSynthesis.cancel(); }
+  else speak(STEPS[I].say);
+}
+function toggleSubs(on){ SUBS=on; document.getElementById('cap').style.display=SUBS?'block':'none'; }
+if(hasTTS){
+  VOICE=pickVoice();
+  speechSynthesis.onvoiceschanged=()=>{ if(!VOICE)VOICE=pickVoice(); };
+}
+window.addEventListener('beforeunload',()=>{try{speechSynthesis.cancel();}catch(e){}});
+go(0);
+</script>
+</body>
+</html>

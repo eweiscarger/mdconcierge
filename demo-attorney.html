@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MDconcierge — Attorney Tutorial</title>
+<style>
+  :root{--gold:#c8922a;--navy:#0b0f14;--ink:#1a2230;--muted:#6b7583;--line:#e3e6ea;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#eef0f3;font-family:'Segoe UI',system-ui,Arial,sans-serif;color:var(--ink);}
+  .wrap{max-width:880px;margin:0 auto;padding:20px 16px 40px;}
+  .hdr{background:var(--navy);border-radius:12px 12px 0 0;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+  .hdr .b{font-size:19px;font-weight:800;color:#fff;}.hdr .b span{color:var(--gold);}
+  .hdr .t{color:#8e97a3;font-size:12px;margin-top:2px;}
+  .hdr .role{font-size:12px;font-weight:700;color:var(--gold);border:1px solid var(--gold);border-radius:20px;padding:4px 12px;}
+  .stage{background:#fff;border:1px solid var(--line);border-top:none;padding:0;}
+  .prog{height:5px;background:#eef0f2;}
+  .prog>div{height:100%;background:var(--gold);transition:width .4s;}
+  .step{padding:26px 30px 8px;}
+  .kicker{font-size:12px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;}
+  h2{margin:4px 0 14px;font-size:23px;}
+  .visual{border:1px solid var(--line);border-radius:12px;background:#f7f8fa;padding:18px;min-height:210px;}
+  .cap{margin:16px 0 8px;font-size:15px;line-height:1.6;color:#2a3340;}
+  .try{display:inline-block;margin-top:6px;font-size:13px;font-weight:700;color:#1a4e8a;text-decoration:none;border:1px solid #b8d4ee;background:#eef5fc;border-radius:8px;padding:7px 13px;}
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--line);padding:14px 30px;background:#fcfcfd;border-radius:0 0 12px 12px;border:1px solid var(--line);border-top:none;}
+  .btn{border:none;border-radius:9px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;}
+  .btn.g{background:var(--gold);color:#fff;}.btn.n{background:var(--navy);color:#fff;}.btn.o{background:#fff;border:1px solid #cdd3da;color:var(--ink);}
+  .btn:disabled{opacity:.4;cursor:default;}
+  .spacer{flex:1;}
+  .toggle{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer;}
+  .dots{display:flex;gap:6px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:#cdd3da;cursor:pointer;}
+  .dot.on{background:var(--gold);}
+  .stepno{font-size:12px;color:var(--muted);}
+  .mock{font-size:13px;}
+  .m-card{background:#fff;border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-bottom:8px;}
+  .m-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f0f2f4;}
+  .m-row:last-child{border:none;}
+  .pill{display:inline-block;font-size:11px;font-weight:700;border-radius:20px;padding:2px 9px;}
+  .pill.new{background:#eef5fc;color:#1a4e8a;}.pill.routed{background:#eef7f1;color:#1e7a52;}.pill.warn{background:#fff8e8;color:#9a6700;}.pill.ok{background:#eaf7f0;color:#1e9e6a;}
+  .hl{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px;}
+  .note{font-size:12px;color:#8a5a00;background:#fdf6e8;border:1px solid #f0d79a;border-radius:7px;padding:8px 11px;margin-top:10px;}
+  .btn-mock{display:inline-block;background:var(--gold);color:#fff;font-size:12px;font-weight:700;border-radius:7px;padding:6px 12px;margin-top:4px;}
+  .email{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .email .eh{background:var(--navy);color:#fff;padding:8px 12px;font-size:12px;}
+  .email .eb{padding:12px;font-size:12.5px;color:#2a3340;}
+  .tl{margin:4px 0;}
+  .tl .ti{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:4px 0;}
+  .tl .d{width:14px;height:14px;border-radius:50%;border:2px solid #cdd3da;background:#fff;flex:none;}
+  .tl .d.done{background:#2ecc8a;border-color:#2ecc8a;}.tl .d.now{background:var(--gold);border-color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div><div class="b">MD<span>concierge</span></div><div class="t">Interactive Tutorial</div></div>
+    <div class="role">⚖️ For Attorneys</div>
+  </div>
+  <div class="stage">
+    <div class="prog"><div id="bar" style="width:0;"></div></div>
+    <div class="step">
+      <div class="kicker" id="kicker">Step</div>
+      <h2 id="title">…</h2>
+      <div class="visual" id="visual"></div>
+      <div class="cap" id="cap"></div>
+      <div id="trywrap"></div>
+    </div>
+  </div>
+  <div class="bar">
+    <button class="btn o" id="back" onclick="go(I-1)">◀ Back</button>
+    <button class="btn n" id="next" onclick="go(I+1)">Next ▶</button>
+    <button class="btn g" id="mute" onclick="toggleMute()">🔊 Sound on</button>
+    <label class="toggle"><input type="checkbox" id="subs" checked onchange="toggleSubs(this.checked)"/> 💬 Subtitles</label>
+    <label class="toggle"><input type="checkbox" id="auto" checked onchange="AUTO=this.checked"/> ⏭ Auto-advance</label>
+    <div class="spacer"></div>
+    <span class="stepno" id="stepno"></span>
+    <div class="dots" id="dots"></div>
+  </div>
+</div>
+<script>
+const SITE='https://mdconcierge.net/';
+const STEPS=[
+ {k:'Welcome',t:'MDconcierge coordinates care for your clients',
+  v:`<div class="mock"><div class="m-card"><b>What we do for your firm</b><div style="color:#6b7583;font-size:12px;margin-top:6px;">You refer an injured client → we find the right provider, get them scheduled, chase the records, and keep you posted — so your staff stops playing phone tag with doctors' offices.</div></div></div>`,
+  say:"Welcome. MDconcierge takes the medical-coordination headache off your plate. You refer an injured client to us, and we find the right treating provider, get them scheduled, chase down the records, and keep you updated the whole way. Let me show you how simple it is on your end.",
+  try:null},
+
+ {k:'Refer a client',t:'Two ways to send us a client',
+  v:`<div class="mock"><div class="m-card hl"><b>Option 1 — the quick form</b><div style="font-size:12px;color:#6b7583;">Fill in the client + injury on our Refer a Client page.</div><div class="btn-mock">Refer a Client ➤</div></div>
+     <div class="m-card"><b>Option 2 — just email us</b><div style="font-size:12px;color:#6b7583;">Forward the details to <b>referrals@mdconcierge.net</b> — our system reads it and creates the case automatically.</div></div></div>`,
+  say:"There are two ways to refer a client. You can fill in our quick Refer a Client form, or you can simply email the details to referrals at mdconcierge dot net. Either way, our system reads it and opens the case automatically. No portal required just to send us someone.",
+  try:['Open the Refer a Client form','refer.html']},
+
+ {k:'Instant confirmation',t:'You get an acknowledgment and a reference number',
+  v:`<div class="email"><div class="eh">MDconcierge Coordination · Re: Your referral</div>
+     <div class="eb">Thank you for trusting us with Maria Lopez. We've received the referral — reference <b>MDC-A-2026-104872</b> — and our team is already coordinating care.<br><br>📊 View live status &nbsp; · &nbsp; Reply to coordinate</div></div>`,
+  say:"Within moments you'll get a branded confirmation email with a reference number for the case. From here on, every update ties back to that number, so nothing gets lost.",
+  try:null},
+
+ {k:'Your login',t:'Set up your portal — one time',
+  v:`<div class="mock"><div class="m-card"><b>Set up your MDconcierge portal login</b><div style="font-size:12px;color:#6b7583;margin:6px 0;">Create a password once. After that, sign in anytime — no hunting through email.</div><div class="btn-mock hl">🔐 Set up my login</div></div></div>`,
+  say:"The first time we coordinate a case for you, you'll get an invitation to set up a portal login. You pick a password once. After that, you can sign in anytime to see your cases — no more digging through your inbox for the right link.",
+  try:['See the portal sign-in','portal.html']},
+
+ {k:'All your cases',t:'One screen shows every client we’re handling',
+  v:`<div class="mock">
+     <div class="m-card"><div class="m-row"><span><b>Maria Lopez</b> · auto</span><span class="pill routed">With provider</span></div></div>
+     <div class="m-card"><div class="m-row"><span><b>James Carter</b> · workers' comp</span><span class="pill ok">Scheduled</span></div></div>
+     <div class="m-card"><div class="m-row"><span><b>Dana White</b> · slip & fall</span><span class="pill new">Matched</span></div></div></div>`,
+  say:"When you log in, you see every client we're coordinating for you, each with its current status at a glance — matched with a provider, scheduled, or in progress. Your whole caseload, in one place.",
+  try:['Open the portal','portal.html']},
+
+ {k:'Live status',t:'Click any case for a live progress timeline',
+  v:`<div class="mock"><div class="m-card"><b>Maria Lopez — MDC-A-2026-104872</b>
+     <div class="tl">
+       <div class="ti"><span class="d done"></span> Referral received</div>
+       <div class="ti"><span class="d done"></span> Matched with Riverside Ortho</div>
+       <div class="ti"><span class="d done"></span> Provider accepted</div>
+       <div class="ti"><span class="d now"></span> Appointment being scheduled</div>
+       <div class="ti"><span class="d"></span> Coordination complete</div>
+     </div></div></div>`,
+  say:"Open any case and you get a live progress timeline — referral received, matched, accepted, scheduled, and so on. You can see exactly where things stand without calling anyone. It updates itself as the case moves.",
+  try:null},
+
+ {k:'Report an event',t:'Got a UR, IME, or IRE notice? One tap',
+  v:`<div class="mock"><div class="m-card"><b>Report a case event</b><div style="font-size:12px;color:#6b7583;margin:6px 0;">One tap and we handle the deadline with the provider.</div>
+     <span class="btn-mock">Report UR</span> <span class="btn-mock">Report IME</span> <span class="btn-mock">Report IRE</span></div></div>`,
+  say:"If a Utilization Review, an I-M-E, or an I-R-E comes up, you can report it with one tap — from the email or the portal. For a U-R, we immediately push the provider to get records to the reviewer before the deadline, since late records usually mean a denial. We surface it; we never give legal advice.",
+  try:null},
+
+ {k:'We keep you posted',t:'Appointments and records come back to you',
+  v:`<div class="email"><div class="eh">MDconcierge Coordination · Scheduled</div>
+     <div class="eb">Good news — Maria Lopez is scheduled for <b>June 20 at 10:00am</b> with Riverside Ortho. We'll keep you posted as things progress.<br><br>📊 View live status</div></div>`,
+  say:"When the appointment is set, we email it to you automatically. As records move between the provider and your office, we pass them along — we're the conduit, and we don't store anything. You stay informed without lifting a finger.",
+  try:null},
+
+ {k:'That’s it',t:'Refer, then relax — we run the coordination',
+  v:`<div class="mock"><div class="m-card" style="text-align:center;padding:22px;"><div style="font-size:30px;">⚖️</div><b>You’re set.</b><div style="color:#6b7583;font-size:13px;margin-top:6px;">Send us a client, and check the portal whenever you want an update.</div></div></div>`,
+  say:"And that's all there is to it. Refer a client, and check your portal whenever you'd like an update. We handle the providers, the scheduling, the records, and the follow-up. Welcome aboard.",
+  try:['Refer your first client','refer.html']},
+];
+
+let I=0, AUTO=true, MUTED=false, SUBS=true, VOICE=null;
+const hasTTS=('speechSynthesis' in window);
+function pickVoice(){
+  const vs=speechSynthesis.getVoices()||[];
+  const pref=['Daniel','Google UK English Male','Microsoft Guy Online','Microsoft David','Microsoft Mark','Alex','Arthur','Google US English'];
+  for(const n of pref){const v=vs.find(v=>v.name&&v.name.includes(n));if(v)return v;}
+  return vs.find(v=>/^en/i.test(v.lang)&&/male/i.test(v.name||''))||vs.find(v=>/^en/i.test(v.lang))||vs[0]||null;
+}
+function speak(text){
+  if(!hasTTS){ AUTO=false; return; }
+  speechSynthesis.cancel();
+  if(MUTED)return;
+  const u=new SpeechSynthesisUtterance(text);
+  if(VOICE)u.voice=VOICE;
+  u.rate=0.94;u.pitch=0.85;
+  u.onend=()=>{ if(AUTO && !MUTED && I<STEPS.length-1) setTimeout(()=>{ if(AUTO) go(I+1); },800); };
+  speechSynthesis.speak(u);
+}
+function renderDots(){ document.getElementById('dots').innerHTML=STEPS.map((s,n)=>`<div class="dot ${n===I?'on':''}" onclick="go(${n})" title="${s.k}"></div>`).join(''); }
+function go(n){
+  I=Math.max(0,Math.min(STEPS.length-1,n));
+  const s=STEPS[I];
+  document.getElementById('kicker').textContent='Step '+(I+1)+' · '+s.k;
+  document.getElementById('title').textContent=s.t;
+  document.getElementById('visual').innerHTML=s.v;
+  const cap=document.getElementById('cap'); cap.textContent=s.say; cap.style.display=SUBS?'block':'none';
+  document.getElementById('trywrap').innerHTML=s.try?`<a class="try" href="${SITE}${s.try[1]}" target="_blank" rel="noopener">${s.try[0]} ↗</a>`:'';
+  document.getElementById('bar').style.width=(I/(STEPS.length-1)*100)+'%';
+  document.getElementById('back').disabled=(I===0);
+  document.getElementById('next').disabled=(I===STEPS.length-1);
+  document.getElementById('stepno').textContent=(I+1)+' / '+STEPS.length;
+  renderDots(); speak(s.say);
+}
+function toggleMute(){
+  MUTED=!MUTED;
+  document.getElementById('mute').textContent=MUTED?'🔇 Muted':'🔊 Sound on';
+  if(MUTED){ if(hasTTS)speechSynthesis.cancel(); } else speak(STEPS[I].say);
+}
+function toggleSubs(on){ SUBS=on; document.getElementById('cap').style.display=SUBS?'block':'none'; }
+if(hasTTS){ VOICE=pickVoice(); speechSynthesis.onvoiceschanged=()=>{ if(!VOICE)VOICE=pickVoice(); }; }
+window.addEventListener('beforeunload',()=>{try{speechSynthesis.cancel();}catch(e){}});
+go(0);
+</script>
+</body>
+</html>
