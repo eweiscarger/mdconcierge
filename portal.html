@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MDconcierge — Partner Portal</title>
+<style>
+  body{margin:0;background:#f4f5f7;font-family:'Segoe UI',system-ui,Arial,sans-serif;color:#1a2230;}
+  .wrap{max-width:680px;margin:0 auto;padding:24px 16px 60px;}
+  .hdr{background:#0b0f14;border-radius:12px 12px 0 0;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;}
+  .hdr .b{font-size:20px;font-weight:800;color:#fff;}.hdr .b span{color:#c8922a;}
+  .hdr .t{color:#8e97a3;font-size:12px;margin-top:2px;}
+  .hdr .out{color:#8e97a3;font-size:12px;text-decoration:none;cursor:pointer;}
+  .hdr .out:hover{color:#fff;}
+  .card{background:#fff;border:1px solid #e3e6ea;border-top:none;border-radius:0 0 12px 12px;padding:24px;}
+  h2{margin:0 0 6px;font-size:19px;}h3{font-size:13px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.5px;color:#6b7583;}
+  .muted{color:#6b7583;font-size:13px;}
+  label{display:block;font-size:13px;font-weight:600;margin:14px 0 5px;}
+  input{width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #cdd3da;border-radius:9px;font-size:15px;}
+  input:focus{outline:none;border-color:#c8922a;}
+  .btn{display:inline-block;padding:12px 22px;margin:16px 0 0;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;}
+  .gold{background:#c8922a;color:#fff;}.gold:hover{background:#b07f1f;}
+  .navy{background:#1a2230;color:#fff;}
+  .err{color:#c0392b;font-size:13px;margin-top:10px;font-weight:600;min-height:16px;}
+  .cs{border:1px solid #e3e6ea;border-radius:11px;padding:16px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
+  .cs:hover{border-color:#c8922a;}
+  .cs .info{min-width:0;}
+  .cs .nm{font-size:15px;font-weight:700;}
+  .cs .rf{font-size:12px;color:#6b7583;margin-top:2px;}
+  .badge{display:inline-block;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700;margin-top:6px;}
+  .lock{display:inline-block;font-size:11px;color:#9a6700;background:#fef6e7;border:1px solid #f0d79a;border-radius:20px;padding:3px 10px;margin-top:6px;}
+  .open{white-space:nowrap;}
+  .empty{text-align:center;color:#6b7583;padding:30px 10px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <div><div class="b">MD<span>concierge</span></div><div class="t">Partner Portal</div></div>
+    <a class="out" id="logout" style="display:none;" onclick="logout()">Sign out</a>
+  </div>
+  <div class="card" id="card"><div class="muted">Loading…</div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
+const SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const params=new URLSearchParams(location.search);
+const setupTok=params.get('setup')||'';
+const card=document.getElementById('card');
+const SESS_KEY='mdc_portal_session';
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function cap(s){s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1);}
+function getSess(){try{return localStorage.getItem(SESS_KEY)||'';}catch(e){return'';}}
+function setSess(t){try{t?localStorage.setItem(SESS_KEY,t):localStorage.removeItem(SESS_KEY);}catch(e){}}
+function showLogoutBtn(on){document.getElementById('logout').style.display=on?'inline':'none';}
+
+const STATUS_LABEL={new:'Received',review:'In review',routed:'With you',scheduled:'Scheduled',accepted:'Accepted',declined:'Declined',closed:'Closed',escalated:'Needs attention'};
+const STATUS_COLOR={new:'#eef5fc;#1a4e8a',review:'#fef6e7;#9a6700',routed:'#eef7f1;#1e7a52',scheduled:'#eaf7f0;#1e9e6a',accepted:'#eaf7f0;#1e9e6a',closed:'#eef0f2;#6b7583',declined:'#fdeceb;#c0392b',escalated:'#fdeceb;#c0392b'};
+
+// ---------- set-password (from invite link) ----------
+function showSetup(){
+  showLogoutBtn(false);
+  card.innerHTML=`<h2>Set up your portal login</h2>
+    <p class="muted">Create a password to access your MDconcierge cases anytime — no more hunting for email links.</p>
+    <label>New password <span class="muted">(at least 8 characters)</span></label>
+    <input id="p1" type="password" autocomplete="new-password"/>
+    <label>Confirm password</label>
+    <input id="p2" type="password" autocomplete="new-password"/>
+    <div class="err" id="e"></div>
+    <button class="btn gold" onclick="doSetPassword()">Set password &amp; sign in</button>`;
+}
+async function doSetPassword(){
+  const p1=document.getElementById('p1').value, p2=document.getElementById('p2').value;
+  const e=document.getElementById('e');
+  if(p1.length<8){e.textContent='Password must be at least 8 characters.';return;}
+  if(p1!==p2){e.textContent='Passwords do not match.';return;}
+  e.textContent='Saving…';
+  const {data,error}=await sb.rpc('portal_set_password',{p_setup_token:setupTok,p_password:p1});
+  if(error||!data||!data.ok){
+    e.textContent=(data&&data.error==='expired')?'This setup link has expired — contact referrals@mdconcierge.net for a new one.'
+      :(data&&data.error==='weak')?'Password must be at least 8 characters.'
+      :'This setup link is not valid. Contact referrals@mdconcierge.net.';
+    return;
+  }
+  setSess(data.session_token);
+  history.replaceState(null,'',location.pathname);
+  loadCases();
+}
+
+// ---------- login ----------
+function showLogin(msg){
+  showLogoutBtn(false);
+  card.innerHTML=`<h2>Sign in</h2>
+    <p class="muted">Access the cases coordinated for you.</p>
+    <label>Email</label><input id="em" type="email" autocomplete="username"/>
+    <label>Password</label><input id="pw" type="password" autocomplete="current-password"/>
+    <div class="err" id="e">${msg?esc(msg):''}</div>
+    <button class="btn gold" onclick="doLogin()">Sign in</button>
+    <p class="muted" style="margin-top:18px;">No account yet? You'll get a one-time setup link by email when a case is routed to you. Questions: <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a></p>`;
+  const pw=document.getElementById('pw');
+  if(pw)pw.addEventListener('keydown',ev=>{if(ev.key==='Enter')doLogin();});
+}
+async function doLogin(){
+  const em=document.getElementById('em').value.trim(), pw=document.getElementById('pw').value;
+  const e=document.getElementById('e');
+  if(!em||!pw){e.textContent='Enter your email and password.';return;}
+  e.textContent='Signing in…';
+  const {data,error}=await sb.rpc('portal_login',{p_email:em,p_password:pw});
+  if(error||!data||!data.ok){e.textContent='Email or password not recognized.';return;}
+  setSess(data.session_token);
+  loadCases();
+}
+
+// ---------- my cases ----------
+async function loadCases(){
+  const tok=getSess();
+  if(!tok){showLogin();return;}
+  showLogoutBtn(true);
+  card.innerHTML='<div class="muted">Loading your cases…</div>';
+  const {data,error}=await sb.rpc('portal_my_cases',{p_token:tok});
+  if(error||!data||!data.ok){setSess('');showLogin('Your session expired — please sign in again.');return;}
+  renderCases(data);
+}
+function caseRow(c){
+  const sc=(STATUS_COLOR[c.status]||'#eef0f2;#6b7583').split(';');
+  const name = c.locked ? (cap(esc(c.case_type||'Referral'))+(c.injury_type?(' · '+esc(c.injury_type)):''))
+                        : esc(c.patient||('Referral '+c.case_id));
+  const stat = `<span class="badge" style="background:${sc[0]};color:${sc[1]};">${esc(STATUS_LABEL[c.status]||cap(c.status||'In progress'))}</span>`;
+  const lock = c.locked ? ' <span class="lock">🔒 details unlock on accept</span>' : '';
+  const appt = c.appointment_at ? `<div class="rf">Appt: ${esc(c.appointment_at)}</div>` : '';
+  const url = (c.link_role==='provider'?'respond.html?t=':'status.html?t=')+encodeURIComponent(c.token||'');
+  const openLbl = c.link_role==='provider' ? (c.locked?'Review &amp; accept':'Open case') : 'View status';
+  return `<div class="cs"><div class="info">
+      <div class="nm">${name}</div>
+      <div class="rf">Reference ${esc(c.case_id||'')}</div>${appt}
+      <div>${stat}${lock}</div>
+    </div>
+    <a class="btn navy open" style="margin:0;" href="${url}" target="_blank" rel="noopener">${openLbl}</a></div>`;
+}
+function renderCases(d){
+  const cases=d.cases||[];
+  const hi = d.name ? ('Welcome, '+esc(d.name)) : 'Your cases';
+  let body;
+  if(!cases.length){
+    body='<div class="empty">No cases yet.<br><span class="muted">When a case is coordinated for you, it will appear here.</span></div>';
+  } else {
+    const open=cases.filter(c=>!['closed','declined'].includes(c.status));
+    const done=cases.filter(c=>['closed','declined'].includes(c.status));
+    body = open.map(caseRow).join('')
+      + (done.length?`<h3 style="margin-top:24px;">Closed</h3>`+done.map(caseRow).join(''):'');
+  }
+  card.innerHTML=`<h2>${hi}</h2>
+    <p class="muted">${d.role==='provider'?'Cases referred to your practice.':'Cases we\'re coordinating for your clients.'} Click any case to open it.</p>
+    ${body}
+    <p class="muted" style="margin-top:22px;">Questions on any case? Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a>.</p>`;
+}
+function logout(){setSess('');showLogin('Signed out.');}
+
+// ---------- route ----------
+if(setupTok){showSetup();}
+else if(getSess()){loadCases();}
+else{showLogin();}
+</script>
+</body>
+</html>
