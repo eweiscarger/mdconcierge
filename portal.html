@@ -31,6 +31,17 @@
   .lock{display:inline-block;font-size:11px;color:#9a6700;background:#fef6e7;border:1px solid #f0d79a;border-radius:20px;padding:3px 10px;margin-top:6px;}
   .open{white-space:nowrap;}
   .empty{text-align:center;color:#6b7583;padding:30px 10px;}
+  .psec{border:1px solid #e3e6ea;border-radius:11px;padding:16px;margin-top:16px;}
+  .psec h3{margin:0 0 6px;}
+  .prep{border:1px dashed #cdd3da;border-radius:9px;padding:14px;margin-top:12px;position:relative;}
+  .prm{position:absolute;top:8px;right:10px;background:none;border:none;color:#c0392b;font-size:12px;font-weight:700;cursor:pointer;}
+  .padd{background:#eef5fc;border:1px solid #b8d4ee;color:#1a4e8a;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-top:12px;}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;}
+  .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px;align-items:center;}
+  @media(max-width:560px){.g2,.g3{grid-template-columns:1fr;}}
+  .ck{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;margin-top:12px;}
+  .ck input{width:auto;}
+  .err{color:#c0392b;font-size:13px;margin-top:12px;font-weight:600;min-height:16px;}
 </style>
 </head>
 <body>
@@ -152,9 +163,119 @@ function renderCases(d){
       + (done.length?`<h3 style="margin-top:24px;">Closed</h3>`+done.map(caseRow).join(''):'');
   }
   card.innerHTML=`<h2>${hi}</h2>
+    <div style="margin:2px 0 8px;"><a onclick="showProfile()" style="font-size:13px;font-weight:600;color:#1a4e8a;cursor:pointer;">✏️ Edit my ${d.role==='provider'?'practice info':'firm info'}</a></div>
     <p class="muted">${d.role==='provider'?'Cases referred to your practice.':'Cases we\'re coordinating for your clients.'} Click any case to open it.</p>
     ${body}
     <p class="muted" style="margin-top:22px;">Questions on any case? Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a>.</p>`;
+}
+// ---------- self-service profile editing ----------
+const PROV_TYPES=['Orthopaedic Surgeon','Orthopaedics','Pain Management','Physical Therapy','Chiropractic','Neurology','Neurosurgery','Imaging / Radiology','Primary Care','Podiatry','Psychology / Psychiatry','Dental / Maxillofacial','Other'];
+const FIRM_TYPES=['Personal Injury','Workers’ Compensation','Auto / MVA','Social Security Disability','Mass Tort','Medical Malpractice','General Practice','Other'];
+function fv(v){return esc(v==null?'':v);}
+function selOpts(list,cur){return list.map(o=>`<option ${o===cur?'selected':''}>${esc(o)}</option>`).join('');}
+function chk(v){return v?'checked':'';}
+function rmBtn(){return `<button type="button" class="prm" onclick="rmRow(this)">✕ remove</button>`;}
+function rmRow(btn){const row=btn.closest('[data-id]');if(row.getAttribute('data-id')){row.setAttribute('data-remove','1');row.style.display='none';}else row.remove();}
+function docRow(d){d=d||{};return `<div class="prep" data-id="${d.id||''}">${rmBtn()}
+  <label>Doctor / clinician name</label><input data-f="doctor_name" value="${fv(d.doctor_name)}"/>
+  <div class="g2"><div><label>Specialty</label><input data-f="specialty" value="${fv(d.specialty)}"/></div>
+  <div><label>Provider type</label><select data-f="provider_type">${selOpts(PROV_TYPES,d.provider_type)}</select></div></div>
+  <label>Body parts / areas</label><input data-f="body_parts" value="${fv(d.body_parts)}" placeholder="Lumbar spine, Knee"/>
+  <div class="g3"><div><label>States</label><input data-f="states" value="${fv(d.states)}"/></div>
+  <div><label>Monthly capacity</label><input data-f="monthly_capacity" type="number" min="0" value="${fv(d.monthly_capacity)}"/></div>
+  <div><label>EHR</label><input data-f="ehr_system" value="${fv(d.ehr_system)}"/></div></div>
+  <div class="g2"><div><label>Phone</label><input data-f="phone" value="${fv(d.phone)}"/></div>
+  <div><label>Fax</label><input data-f="fax" value="${fv(d.fax)}"/></div></div>
+  <label>Languages</label><input data-f="languages" value="${fv(d.languages)}"/>
+  <div class="g3"><label class="ck"><input type="checkbox" data-f="lien_acceptance" ${chk(d.lien_acceptance)}/> Accepts liens</label>
+  <label class="ck"><input type="checkbox" data-f="ncp_required" ${chk(d.ncp_required)}/> NCP required</label>
+  <label class="ck"><input type="checkbox" data-f="litigation_acceptance" ${chk(d.litigation_acceptance)}/> Litigation OK</label></div></div>`;}
+function conRow(c){c=c||{};return `<div class="prep" data-id="${c.id||''}">${rmBtn()}
+  <div class="g2"><div><label>Contact name</label><input data-f="name" value="${fv(c.name)}"/></div>
+  <div><label>Role</label><input data-f="role" value="${fv(c.role)}"/></div></div>
+  <div class="g2"><div><label>Email</label><input data-f="email" type="email" value="${fv(c.email)}"/></div>
+  <div><label>Phone</label><input data-f="phone" value="${fv(c.phone)}"/></div></div>
+  <label class="ck"><input type="checkbox" data-f="receives_referrals" ${chk(c.receives_referrals)}/> Send new referrals here</label></div>`;}
+function attyRow(a){a=a||{};return `<div class="prep" data-id="${a.id||''}">${rmBtn()}
+  <div class="g2"><div><label>First name</label><input data-f="first_name" value="${fv(a.first_name)}"/></div>
+  <div><label>Last name</label><input data-f="last_name" value="${fv(a.last_name)}"/></div></div>
+  <div class="g2"><div><label>Email</label><input data-f="email" type="email" value="${fv(a.email)}"/></div>
+  <div><label>Phone</label><input data-f="phone" value="${fv(a.phone)}"/></div></div>
+  <div class="g2"><div><label>States</label><input data-f="states" value="${fv(a.states)}"/></div>
+  <div><label>Case types</label><input data-f="case_types" value="${fv(a.case_types)}"/></div></div>
+  <div class="g2"><div><label>Paralegal / POC name</label><input data-f="paralegal_name" value="${fv(a.paralegal_name)}"/></div>
+  <div><label>POC email</label><input data-f="paralegal_email" type="email" value="${fv(a.paralegal_email)}"/></div></div>
+  <div class="g2"><div><label>POC phone</label><input data-f="paralegal_phone" value="${fv(a.paralegal_phone)}"/></div>
+  <div><label>CC emails</label><input data-f="cc_emails" value="${fv(a.cc_emails)}" placeholder="comma-separated"/></div></div></div>`;}
+function addRow(boxId,html){document.getElementById(boxId).insertAdjacentHTML('beforeend',html);}
+
+async function showProfile(){
+  const tok=getSess(); if(!tok){showLogin();return;}
+  card.innerHTML='<div class="muted">Loading your info…</div>';
+  const {data,error}=await sb.rpc('portal_profile',{p_token:tok});
+  if(error||!data||!data.ok){card.innerHTML='<h2>Couldn\'t load</h2><p class="muted">Please try again.</p><a class="btn navy" onclick="loadCases()">← Back to cases</a>';return;}
+  renderProfile(data);
+}
+function renderProfile(d){
+  let html=`<a onclick="loadCases()" style="font-size:13px;font-weight:600;color:#1a4e8a;cursor:pointer;">← Back to my cases</a><h2 style="margin-top:8px;">My information</h2>
+    <p class="muted">Update your details anytime — changes save instantly and the MDconcierge team is notified. (Your signed-agreement status is managed by MDconcierge.)</p>`;
+  if(d.role==='provider'){
+    const p=d.practice||{};
+    html+=`<div class="psec"><h3>Practice</h3>
+      <label>Practice name</label><input id="pf_name" value="${fv(p.name)}"/>
+      <div class="g2"><div><label>Specialty</label><input id="pf_spec" value="${fv(p.specialty)}"/></div>
+      <div><label>States served</label><input id="pf_states" value="${fv(p.states)}"/></div></div>
+      <label>Website</label><input id="pf_web" value="${fv(p.website)}"/>
+      <label>Office address</label><input id="pf_addr" value="${fv(p.address)}"/></div>
+      <div class="psec"><h3>Doctors / clinicians</h3><div id="pf_docs"></div>
+      <button type="button" class="padd" onclick="addRow('pf_docs',docRow())">＋ Add doctor</button></div>
+      <div class="psec"><h3>Contacts</h3><div id="pf_cons"></div>
+      <button type="button" class="padd" onclick="addRow('pf_cons',conRow())">＋ Add contact</button></div>`;
+  }else{
+    const f=d.firm||{};
+    html+=`<div class="psec"><h3>Firm</h3>
+      <label>Firm name</label><input id="pf_name" value="${fv(f.name)}"/>
+      <div class="g2"><div><label>Practice area</label><select id="pf_ftype">${selOpts(FIRM_TYPES,f.type)}</select></div>
+      <div><label>Phone</label><input id="pf_phone" value="${fv(f.phone)}"/></div></div>
+      <label>Website</label><input id="pf_web" value="${fv(f.website)}"/>
+      <label>Office address</label><input id="pf_addr" value="${fv(f.address)}"/></div>
+      <div class="psec"><h3>Attorney(s)</h3><div id="pf_attys"></div>
+      <button type="button" class="padd" onclick="addRow('pf_attys',attyRow())">＋ Add attorney</button></div>`;
+  }
+  html+=`<div class="err" id="pf_err"></div><button class="btn gold" onclick="saveProfile('${d.role}')">Save changes</button>`;
+  card.innerHTML=html;
+  if(d.role==='provider'){(d.doctors||[]).forEach(x=>addRow('pf_docs',docRow(x)));(d.contacts||[]).forEach(x=>addRow('pf_cons',conRow(x)));
+    if(!(d.doctors||[]).length)addRow('pf_docs',docRow());if(!(d.contacts||[]).length)addRow('pf_cons',conRow());}
+  else{(d.attorneys||[]).forEach(x=>addRow('pf_attys',attyRow(x)));if(!(d.attorneys||[]).length)addRow('pf_attys',attyRow());}
+}
+function collectRows(boxId){
+  const out=[];
+  document.querySelectorAll('#'+boxId+' [data-id]').forEach(r=>{
+    const o={}; const id=r.getAttribute('data-id'); if(id)o.id=parseInt(id,10);
+    if(r.getAttribute('data-remove')){o._remove=true; if(o.id)out.push(o); return;}
+    r.querySelectorAll('[data-f]').forEach(el=>{o[el.getAttribute('data-f')]=el.type==='checkbox'?el.checked:(el.value||'').trim();});
+    out.push(o);
+  });
+  return out;
+}
+function pv(id){const el=document.getElementById(id);return el?(el.value||'').trim():'';}
+async function saveProfile(role){
+  const tok=getSess(); if(!tok){showLogin();return;}
+  const payload={};
+  if(role==='provider'){
+    payload.practice={name:pv('pf_name'),specialty:pv('pf_spec'),states:pv('pf_states'),website:pv('pf_web'),address:pv('pf_addr')};
+    payload.doctors=collectRows('pf_docs');
+    payload.contacts=collectRows('pf_cons');
+  }else{
+    payload.firm={name:pv('pf_name'),type:pv('pf_ftype'),phone:pv('pf_phone'),website:pv('pf_web'),address:pv('pf_addr')};
+    payload.attorneys=collectRows('pf_attys');
+  }
+  const e=document.getElementById('pf_err'); e.textContent='Saving…';
+  const {data,error}=await sb.rpc('portal_save_profile',{p_token:tok,p_payload:payload});
+  if(error||!data||!data.ok){e.textContent='Could not save — please try again.';return;}
+  card.innerHTML=`<h2>✓ Saved</h2><p class="muted">Your changes are live, and we've let the MDconcierge team know. Thank you for keeping your information current.</p>
+    <a class="btn navy" onclick="showProfile()">Edit again</a> <a class="btn" style="background:#eef5fc;color:#1a2230;" onclick="loadCases()">Back to my cases</a>`;
+  window.scrollTo(0,0);
 }
 function logout(){setSess('');showLogin('Signed out.');}
 
