@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MDconcierge — Case Status</title>
+<style>
+  body{margin:0;background:#f4f5f7;font-family:'Segoe UI',system-ui,Arial,sans-serif;color:#1a2230;}
+  .wrap{max-width:620px;margin:0 auto;padding:24px 16px 60px;}
+  .hdr{background:#0b0f14;border-radius:12px 12px 0 0;padding:18px 24px;}
+  .hdr .b{font-size:20px;font-weight:800;color:#fff;}.hdr .b span{color:#c8922a;}
+  .hdr .t{color:#8e97a3;font-size:12px;margin-top:2px;}
+  .card{background:#fff;border:1px solid #e3e6ea;border-top:none;border-radius:0 0 12px 12px;padding:24px;}
+  h2{margin:0 0 4px;font-size:19px;}h3{font-size:13px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.5px;color:#6b7583;}
+  .muted{color:#6b7583;font-size:13px;}
+  .badge{display:inline-block;padding:4px 13px;border-radius:20px;font-size:12px;font-weight:700;}
+  .box{border:1px solid #e3e6ea;border-radius:10px;padding:16px;margin-top:16px;}
+  .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eef0f2;font-size:14px;}
+  .row:last-child{border-bottom:none;}.row .k{color:#6b7583;}.row .v{font-weight:600;text-align:right;}
+  /* timeline */
+  .tl{position:relative;margin:6px 0 0;padding:0;}
+  .step{position:relative;padding:0 0 18px 30px;}
+  .step:before{content:'';position:absolute;left:8px;top:18px;bottom:-4px;width:2px;background:#e3e6ea;}
+  .step:last-child:before{display:none;}
+  .dot{position:absolute;left:0;top:1px;width:18px;height:18px;border-radius:50%;border:2px solid #cdd3da;background:#fff;}
+  .step.done .dot{background:#2ecc8a;border-color:#2ecc8a;}
+  .step.active .dot{background:#c8922a;border-color:#c8922a;box-shadow:0 0 0 4px #fdf0d6;}
+  .step .lbl{font-size:14px;font-weight:600;}
+  .step.future .lbl{color:#9aa3af;font-weight:500;}
+  .step .sub{font-size:12px;color:#6b7583;margin-top:1px;}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #eef0f2;font-size:13px;}
+  .item:last-child{border-bottom:none;}
+  .chip{font-size:11px;font-weight:700;padding:2px 9px;border-radius:11px;}
+  .c-open{background:#fdeceb;color:#c0392b;}.c-await{background:#fef6e7;color:#9a6700;}.c-done{background:#eaf7f0;color:#1e9e6a;}
+  .ev{background:#fff7e8;border:1px solid #f0d79a;border-radius:9px;padding:10px 12px;margin-top:8px;font-size:13px;}
+  .ev b{color:#9a6700;}
+  .btn{display:inline-block;padding:11px 18px;margin:10px 8px 0 0;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;}
+  .navy{background:#1a2230;color:#fff;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr"><div class="b">MD<span>concierge</span></div><div class="t">Medical-Legal Coordination · Case Status</div></div>
+  <div class="card" id="card"><div class="muted">Loading…</div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
+const SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const token=new URLSearchParams(location.search).get('t')||'';
+const card=document.getElementById('card');
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function cap(s){s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1);}
+const STATUS_LABEL={new:'Received',review:'In review',routed:'With provider',scheduled:'Scheduled',accepted:'Accepted',declined:'Declined',closed:'Closed',escalated:'Needs attention'};
+const STATUS_COLOR={new:'#eef5fc;#1a4e8a',review:'#fef6e7;#9a6700',routed:'#eef7f1;#1e7a52',scheduled:'#eaf7f0;#1e9e6a',accepted:'#eaf7f0;#1e9e6a',closed:'#eef0f2;#6b7583',declined:'#fdeceb;#c0392b',escalated:'#fdeceb;#c0392b'};
+
+function timeline(d){
+  const accepted = ['scheduled','accepted','closed'].includes(d.status) || !!d.schedule_status;
+  const scheduled = d.schedule_status==='scheduled' || !!d.appointment_at || d.status==='scheduled';
+  const closed = d.status==='closed';
+  const steps=[
+    {lbl:'Referral received', sub:'Reference '+esc(d.case_id||''), state:'done'},
+    {lbl:'Matched with provider', sub:d.provider?('with '+esc(d.provider)):'assigning a provider', state:(d.provider||d.provider_notified||['routed','scheduled','accepted','closed'].includes(d.status))?'done':'future'},
+    {lbl:'Referral accepted', sub:accepted?'provider accepted the referral':'awaiting acceptance', state:accepted?'done':(d.provider_notified?'active':'future')},
+    {lbl:'Appointment scheduled', sub:scheduled?(d.appointment_at?esc(d.appointment_at):'scheduled'):(d.schedule_status?cap(esc(d.schedule_status.replace(/_/g,' '))):'pending scheduling'), state:scheduled?'done':(accepted?'active':'future')},
+    {lbl:'Coordination complete', sub:closed?'closed out':'in progress', state:closed?'done':'future'},
+  ];
+  // mark the latest done as active if nothing later is active/done
+  return '<div class="tl">'+steps.map(s=>`<div class="step ${s.state}"><span class="dot"></span><div class="lbl">${s.lbl}</div><div class="sub">${s.sub}</div></div>`).join('')+'</div>';
+}
+
+function render(d){
+  const sc=(STATUS_COLOR[d.status]||'#eef0f2;#6b7583').split(';');
+  const openGaps=(d.gaps||[]).filter(g=>g.status!=='received');
+  const arts=d.artifacts||[];
+  const events=(d.events||[]).filter(e=>e.status!=='resolved');
+  card.innerHTML=`
+    <h2>${esc(d.patient||('Referral '+(d.case_id||'')))}</h2>
+    <div class="muted">Reference ${esc(d.case_id||'')}${d.case_type?(' · '+esc(d.case_type)):''}</div>
+    <div style="margin-top:10px;"><span class="badge" style="background:${sc[0]};color:${sc[1]};">${esc(STATUS_LABEL[d.status]||cap(d.status||'In progress'))}</span></div>
+    ${events.length?`<div style="margin-top:14px;">${events.map(e=>`<div class="ev"><b>${esc(e.type)} reported</b>${e.deadline?(' — due '+esc(e.deadline)):''}. Our team is coordinating this.</div>`).join('')}</div>`:''}
+    <div class="box"><h3>Progress</h3>${timeline(d)}</div>
+    ${openGaps.length?`<div class="box"><h3>Outstanding items</h3>${openGaps.map(g=>`<div class="item"><span>${esc(g.label)} <span class="muted">· ${esc(g.owner)}</span></span><span class="chip ${g.status==='awaiting'?'c-await':'c-open'}">${g.status==='awaiting'?'awaiting':'needed'}</span></div>`).join('')}</div>`:''}
+    ${arts.length?`<div class="box"><h3>Records &amp; documents</h3>${arts.map(a=>`<div class="item"><span>${esc(a.label)}</span><span class="chip ${a.status==='transmitted'?'c-done':'c-await'}">${a.status==='transmitted'?'sent':'requested'}</span></div>`).join('')}</div>`:''}
+    <a class="btn navy" href="mailto:referrals@mdconcierge.net?subject=${encodeURIComponent('Re: '+(d.case_id||'')+' — status')}&body=${encodeURIComponent('Hello, regarding referral '+(d.case_id||'')+':\n\n')}">Reply to our team</a>
+    <p class="muted" style="margin-top:16px;">This page updates as your case progresses. Questions? Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a> anytime.</p>`;
+}
+
+async function load(){
+  if(!token){card.innerHTML='<h2>Invalid link</h2><p class="muted">Missing status token.</p>';return;}
+  const {data,error}=await sb.rpc('case_status',{p_token:token});
+  if(error||!data||!data.ok){card.innerHTML='<h2>Link not valid</h2><p class="muted">This status link is invalid or expired. Please contact referrals@mdconcierge.net.</p>';return;}
+  render(data);
+}
+load();
+</script>
+</body>
+</html>
