@@ -223,6 +223,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <div class="sb-nav">
     <button class="ni active" onclick="showView('leads',this)"><span class="ni-ic">📋</span> Lead Queue <span class="nb" id="new-count">6</span></button>
     <button class="ni" onclick="showView('network',this)"><span class="ni-ic">🏥</span> Provider Network</button>
+    <button class="ni" onclick="showView('portal',this)"><span class="ni-ic">🔐</span> Portal Accounts <span class="nb" id="hold-count" style="display:none;">0</span></button>
     <div class="ns">Analytics</div>
     <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
     <div class="ns">Settings</div>
@@ -298,6 +299,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div id="tab-providers" style="display:none;"><div class="net-grid" id="prov-grid"></div></div>
         <div id="tab-vendors"   style="display:none;"><div class="net-grid" id="vend-grid"></div></div>
       </div>
+    </div>
+  </div>
+
+  <!-- PORTAL ACCOUNTS VIEW -->
+  <div class="view" id="view-portal">
+    <div class="panel" id="hold-panel" style="margin-bottom:16px;display:none;border:1px solid #f0c36d;background:#fff8e8;">
+      <div class="ph"><div class="pt" style="color:#9a6700;">⚠ Awaiting your review</div><div class="ps">Free-domain sign-ups (e.g. gmail) — confirm identity before granting access</div></div>
+      <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Requested</th><th>Action</th></tr></thead><tbody id="hold-body"></tbody></table></div>
+    </div>
+    <div class="panel" style="margin-bottom:0;">
+      <div class="ph">
+        <div class="pt">Partner portal accounts</div>
+        <div class="ps">Providers &amp; attorneys who can log in to see their own cases</div>
+        <span style="margin-left:12px;font-size:12px;color:var(--muted);">Invites are sent automatically when a case is routed (business-domain emails) — you only review free-domain ones.</span>
+      </div>
+      <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last sign-in</th><th>Action</th></tr></thead><tbody id="portal-body"></tbody></table></div>
     </div>
   </div>
 
@@ -893,8 +910,9 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',revenue:'Revenue',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',revenue:'Revenue',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
+  if(v==='portal')loadPortalAccounts();
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2800);}
@@ -951,6 +969,66 @@ async function loadProviders(){
 function providerOptions(){
   return '<option value="">— Assign provider —</option>'+REAL_PROVIDERS.map(p=>{const pr=NET_PRACTICES.find(x=>x.id===p.practice_id);return `<option value="${p.id}">${ehtml(p.doctor_name)}${pr?(' — '+ehtml(pr.name)):''}${p.specialty?(' · '+ehtml(p.specialty)):''}${p.baa_on_file?'':'  ⚠ NO BAA'}</option>`;}).join('');
 }
+// ── Partner portal accounts (providers/attorneys who log in to see their own cases) ──
+let PORTAL_ACCTS=[];
+function genTok(){const a=new Uint8Array(24);crypto.getRandomValues(a);return Array.from(a,b=>b.toString(16).padStart(2,'0')).join('');}
+async function loadPortalAccounts(){
+  try{
+    const {data,error}=await sbClient.from('portal_accounts')
+      .select('id,role,provider_id,attorney_id,name,email,status,flagged_reason,setup_token,setup_exp,created_at,last_login')
+      .order('created_at',{ascending:false});
+    if(error){showToast('Portal load error: '+error.message);PORTAL_ACCTS=[];}
+    else PORTAL_ACCTS=data||[];
+  }catch(e){console.warn('portal load failed',e);PORTAL_ACCTS=[];}
+  renderPortalAccounts();
+}
+function portalStatusBadge(s){
+  const m={active:['#eaf7f0','#1e9e6a','Active'],invited:['#eef5fc','#1a4e8a','Invited'],hold:['#fff8e8','#9a6700','Held — review'],disabled:['#fdeceb','#c0392b','Disabled']};
+  const x=m[s]||['#eef0f2','#6b7583',s||'—'];
+  return `<span style="display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${x[0]};color:${x[1]};">${x[2]}</span>`;
+}
+function inviteLink(a){return a.setup_token?('https://mdconcierge.net/portal.html?setup='+a.setup_token):'';}
+function renderPortalAccounts(){
+  const holds=PORTAL_ACCTS.filter(a=>a.status==='hold');
+  const hc=document.getElementById('hold-count');
+  if(hc){if(holds.length){hc.style.display='';hc.textContent=holds.length;}else hc.style.display='none';}
+  const hp=document.getElementById('hold-panel'),hb=document.getElementById('hold-body');
+  if(hp&&hb){
+    hp.style.display=holds.length?'':'none';
+    hb.innerHTML=holds.map(a=>`<tr><td>${ehtml(a.name||'—')}</td><td>${ehtml(a.email)}</td><td>${ehtml(a.role)}</td><td style="color:var(--muted);font-size:12px;">${_timeAgo(a.created_at)}</td><td><button class="ib" style="color:#1e9e6a;" onclick="approvePortal(${a.id})">✓ Approve &amp; invite</button> <button class="ib" style="color:#c0392b;" onclick="disablePortal(${a.id})">✕ Deny</button></td></tr>`).join('');
+  }
+  const tb=document.getElementById('portal-body');
+  const list=PORTAL_ACCTS.filter(a=>a.status!=='hold');
+  if(tb)tb.innerHTML=list.length?list.map(a=>{
+    let act='';
+    if(a.status==='invited'&&a.setup_token)act=`<button class="ib" onclick="copyInvite('${a.setup_token}')">⧉ Copy link</button> <button class="ib" onclick="emailInvite(${a.id})">✉ Email invite</button>`;
+    else if(a.status==='active')act=`<button class="ib" style="color:#c0392b;" onclick="disablePortal(${a.id})">Disable</button>`;
+    else if(a.status==='disabled')act=`<button class="ib" style="color:#1e9e6a;" onclick="approvePortal(${a.id})">Re-enable</button>`;
+    return `<tr><td>${ehtml(a.name||'—')}</td><td>${ehtml(a.email)}</td><td>${ehtml(a.role)}</td><td>${portalStatusBadge(a.status)}</td><td style="color:var(--muted);font-size:12px;">${a.last_login?_timeAgo(a.last_login):'—'}</td><td>${act}</td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">No portal accounts yet — they\'re created automatically when cases are routed.</td></tr>';
+}
+async function approvePortal(id){
+  const a=PORTAL_ACCTS.find(x=>x.id===id);if(!a)return;
+  const patch=a.last_login?{status:'active',flagged_reason:null}
+    :{status:'invited',flagged_reason:null,setup_token:genTok(),setup_exp:new Date(Date.now()+14*86400000).toISOString()};
+  const {error}=await sbClient.from('portal_accounts').update(patch).eq('id',id);
+  if(error){showToast('Error: '+error.message);return;}
+  await loadPortalAccounts();
+  showToast(patch.status==='active'?'Re-enabled':'Approved — copy or email the invite link from the list below.');
+}
+async function disablePortal(id){
+  if(!confirm('Disable this portal account? They will no longer be able to sign in.'))return;
+  const {error}=await sbClient.from('portal_accounts').update({status:'disabled',session_token:null}).eq('id',id);
+  if(error){showToast('Error: '+error.message);return;}
+  loadPortalAccounts();showToast('Disabled');
+}
+function copyInvite(tok){const url='https://mdconcierge.net/portal.html?setup='+tok;
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(()=>showToast('Invite link copied'),()=>showToast(url));
+  else showToast(url);}
+function emailInvite(id){const a=PORTAL_ACCTS.find(x=>x.id===id);if(!a||!a.setup_token)return;
+  const url=inviteLink(a);
+  const body='Hello'+(a.name?(' '+a.name):'')+',\n\nYou can manage your MDconcierge cases from one secure portal. Set your password here (link expires in 14 days):\n\n'+url+'\n\nWith gratitude,\nThe MDconcierge Coordination Team';
+  location.href='mailto:'+encodeURIComponent(a.email)+'?subject='+encodeURIComponent('Set up your MDconcierge portal login')+'&body='+encodeURIComponent(body);}
 async function loadPortalLeads(){
   try{
     const {data,error}=await sbClient.from('cases').select('*').order('created_at',{ascending:false});
@@ -974,7 +1052,7 @@ async function doLogin(){
   const {error}=await sbClient.auth.signInWithPassword({email,password});
   btn.disabled=false;btn.textContent='Sign in';
   if(error){errEl.textContent=error.message||'Sign-in failed';errEl.style.display='block';return;}
-  showGate(false);loadPortalLeads();loadProviders();
+  showGate(false);loadPortalLeads();loadProviders();loadPortalAccounts();
 }
 async function doLogout(){try{await sbClient.auth.signOut();}catch(e){}for(let i=LEADS.length-1;i>=0;i--){if(LEADS[i]._supa)LEADS.splice(i,1);}renderTable();showGate(true);}
 function openPw(){const m=document.getElementById('pw-msg');m.style.display='none';document.getElementById('pw-new').value='';document.getElementById('pw-modal').style.display='flex';}
@@ -989,7 +1067,7 @@ async function doChangePw(){
   setTimeout(closePw,1800);
 }
 (function(){const pe=document.getElementById('auth-pass');if(pe)pe.addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});})();
-(async function(){try{const {data:{session}}=await sbClient.auth.getSession();if(session){showGate(false);loadPortalLeads();loadProviders();}else{showGate(true);}}catch(e){showGate(true);}})();
+(async function(){try{const {data:{session}}=await sbClient.auth.getSession();if(session){showGate(false);loadPortalLeads();loadProviders();loadPortalAccounts();}else{showGate(true);}}catch(e){showGate(true);}})();
 </script>
 </body>
 </html>
