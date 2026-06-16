@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MDconcierge — Platform Overview</title>
+<style>
+  :root{--gold:#c8922a;--navy:#0b0f14;--ink:#1a2230;--muted:#6b7583;--line:#e3e6ea;--green:#1e9e6a;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#eef0f3;font-family:'Segoe UI',system-ui,Arial,sans-serif;color:var(--ink);}
+  .wrap{max-width:920px;margin:0 auto;padding:22px 16px 60px;}
+  .hdr{background:var(--navy);border-radius:12px 12px 0 0;padding:20px 26px;}
+  .hdr .b{font-size:21px;font-weight:800;color:#fff;}.hdr .b span{color:var(--gold);}
+  .hdr .t{color:#8e97a3;font-size:12.5px;margin-top:3px;}
+  .card{background:#fff;border:1px solid var(--line);border-top:none;border-radius:0 0 12px 12px;padding:24px;}
+  h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--gold);margin:26px 0 10px;}
+  h2:first-child{margin-top:4px;}
+  .lead{color:var(--muted);font-size:14px;margin:0 0 6px;}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:8px 0 4px;}
+  .fstep{flex:1;min-width:120px;background:#f7f8fa;border:1px solid var(--line);border-radius:10px;padding:11px 12px;}
+  .fstep .n{font-size:11px;font-weight:800;color:var(--gold);}
+  .fstep .ti{font-size:13px;font-weight:700;margin:2px 0 3px;}
+  .fstep .ds{font-size:11.5px;color:var(--muted);line-height:1.45;}
+  .grp{border:1px solid var(--line);border-radius:11px;padding:6px 14px;margin-top:12px;}
+  .row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f2f4;}
+  .row:last-child{border-bottom:none;}
+  .row .pill{flex:none;font-size:10.5px;font-weight:800;border-radius:20px;padding:3px 9px;}
+  .live{background:#eaf7f0;color:var(--green);}
+  .plan{background:#fff8e8;color:#9a6700;}
+  .row .meta{flex:1;min-width:0;}
+  .row .nm{font-size:14px;font-weight:600;}
+  .row .ds{font-size:12px;color:var(--muted);}
+  .row a{flex:none;font-size:12px;font-weight:700;color:#1a4e8a;text-decoration:none;border:1px solid #b8d4ee;background:#eef5fc;border-radius:7px;padding:6px 11px;}
+  .note{background:#fdf6e8;border:1px solid #f0d79a;border-radius:9px;padding:13px 15px;margin-top:14px;font-size:13px;color:#8a5a00;}
+  .gh{font-size:12px;font-weight:700;color:var(--ink);margin:14px 0 2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr"><div class="b">MD<span>concierge</span></div><div class="t">Platform Overview — what's built, what's next, and where to click</div></div>
+  <div class="card">
+
+    <h2>The coordination flow</h2>
+    <p class="lead">A referral comes in, you place it, and the engine runs the back-and-forth. You stay in the middle — connect, move, follow up, flag.</p>
+    <div class="flow">
+      <div class="fstep"><div class="n">1</div><div class="ti">Referral in</div><div class="ds">Attorney email or InjuredGuide intake → a case is created automatically.</div></div>
+      <div class="fstep"><div class="n">2</div><div class="ti">AI reads it</div><div class="ds">Client, firm, injury, claim details pulled out; you get an ack with a reference #.</div></div>
+      <div class="fstep"><div class="n">3</div><div class="ti">You route</div><div class="ds">Pick a provider (BAA-gated). Two clicks.</div></div>
+      <div class="fstep"><div class="n">4</div><div class="ti">Provider notified</div><div class="ds">Privacy-safe teaser → Accept / Decline by magic link.</div></div>
+      <div class="fstep"><div class="n">5</div><div class="ti">Accept → reveal</div><div class="ds">Full patient details + one-click EHR import.</div></div>
+      <div class="fstep"><div class="n">6</div><div class="ti">Schedule</div><div class="ds">Date/time picker → relayed to the attorney. Can't reach? Bell rings.</div></div>
+      <div class="fstep"><div class="n">7</div><div class="ti">Coordinate</div><div class="ds">Chase missing info, move records (never stored), report UR/IME/IRE.</div></div>
+      <div class="fstep"><div class="n">8</div><div class="ti">Everyone sees status</div><div class="ds">Attorney & provider track it in their portal.</div></div>
+    </div>
+
+    <h2>✅ Built &amp; live</h2>
+
+    <div class="gh">Intake &amp; the AI engine</div>
+    <div class="grp">
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Email referral intake + AI extraction</div><div class="ds">Reads referrals@ every few minutes, builds the case, sends a branded acknowledgment.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Consumer intake (InjuredGuide)</div><div class="ds">The public funnel drops leads straight into your queue.</div></div><a href="https://injuredguide.com" target="_blank" rel="noopener">Open ↗</a></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Instant website importer</div><div class="ds">Paste a practice URL → doctors + services extracted in seconds.</div></div></div>
+    </div>
+
+    <div class="gh">Provider experience</div>
+    <div class="grp">
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Privacy-safe notify → Accept/Decline</div><div class="ds">No patient info until they accept; magic-link, no login needed.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Patient reveal + EHR / case-mgmt import</div><div class="ds">Full details incl. address; one-click file for any system.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Scheduling (date/time picker)</div><div class="ds">Clean appointment → relayed to the attorney automatically.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">“Can’t reach the patient” → rings the bell</div><div class="ds">Relays to the attorney to get the client to call. We never chase the patient.</div></div></div>
+    </div>
+
+    <div class="gh">Coordination &amp; follow-up engine</div>
+    <div class="grp">
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Missing-info chaser</div><div class="ds">Auto-follows the attorney for claim #, status, DOI, adjuster — escalates if ignored.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Forward claim details to the provider</div><div class="ds">Once retrieved, pushes claim info to the provider for billing/auth.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Document conduit (never stored)</div><div class="ds">Moves records/bills between parties in-memory with a non-retention notice.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Report UR / IME / IRE</div><div class="ds">One tap → chases records to the reviewer by deadline / flags the attorney.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">One-touch action bar on every email</div><div class="ds">Request records, report an event, view cases — from any message.</div></div></div>
+    </div>
+
+    <div class="gh">Onboarding &amp; the network</div>
+    <div class="grp">
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Self-serve sign-up forms</div><div class="ds">Providers/attorneys enter their own info (or auto-fill from their website).</div></div><a href="https://mdconcierge.net/signup.html?type=provider" target="_blank" rel="noopener">Open ↗</a></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Review &amp; edit drafts → approve</div><div class="ds">Fix any field before it’s added to your network. BAA gate built in.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Invite-to-onboard + signature→contact</div><div class="ds">Push the form to an inbox; forward an email to scrape a contact.</div></div></div>
+    </div>
+
+    <div class="gh">Portals &amp; access</div>
+    <div class="grp">
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Partner portal — “my cases”</div><div class="ds">Sign in by password or one-click magic link; practice-wide view; self-edit profile.</div></div><a href="https://mdconcierge.net/portal.html" target="_blank" rel="noopener">Open ↗</a></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Live status page (read-only)</div><div class="ds">Progress timeline for attorneys, per case.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Your admin dashboard</div><div class="ds">Leads, network, sign-ups, portal accounts, links, tutorials, audit log.</div></div><a href="https://mdconcierge.net/admin-v2.html" target="_blank" rel="noopener">Open ↗</a></div>
+    </div>
+
+    <div class="gh">Compliance &amp; trust</div>
+    <div class="grp">
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">BAA-on-file tracking + routing gate</div><div class="ds">Warns before routing to a provider without a signed BAA.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Full audit / activity log</div><div class="ds">Every action and access recorded per case.</div></div></div>
+      <div class="row"><span class="pill live">LIVE</span><div class="meta"><div class="nm">Magic links expire + token-gated data</div><div class="ds">Nothing readable without a valid token; links time out.</div></div></div>
+    </div>
+
+    <h2>🔧 Next up (agreed, not built yet)</h2>
+    <div class="grp">
+      <div class="row"><span class="pill plan">PLANNED</span><div class="meta"><div class="nm">Multi-provider per case + “Send within the network”</div><div class="ds">A case becomes a hub; provider or attorney refers in-network to PT, MRI, specialists — routes direct, notifies everyone involved.</div></div></div>
+      <div class="row"><span class="pill plan">PLANNED</span><div class="meta"><div class="nm">Demand-packet button</div><div class="ds">Request all records/bills → forward as they arrive + a live checklist. No storage.</div></div></div>
+      <div class="row"><span class="pill plan">PLANNED</span><div class="meta"><div class="nm">One-click intake packet</div><div class="ds">Chart-ready patient sheet for the provider.</div></div></div>
+      <div class="row"><span class="pill plan">PLANNED</span><div class="meta"><div class="nm">In-portal “request from the other party”</div><div class="ds">Provider ↔ attorney request records / ask a question, logged.</div></div></div>
+      <div class="row"><span class="pill plan">PLANNED</span><div class="meta"><div class="nm">Coverage/litigation flags + matching</div><div class="ds">“Takes litigated” / “requires backup insurance” → relay to attorney.</div></div></div>
+      <div class="row"><span class="pill plan">PLANNED</span><div class="meta"><div class="nm">Locations + auto-routing (specialty · zip · rank) + map</div><div class="ds">Suggest the best provider; you confirm, then auto later.</div></div></div>
+    </div>
+
+    <div class="note">⚠ <b>Two real-world to-dos that aren't features:</b> (1) Add a <b>DMARC</b> record + confirm <b>DKIM</b> in Zoho so your emails don't hit spam. (2) The platform is built but <b>empty</b> — the next real milestone is your <b>first real provider + attorney</b> actually using it.</div>
+
+    <p class="lead" style="margin-top:18px;">Bottom line: the whole coordination loop — intake → route → notify → accept → schedule → chase → move records → status — is <b>real and running</b>. What's left is the network-referral depth and getting real partners in.</p>
+  </div>
+</div>
+</body>
+</html>
