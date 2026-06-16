@@ -345,7 +345,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <div style="flex:1;min-width:260px;"><label class="flabel">Practice website URL</label><input class="finput" id="imp-url" placeholder="https://riversideortho.com" style="width:100%;"/></div>
         <button class="br" style="margin:0;" onclick="queueImport()">🌐 Import</button>
       </div>
-      <div class="ps" style="margin-top:6px;color:var(--muted);font-size:12px;">Takes a couple minutes; JS-heavy sites may extract partially. Drafts appear below as “Imported” — review and edit before approving.</div>
+      <div class="ps" style="margin-top:6px;color:var(--muted);font-size:12px;">Reads the site in a few seconds; JS-heavy sites may extract partially. The draft appears below as “Imported” — review and edit before approving.</div>
       <div id="imp-recent" style="margin-top:10px;"></div>
     </div>
     <div class="panel" style="margin-bottom:0;">
@@ -1210,11 +1210,24 @@ async function queueImport(){
   let url=(document.getElementById('imp-url').value||'').trim();
   if(!url){showToast('Paste a website URL');return;}
   if(!/^https?:\/\//i.test(url))url='https://'+url;
-  const {error}=await sbClient.from('import_jobs').insert({url,status:'pending',requested_by:'eric'});
-  if(error){showToast('Error: '+error.message);return;}
-  document.getElementById('imp-url').value='';
-  showToast('🌐 Reading the site — a draft will appear below in a couple minutes.');
-  loadImports();
+  showToast('🌐 Reading the site…');
+  try{
+    const {data,error}=await sbClient.functions.invoke('extract-practice',{body:{url}});
+    if(error||!data||!data.ok)throw new Error((data&&data.error)||'extract failed');
+    const payload={practice:data.practice||{website:url},providers:(data.providers||[]).filter(d=>d&&d.doctor_name),contacts:(data.contacts||[]).filter(c=>c&&(c.name||c.email)),services:data.services||[],locations:data.locations||[],submitter:{name:'Website import',email:''},source_url:url};
+    const org=(data.practice&&data.practice.name)||url.replace(/^https?:\/\//,'').split('/')[0];
+    const {error:ie}=await sbClient.from('signup_submissions').insert({type:'provider',payload,org_name:org,submitter_email:'',flagged_reason:'Imported from website — verify details before approving'});
+    if(ie)throw ie;
+    document.getElementById('imp-url').value='';
+    showToast('✓ Drafted '+org+' — review & edit it below.');
+    loadSignups();
+  }catch(e){
+    // fallback: queue for the background engine if the instant extractor is unavailable
+    await sbClient.from('import_jobs').insert({url,status:'pending',requested_by:'eric'});
+    document.getElementById('imp-url').value='';
+    showToast('Reading in the background — a draft will appear shortly.');
+    loadImports();
+  }
 }
 async function loadImports(){
   try{
