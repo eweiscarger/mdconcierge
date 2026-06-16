@@ -105,10 +105,16 @@ function renderAccepted(c){
     <div class="box">
       <h3>Update scheduling</h3>
       <div class="muted" style="margin-bottom:8px;">One tap — we relay it to the attorney's office.</div>
-      <a class="btn accept" onclick="schedFromPage('scheduled')">✅ Scheduled</a>
+      <a class="btn accept" onclick="showSchedPicker()">✅ Scheduled</a>
       <a class="btn" style="background:#eef5fc;color:#1a2230;" onclick="schedFromPage('pending')">Pending patient contact</a>
       <a class="btn" style="background:#eef5fc;color:#1a2230;" onclick="schedFromPage('unable')">Unable to reach</a>
       <a class="btn decline" onclick="schedFromPage('cannot')">Cannot accept</a>
+      <div id="sched-picker" style="display:none;margin-top:12px;padding:13px;border:1px solid #e3e6ea;border-radius:9px;background:#fafbfc;">
+        <div style="font-size:13px;font-weight:600;margin-bottom:9px;">Pick the appointment date &amp; time:</div>
+        <input type="date" id="sched-date" style="padding:10px;border:1px solid #cdd3da;border-radius:7px;font-size:14px;margin:0 8px 8px 0;"/>
+        <input type="time" id="sched-time" style="padding:10px;border:1px solid #cdd3da;border-radius:7px;font-size:14px;margin:0 8px 8px 0;"/>
+        <button class="btn accept" style="margin:0;padding:10px 18px;" onclick="confirmSched()">Confirm appointment</button>
+      </div>
       <div class="muted" id="sched-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
     </div>
     <div class="box">
@@ -133,21 +139,55 @@ async function doAccept(){card.innerHTML='<div class="muted">Accepting…</div>'
 async function doDecline(){card.innerHTML='<div class="muted">Submitting…</div>';await sb.rpc('decline_referral',{p_token:token});
   card.innerHTML='<h2>Thank you</h2><p class="muted">You\'ve declined this referral — no further action needed. We appreciate you letting us know.<br><br>— The MDconcierge Coordination Team</p>';}
 const SCHED_MSG={scheduled:'appointment recorded',pending:'pending patient contact',unable:'unable to reach the patient',cannot:'unable to take this referral'};
-async function schedFromPage(status){
-  let appt='';
-  if(status==='scheduled'){appt=prompt('Appointment date & time (e.g. 6/20 at 10:00am):')||'';if(!appt)return;}
-  const el=document.getElementById('sched-done'); if(el)el.textContent='Saving…';
+function showSchedPicker(){const p=document.getElementById('sched-picker');if(p)p.style.display='block';
+  const d=document.getElementById('sched-date');if(d&&!d.value){const t=new Date();d.min=t.toISOString().slice(0,10);}}
+function fmtAppt(d,t){
+  if(!d)return '';
+  const [Y,M,D]=d.split('-');
+  let s=parseInt(M,10)+'/'+parseInt(D,10)+'/'+Y;
+  if(t){let [h,m]=t.split(':');h=parseInt(h,10);const ap=h<12?'AM':'PM';let hh=h%12;if(hh===0)hh=12;s+=' at '+hh+':'+m+' '+ap;}
+  return s;
+}
+function confirmSched(){
+  const d=document.getElementById('sched-date').value, t=document.getElementById('sched-time').value;
+  const el=document.getElementById('sched-done');
+  if(!d){if(el){el.style.color='#c0392b';el.textContent='Please choose a date.';}return;}
+  if(el)el.style.color='#1e9e6a';
+  schedFromPage('scheduled', fmtAppt(d,t));
+}
+async function schedFromPage(status, appt){
+  appt=appt||'';
+  const el=document.getElementById('sched-done'); if(el){el.style.color='#1e9e6a';el.textContent='Saving…';}
   const {data,error}=await sb.rpc('set_schedule_status',{p_token:token,p_status:status,p_appt:appt});
-  if(error||!data||!data.ok){if(el)el.textContent='Could not save — please try again.';return;}
-  if(el)el.textContent={scheduled:'✓ Scheduled'+(appt?(' for '+appt):'')+' — the attorney will be notified.',pending:'✓ Marked pending patient contact.',unable:'✓ Marked unable to reach — we\'ll follow up.',cannot:'✓ Noted — we\'ll re-route this one.'}[status]||'✓ Saved';
+  if(error||!data||!data.ok){if(el){el.style.color='#c0392b';el.textContent='Could not save — please try again.';}return;}
+  const pk=document.getElementById('sched-picker'); if(pk)pk.style.display='none';
+  if(el){el.style.color='#1e9e6a';el.textContent={scheduled:'✓ Scheduled'+(appt?(' for '+appt):'')+' — the attorney will be notified.',pending:'✓ Marked pending patient contact.',unable:'✓ Marked unable to reach — we\'ll follow up.',cannot:'✓ Noted — we\'ll re-route this one.'}[status]||'✓ Saved';}
+}
+function renderSchedPickerCard(){
+  card.innerHTML=`<h2>Set the appointment</h2><p class="muted">Pick the date and time — we'll relay it to the attorney's office.</p>
+    <div class="box">
+      <input type="date" id="dl-date" style="padding:11px;border:1px solid #cdd3da;border-radius:8px;font-size:15px;margin:0 8px 10px 0;"/>
+      <input type="time" id="dl-time" style="padding:11px;border:1px solid #cdd3da;border-radius:8px;font-size:15px;margin:0 8px 10px 0;"/>
+      <div><button class="btn accept" onclick="dlConfirmSched()">Confirm appointment</button></div>
+      <div class="muted" id="dl-done" style="margin-top:8px;color:#c0392b;font-weight:600;"></div>
+    </div>`;
+  const d=document.getElementById('dl-date'); if(d){d.min=new Date().toISOString().slice(0,10);}
+}
+async function dlConfirmSched(){
+  const d=document.getElementById('dl-date').value, t=document.getElementById('dl-time').value;
+  if(!d){const e=document.getElementById('dl-done');if(e)e.textContent='Please choose a date.';return;}
+  const appt=fmtAppt(d,t);
+  card.innerHTML='<div class="muted">Saving…</div>';
+  const {data,error}=await sb.rpc('set_schedule_status',{p_token:token,p_status:'scheduled',p_appt:appt});
+  if(error||!data||!data.ok){card.innerHTML='<h2>Link not valid</h2><p class="muted">This link is invalid or expired. Please contact referrals@mdconcierge.net.</p>';return;}
+  card.innerHTML='<span class="pill">✓ Updated</span><h2 style="margin-top:12px;font-size:18px;">Thank you — appointment recorded for '+fmtAppt(d,t)+'. We\'ll let the attorney\'s office know.</h2><p class="muted">— The MDconcierge Coordination Team</p>';
 }
 async function doSchedule(status){
-  let appt='';
-  if(status==='scheduled'){appt=prompt('Appointment date & time (e.g. 6/20 at 10:00am):')||'';}
+  if(status==='scheduled'){ renderSchedPickerCard(); return; }
   card.innerHTML='<div class="muted">Saving…</div>';
-  const {data,error}=await sb.rpc('set_schedule_status',{p_token:token,p_status:status,p_appt:appt});
+  const {data,error}=await sb.rpc('set_schedule_status',{p_token:token,p_status:status,p_appt:''});
   if(error||!data||!data.ok){card.innerHTML='<h2>Link not valid</h2><p class="muted">This link is invalid or expired. Please contact referrals@mdconcierge.net.</p>';return;}
-  const m={scheduled:'Thank you — appointment recorded'+(appt?(' for '+appt):'')+'. We\'ll let the attorney\'s office know.',pending:'Noted — pending patient contact. Thank you for the update.',unable:'Noted — unable to reach the patient. Our team will follow up.',cannot:'Understood — you\'re unable to take this one. We\'ll re-route it. Thank you.'}[status]||'Update saved.';
+  const m={pending:'Noted — pending patient contact. Thank you for the update.',unable:'Noted — unable to reach the patient. Our team will follow up.',cannot:'Understood — you\'re unable to take this one. We\'ll re-route it. Thank you.'}[status]||'Update saved.';
   card.innerHTML='<span class="pill">✓ Updated</span><h2 style="margin-top:12px;font-size:18px;">'+m+'</h2><p class="muted">— The MDconcierge Coordination Team</p>';
 }
 async function reportFromPage(type){
