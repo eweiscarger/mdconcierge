@@ -117,11 +117,43 @@ function fieldsPoc(){
   </div>`;
 }
 function addRow(containerId,html){document.getElementById(containerId).insertAdjacentHTML('beforeend',html);}
+function setVal(id,v){const el=document.getElementById(id);if(el&&v)el.value=v;}
+function setRowVals(row,obj){row.querySelectorAll('[data-f]').forEach(el=>{const k=el.getAttribute('data-f');if(!(k in obj))return;if(el.type==='checkbox')el.checked=!!obj[k];else el.value=obj[k]||'';});}
+async function autofillFromSite(){
+  let url=(gv('imp_url')||'').trim();
+  const status=document.getElementById('imp_status');
+  if(!url){status.style.color='#c0392b';status.textContent='Paste your website address first.';return;}
+  if(!/^https?:\/\//i.test(url))url='https://'+url;
+  status.style.color='#6b7583';status.textContent='Reading your website… (a few seconds)';
+  try{
+    const {data,error}=await sb.functions.invoke('extract-practice',{body:{url}});
+    if(error||!data||!data.ok)throw new Error((data&&data.error)||'could not read site');
+    const p=data.practice||{};
+    setVal('p_name',p.name);setVal('p_specialty',p.specialty);setVal('p_states',p.states);setVal('p_phone',p.phone);setVal('p_website',p.website||url);setVal('p_address',p.address);
+    const dbox=document.getElementById('doctors');dbox.innerHTML='';
+    (data.providers||[]).filter(d=>d&&d.doctor_name).forEach(d=>{dbox.insertAdjacentHTML('beforeend',fieldsProvDoctor());setRowVals(dbox.lastElementChild,d);});
+    if(!dbox.children.length)addRow('doctors',fieldsProvDoctor());
+    const cbox=document.getElementById('contacts');cbox.innerHTML='';
+    (data.contacts||[]).filter(c=>c&&(c.name||c.email)).forEach(c=>{cbox.insertAdjacentHTML('beforeend',fieldsContact());setRowVals(cbox.lastElementChild,c);});
+    if(!cbox.children.length)addRow('contacts',fieldsContact());
+    const n=(data.providers||[]).filter(d=>d&&d.doctor_name).length;
+    status.style.color='#1e9e6a';status.textContent='✓ Filled in '+n+' doctor(s) from your site — please review and fix anything below, then submit.';
+  }catch(e){status.style.color='#c0392b';status.textContent="Couldn't read that site automatically — no worries, just fill it in below.";}
+}
 
 function renderProvider(){
   card.innerHTML=`<h1>Join the MDconcierge provider network</h1>
     <p class="muted">Tell us about your practice and how you'd like referrals routed. It takes a few minutes — and saves a lot of back-and-forth later. Fields marked <span style="color:#c0392b;">*</span> are required.</p>
     <a href="demo-provider.html" target="_blank" rel="noopener" style="display:inline-block;font-size:13px;font-weight:600;color:#1a4e8a;text-decoration:none;background:#eef5fc;border:1px solid #b8d4ee;border-radius:8px;padding:7px 13px;margin:2px 0 4px;">▶ See how it works (quick tour)</a>
+    <div class="sec" style="background:#fdf6e8;border-color:#f0d79a;">
+      <h2 style="color:#8a5a00;">⚡ Save time — paste your website</h2>
+      <p class="hint">Have a practice website? Paste it and we'll auto-fill your doctors and services for you. Then just fix anything that's off below.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <input id="imp_url" placeholder="https://yourpractice.com" style="flex:1;min-width:220px;"/>
+        <button type="button" class="btn gold" style="margin:0;padding:11px 18px;" onclick="autofillFromSite()">Auto-fill</button>
+      </div>
+      <div class="hint" id="imp_status" style="margin-top:6px;"></div>
+    </div>
     <div class="sec">
       <h2>Your practice / office</h2>
       <label>Practice name <span class="req">*</span></label><input id="p_name"/>
