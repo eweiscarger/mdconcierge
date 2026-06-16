@@ -836,11 +836,15 @@ function openProvModal(id){
      <div class="fgroup"><label class="flabel">State(s)</label><input class="finput" id="mp-states" value="${p?ehtml(p.states):''}" placeholder="PA, NJ"/></div>
    </div>
    <div class="form-row" style="margin-bottom:12px;">
-     <div class="fgroup"><label class="flabel">Phone</label><input class="finput" id="mp-phone" value="${p?ehtml(p.phone):''}"/></div>
+     <div class="fgroup"><label class="flabel">Office phone</label><input class="finput" id="mp-phone" value="${p?ehtml(p.phone):''}"/></div>
+     <div class="fgroup"><label class="flabel">Mobile phone</label><input class="finput" id="mp-mobile" value="${p&&p.mobile_phone?ehtml(p.mobile_phone):''}"/></div>
+   </div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">Email</label><input class="finput" id="mp-email" type="email" value="${p&&p.email?ehtml(p.email):''}"/></div>
      <div class="fgroup"><label class="flabel">Fax</label><input class="finput" id="mp-fax" value="${p?ehtml(p.fax):''}"/></div>
    </div>
    <div class="fgroup" id="mp-addr-wrap" style="margin-bottom:12px;display:${isGroup?'none':'block'};"><label class="flabel">Office address</label><input class="finput" id="mp-addr" value="${p?ehtml(p.location_address):''}"/></div>
-   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Body parts / areas treated</label><div class="ct-check-grid">${BODY_PARTS.map(b=>`<label class="ct-chk"><input type="checkbox" class="mp-bp" value="${ehtml(b)}" ${(p&&Array.isArray(p.body_parts)&&p.body_parts.includes(b))?'checked':''}/> ${b}</label>`).join('')}</div></div>
+   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Body parts / areas treated <span style="font-weight:400;color:var(--muted);">— pick one, several, or all</span> <a onclick="document.querySelectorAll('.mp-bp').forEach(x=>x.checked=true)" style="font-size:11px;color:#4a9eff;cursor:pointer;margin-left:6px;">Select all</a> · <a onclick="document.querySelectorAll('.mp-bp').forEach(x=>x.checked=false)" style="font-size:11px;color:#4a9eff;cursor:pointer;">Clear</a></label><div class="ct-check-grid">${BODY_PARTS.map(b=>`<label class="ct-chk"><input type="checkbox" class="mp-bp" value="${ehtml(b)}" ${(p&&Array.isArray(p.body_parts)&&p.body_parts.includes(b))?'checked':''}/> ${b}</label>`).join('')}</div></div>
    <div class="form-row" style="margin-bottom:12px;">
      <div class="fgroup"><label class="flabel">Monthly capacity</label><input class="finput" id="mp-cap" type="number" value="${p&&p.monthly_capacity!=null?p.monthly_capacity:''}"/></div>
      <div class="fgroup"><label class="flabel">Languages</label><input class="finput" id="mp-lang" value="${p?ehtml(p.languages):''}"/></div>
@@ -874,6 +878,7 @@ async function saveProv(){
   const rec={doctor_name:name,practice_id,location_id,same_as_practice,location_address,
     specialty:document.getElementById('mp-spec').value,provider_type:document.getElementById('mp-type').value,
     states:(document.getElementById('mp-states').value||'').trim(),phone:(document.getElementById('mp-phone').value||'').trim(),
+    mobile_phone:(document.getElementById('mp-mobile').value||'').trim(),email:(document.getElementById('mp-email').value||'').trim(),
     fax:(document.getElementById('mp-fax').value||'').trim(),languages:(document.getElementById('mp-lang').value||'').trim(),
     monthly_capacity:cap?parseInt(cap,10):null,active:document.getElementById('mp-active').checked,
     lien_acceptance:document.getElementById('mp-lien').checked,ncp_required:document.getElementById('mp-ncp').checked,
