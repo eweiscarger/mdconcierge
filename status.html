@@ -83,10 +83,36 @@ function render(d){
     <div class="box"><h3>Progress</h3>${timeline(d)}</div>
     ${openGaps.length?`<div class="box"><h3>Outstanding items</h3>${openGaps.map(g=>`<div class="item"><span>${esc(g.label)} <span class="muted">· ${esc(g.owner)}</span></span><span class="chip ${g.status==='awaiting'?'c-await':'c-open'}">${g.status==='awaiting'?'awaiting':'needed'}</span></div>`).join('')}</div>`:''}
     ${arts.length?`<div class="box"><h3>Records &amp; documents</h3>${arts.map(a=>`<div class="item"><span>${esc(a.label)}</span><span class="chip ${a.status==='transmitted'?'c-done':'c-await'}">${a.status==='transmitted'?'sent':'requested'}</span></div>`).join('')}</div>`:''}
+    <div class="box"><h3>Send within the MDconcierge network</h3>
+      <div class="muted" style="margin-bottom:8px;">Need to add PT, imaging, pain management, or a specialist for your client? Refer to an in-network provider — we coordinate it.</div>
+      <select id="net-prov" style="width:100%;padding:11px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;margin-bottom:8px;"><option>Loading network…</option></select>
+      <input id="net-svc" placeholder="What's it for? (e.g. Physical Therapy)" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;margin-bottom:8px;"/>
+      <button class="btn navy" style="margin:0;" onclick="sendInNetwork()">Send referral</button>
+      <div class="muted" id="net-done" style="margin-top:8px;font-weight:600;"></div>
+    </div>
     <a class="btn navy" href="mailto:referrals@mdconcierge.net?subject=${encodeURIComponent('Re: '+(d.case_id||'')+' — status')}&body=${encodeURIComponent('Hello, regarding referral '+(d.case_id||'')+':\n\n')}">Reply to our team</a>
     <p class="muted" style="margin-top:16px;">This page updates as your case progresses. Questions? Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a> anytime.</p>`;
+  loadNetwork();
 }
 
+let NETPROV=[];
+async function loadNetwork(){
+  try{const {data}=await sb.rpc('network_providers');NETPROV=data||[];}catch(e){NETPROV=[];}
+  const sel=document.getElementById('net-prov');if(!sel)return;
+  if(!NETPROV.length){sel.innerHTML='<option value="">No network providers available</option>';return;}
+  const groups={};NETPROV.forEach(p=>{(groups[p.type||'Other']=groups[p.type||'Other']||[]).push(p);});
+  sel.innerHTML='<option value="">— Choose an in-network provider —</option>'+Object.keys(groups).sort().map(t=>`<optgroup label="${esc(t)}">${groups[t].map(p=>`<option value="${p.id}" data-svc="${esc(p.type||'')}">${esc(p.name)}${p.specialty?(' · '+esc(p.specialty)):''}${p.practice?(' ('+esc(p.practice)+')'):''}</option>`).join('')}</optgroup>`).join('');
+}
+async function sendInNetwork(){
+  const sel=document.getElementById('net-prov');const pid=parseInt(sel.value,10);const done=document.getElementById('net-done');
+  if(!pid){if(done){done.style.color='#c0392b';done.textContent='Pick a provider first.';}return;}
+  const svc=(document.getElementById('net-svc').value||'').trim()||(sel.options[sel.selectedIndex].getAttribute('data-svc')||'Referral');
+  if(done){done.style.color='#6b7583';done.textContent='Sending…';}
+  const {data,error}=await sb.rpc('refer_in_network',{p_token:token,p_provider_id:pid,p_service:svc});
+  if(error||!data||!data.ok){if(done){done.style.color='#c0392b';done.textContent='Could not send — please try again.';}return;}
+  if(done){done.style.color='#1e9e6a';done.textContent='✓ Referred to '+(data.provider||'the provider')+' for '+(data.service||svc)+' — we\'ll coordinate it.';}
+  sel.value='';document.getElementById('net-svc').value='';
+}
 async function load(){
   if(!token){card.innerHTML='<h2>Invalid link</h2><p class="muted">Missing status token.</p>';return;}
   const {data,error}=await sb.rpc('case_status',{p_token:token});

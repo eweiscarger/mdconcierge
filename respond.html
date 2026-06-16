@@ -127,11 +127,38 @@ function renderAccepted(c){
       <div class="muted" id="report-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
     </div>
     <div class="box">
+      <h3>Send within the MDconcierge network</h3>
+      <div class="muted" style="margin-bottom:8px;">Need PT, imaging, pain management, or a specialist? Refer this patient to an in-network provider — we notify them, keep the attorney in the loop, and coordinate the rest.</div>
+      <select id="net-prov" style="width:100%;padding:11px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;margin-bottom:8px;"><option>Loading network…</option></select>
+      <input id="net-svc" placeholder="What's it for? (e.g. Physical Therapy)" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;margin-bottom:8px;"/>
+      <button class="btn navy" onclick="sendInNetwork()">Send referral</button>
+      <div class="muted" id="net-done" style="margin-top:8px;font-weight:600;"></div>
+    </div>
+    <div class="box">
       <h3>Request ancillary services</h3>
       <div class="muted" style="margin-bottom:8px;">One-click — we coordinate the rest.</div>
       ${pillsHtml(d.case_id||'')}
     </div>
     <p class="muted" style="margin-top:16px;">Our coordination team will follow up to help with scheduling. Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a> anytime.</p>`;
+  loadNetwork();
+}
+let NETPROV=[];
+async function loadNetwork(){
+  try{const {data}=await sb.rpc('network_providers');NETPROV=data||[];}catch(e){NETPROV=[];}
+  const sel=document.getElementById('net-prov');if(!sel)return;
+  if(!NETPROV.length){sel.innerHTML='<option value="">No network providers available</option>';return;}
+  const groups={};NETPROV.forEach(p=>{(groups[p.type||'Other']=groups[p.type||'Other']||[]).push(p);});
+  sel.innerHTML='<option value="">— Choose an in-network provider —</option>'+Object.keys(groups).sort().map(t=>`<optgroup label="${esc(t)}">${groups[t].map(p=>`<option value="${p.id}" data-svc="${esc(p.type||'')}">${esc(p.name)}${p.specialty?(' · '+esc(p.specialty)):''}${p.practice?(' ('+esc(p.practice)+')'):''}</option>`).join('')}</optgroup>`).join('');
+}
+async function sendInNetwork(){
+  const sel=document.getElementById('net-prov');const pid=parseInt(sel.value,10);const done=document.getElementById('net-done');
+  if(!pid){if(done){done.style.color='#c0392b';done.textContent='Pick a provider first.';}return;}
+  const svc=(document.getElementById('net-svc').value||'').trim()||(sel.options[sel.selectedIndex].getAttribute('data-svc')||'Referral');
+  if(done){done.style.color='#6b7583';done.textContent='Sending…';}
+  const {data,error}=await sb.rpc('refer_in_network',{p_token:token,p_provider_id:pid,p_service:svc});
+  if(error||!data||!data.ok){if(done){done.style.color='#c0392b';done.textContent='Could not send — please try again.';}return;}
+  if(done){done.style.color='#1e9e6a';done.textContent='✓ Referred to '+(data.provider||'the provider')+' for '+(data.service||svc)+' — they\'ll be notified and the attorney is kept in the loop.';}
+  sel.value='';document.getElementById('net-svc').value='';
 }
 async function doAccept(){card.innerHTML='<div class="muted">Accepting…</div>';
   const {data,error}=await sb.rpc('accept_referral',{p_token:token});
