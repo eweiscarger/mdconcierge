@@ -1253,6 +1253,66 @@ async function loadInvites(){
 function filterSignups(f,btn){SIGNUP_FILTER=f;document.querySelectorAll('#view-signups .fb').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');renderSignups();}
 function suRow(k,v){if(v===undefined||v===null||v==='')return'';return `<div style="display:flex;gap:8px;padding:3px 0;font-size:13px;"><span style="color:var(--muted);min-width:130px;">${ehtml(k)}</span><span style="font-weight:600;">${ehtml(String(v))}</span></div>`;}
 function suSec(title,rows){const body=rows.map(r=>suRow(r[0],r[1])).join('');if(!body.replace(/\s/g,''))return'';return `<div style="border:1px solid var(--border2);border-radius:9px;padding:11px 13px;margin-top:10px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);margin-bottom:5px;">${ehtml(title)}</div>${body}</div>`;}
+// ── editable review of a pending sign-up draft (fix wrong fields before approving) ──
+const PROV_TYPES=['Orthopaedic Surgeon','Orthopaedics','Pain Management','Physical Therapy','Chiropractic','Neurology','Neurosurgery','Imaging / Radiology','Primary Care','Podiatry','Psychology / Psychiatry','Dental / Maxillofacial','Other'];
+function suIn(attr,key,val,ph){return `<input class="finput" style="font-size:12.5px;padding:7px 9px;" data-${attr}="${key}" value="${ehtml(val||'')}" placeholder="${ph||''}"/>`;}
+function docEdit(d,dl){d=d||{};return `<div class="su-doc" style="border:1px dashed var(--border2);border-radius:8px;padding:9px 9px 9px;margin-bottom:7px;position:relative;">
+  <button class="btn-sm danger" style="position:absolute;top:5px;right:5px;" onclick="this.closest('.su-doc').remove()">✕</button>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+   ${suIn('d','doctor_name',d.doctor_name,'Doctor name')}
+   <input class="finput" style="font-size:12.5px;padding:7px 9px;" list="${dl}" data-d="provider_type" value="${ehtml(d.provider_type||'')}" placeholder="Type (e.g. Pain Management)"/>
+   ${suIn('d','specialty',d.specialty,'Specialty')}${suIn('d','states',d.states,'States')}
+   ${suIn('d','phone',d.phone,'Phone')}${suIn('d','body_parts',d.body_parts,'Body parts')}</div></div>`;}
+function conEdit(c){c=c||{};return `<div class="su-con" style="border:1px dashed var(--border2);border-radius:8px;padding:9px;margin-bottom:7px;position:relative;">
+  <button class="btn-sm danger" style="position:absolute;top:5px;right:5px;" onclick="this.closest('.su-con').remove()">✕</button>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${suIn('c','name',c.name,'Contact name')}${suIn('c','role',c.role,'Role')}${suIn('c','email',c.email,'Email')}${suIn('c','phone',c.phone,'Phone')}</div>
+  <label style="font-size:12px;display:flex;gap:6px;align-items:center;margin-top:5px;"><input type="checkbox" data-c="receives_referrals" ${c.receives_referrals?'checked':''}/> Receives referrals</label></div>`;}
+function attyEdit(a){a=a||{};return `<div class="su-atty" style="border:1px dashed var(--border2);border-radius:8px;padding:9px;margin-bottom:7px;position:relative;">
+  <button class="btn-sm danger" style="position:absolute;top:5px;right:5px;" onclick="this.closest('.su-atty').remove()">✕</button>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${suIn('a','first_name',a.first_name,'First')}${suIn('a','last_name',a.last_name,'Last')}${suIn('a','email',a.email,'Email')}${suIn('a','phone',a.phone,'Phone')}${suIn('a','states',a.states,'States')}${suIn('a','case_types',a.case_types,'Case types')}</div></div>`;}
+function addDocEdit(id,dl){document.getElementById('su-docs-'+id).insertAdjacentHTML('beforeend',docEdit({},dl));}
+function addConEdit(id){document.getElementById('su-cons-'+id).insertAdjacentHTML('beforeend',conEdit({}));}
+function addAttyEdit(id){document.getElementById('su-attys-'+id).insertAdjacentHTML('beforeend',attyEdit({}));}
+function lbl(t){return `<div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 5px;">${t}</div>`;}
+function editSignup(s){
+  const p=s.payload||{}; const dl='pt-'+s.id; let h=`<datalist id="${dl}">${PROV_TYPES.map(t=>'<option>'+ehtml(t)+'</option>').join('')}</datalist>`;
+  if(s.type==='provider'){
+    const pr=p.practice||{};
+    h+=lbl('Practice')+`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${suIn('p','name',pr.name,'Practice name')}${suIn('p','specialty',pr.specialty,'Primary specialty')}${suIn('p','states',pr.states,'States')}${suIn('p','phone',pr.phone,'Phone')}${suIn('p','website',pr.website,'Website')}${suIn('p','address',pr.address,'Address')}</div>`;
+    h+=lbl('Doctors — fix specialty / type here')+`<div id="su-docs-${s.id}">${(p.providers||[]).map(d=>docEdit(d,dl)).join('')}</div><button class="btn-sm" onclick="addDocEdit(${s.id},'${dl}')">+ Add doctor</button>`;
+    h+=lbl('Contacts')+`<div id="su-cons-${s.id}">${(p.contacts||[]).map(conEdit).join('')}</div><button class="btn-sm" onclick="addConEdit(${s.id})">+ Add contact</button>`;
+    if(p.services&&p.services.length)h+=`<div style="font-size:12px;color:var(--muted);margin-top:10px;">On-site / services (saved to notes): ${ehtml(p.services.join(', '))}</div>`;
+  }else{
+    const f=p.firm||{};
+    h+=lbl('Firm')+`<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${suIn('f','name',f.name,'Firm name')}${suIn('f','type',f.type,'Practice area')}${suIn('f','phone',f.phone,'Phone')}${suIn('f','website',f.website,'Website')}${suIn('f','address',f.address,'Address')}</div>`;
+    h+=lbl('Attorneys')+`<div id="su-attys-${s.id}">${(p.attorneys||[]).map(attyEdit).join('')}</div><button class="btn-sm" onclick="addAttyEdit(${s.id})">+ Add attorney</button>`;
+    h+=lbl('Contacts')+`<div id="su-cons-${s.id}">${(p.contacts||[]).map(conEdit).join('')}</div><button class="btn-sm" onclick="addConEdit(${s.id})">+ Add contact</button>`;
+  }
+  return h;
+}
+function rowObj(el,attr){const o={};el.querySelectorAll('[data-'+attr+']').forEach(x=>{const k=x.getAttribute('data-'+attr);o[k]=x.type==='checkbox'?x.checked:(x.value||'').trim();});return o;}
+function collectSubmission(id,type){
+  const root=document.getElementById('su-card-'+id); if(!root)return null;
+  const orig=(SIGNUPS.find(s=>s.id===id)||{}).payload||{};
+  const p={submitter:orig.submitter||{},services:orig.services||[],locations:orig.locations||[],source_url:orig.source_url};
+  if(type==='provider'){
+    const pr={}; root.querySelectorAll('[data-p]').forEach(x=>pr[x.getAttribute('data-p')]=(x.value||'').trim()); p.practice=pr;
+    p.providers=[...root.querySelectorAll('.su-doc')].map(el=>rowObj(el,'d')).filter(d=>d.doctor_name);
+    p.contacts=[...root.querySelectorAll('.su-con')].map(el=>rowObj(el,'c')).filter(c=>c.name||c.email);
+  }else{
+    const f={}; root.querySelectorAll('[data-f]').forEach(x=>f[x.getAttribute('data-f')]=(x.value||'').trim()); p.firm=f;
+    p.attorneys=[...root.querySelectorAll('.su-atty')].map(el=>rowObj(el,'a')).filter(a=>a.first_name||a.last_name);
+    p.contacts=[...root.querySelectorAll('.su-con')].map(el=>rowObj(el,'c')).filter(c=>c.name||c.email);
+  }
+  return p;
+}
+async function saveSignupDraft(id){
+  const s=SIGNUPS.find(x=>x.id===id);if(!s)return;
+  const payload=collectSubmission(id,s.type); if(!payload)return;
+  const {error}=await sbClient.from('signup_submissions').update({payload}).eq('id',id);
+  if(error){showToast('Error: '+error.message);return;}
+  s.payload=payload; showToast('Saved ✓');
+}
 function fmtSignup(s){
   const p=s.payload||{};let h='';
   if(s.type==='provider'){
@@ -1282,17 +1342,18 @@ function renderSignups(){
   if(!list.length){box.innerHTML='<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">Nothing here. Share your sign-up links to start collecting.</div>';return;}
   box.innerHTML=list.map(s=>{
     const flag=s.flagged_reason?`<div style="font-size:12px;color:#9a6700;background:#fff8e8;border:1px solid #f0c36d;border-radius:7px;padding:6px 10px;margin-top:8px;">⚠ ${ehtml(s.flagged_reason)}</div>`:'';
-    const actions=s.status==='pending'
-      ? `<div style="margin-top:12px;display:flex;gap:10px;"><button class="br" style="margin:0;" onclick="approveSignup(${s.id})">✓ Approve &amp; add to network</button><button class="bdq" style="margin:0;" onclick="rejectSignup(${s.id})">✕ Reject</button></div>`
+    const editable=s.status==='pending';
+    const actions=editable
+      ? `<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;"><button class="br" style="margin:0;" onclick="approveSignup(${s.id})">✓ Approve &amp; add to network</button><button class="ib" onclick="saveSignupDraft(${s.id})">💾 Save changes</button><button class="bdq" style="margin:0;" onclick="rejectSignup(${s.id})">✕ Reject</button></div>`
       : `<div style="margin-top:10px;font-size:12px;color:var(--muted);">${s.reviewed_at?('Reviewed '+_timeAgo(s.reviewed_at)):''}</div>`;
-    return `<div style="border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:14px;">
+    return `<div id="su-card-${s.id}" style="border:1px solid var(--border2);border-radius:12px;padding:16px;margin-bottom:14px;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
         <div><span style="font-size:15px;font-weight:700;">${ehtml(s.org_name||s.submitter_email||('Submission #'+s.id))}</span>
           <span style="font-size:12px;color:var(--muted);margin-left:8px;text-transform:capitalize;">${ehtml(s.type)}</span></div>
         <div>${suStatusBadge(s.status)} <span style="font-size:12px;color:var(--muted);margin-left:6px;">${_timeAgo(s.created_at)}</span></div>
       </div>
       ${flag}
-      ${fmtSignup(s)}
+      ${editable?editSignup(s):fmtSignup(s)}
       ${actions}
     </div>`;
   }).join('');
@@ -1307,7 +1368,7 @@ function splitList(s){return String(s||'').split(',').map(x=>x.trim()).filter(Bo
 async function approveSignup(id){
   const s=SIGNUPS.find(x=>x.id===id);if(!s)return;
   if(!confirm('Approve and add to your network? (You can set their BAA-on-file flag afterward in the Network tab — records shouldn\'t flow until it\'s signed.)'))return;
-  const p=s.payload||{};
+  const p=collectSubmission(id,s.type)||s.payload||{};   // use your on-screen edits
   try{
     if(s.type==='provider'){
       const pr=p.practice||{};
