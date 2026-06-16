@@ -53,8 +53,8 @@ const ANCILLARY=[['🔬 Imaging / MRI','Imaging / MRI'],['🏃 Physical Therapy'
 function pillsHtml(ref){return ANCILLARY.map(p=>`<a href="mailto:referrals@mdconcierge.net?subject=${encodeURIComponent('Request: '+p[1]+' — '+ref)}&body=${encodeURIComponent('Please coordinate '+p[1]+' for referral '+ref+'.\n\n')}" style="display:inline-block;font-size:12px;padding:6px 12px;margin:4px 6px 4px 0;background:#eef5fc;border:1px solid #b8d4ee;border-radius:14px;color:#1a2230;text-decoration:none;">${p[0]}</a>`).join('');}
 
 function vcard(){const d=CASE;const name=((d.first||'')+' '+(d.last||'')).trim();
-  return ['BEGIN:VCARD','VERSION:3.0','N:'+(d.last||'')+';'+(d.first||''),'FN:'+name,d.phone?('TEL;TYPE=CELL:'+d.phone):'',d.email?('EMAIL:'+d.email):'',d.zip?('ADR;TYPE=HOME:;;;;;'+d.zip+';'):'','NOTE:MDconcierge '+(d.case_id||'')+' — '+(d.case_type||'')+' — '+(d.injury||''),'END:VCARD'].filter(Boolean).join('\r\n');}
-function patientCsv(){const d=CASE;const h=['LastName','FirstName','DOB','Phone','Email','ZIP','Reason','Reference'];const r=[d.last,d.first,d.dob,d.phone,d.email,d.zip,(d.case_type||'')+' — '+(d.injury||''),d.case_id];return h.map(cc).join(',')+'\r\n'+r.map(cc).join(',')+'\r\n';}
+  return ['BEGIN:VCARD','VERSION:3.0','N:'+(d.last||'')+';'+(d.first||''),'FN:'+name,d.phone?('TEL;TYPE=CELL:'+d.phone):'',d.email?('EMAIL:'+d.email):'',(d.address||d.zip)?('ADR;TYPE=HOME:;;'+(d.address||'')+';;;'+(d.zip||'')+';'):'','NOTE:MDconcierge '+(d.case_id||'')+' — '+(d.case_type||'')+' — '+(d.injury||''),'END:VCARD'].filter(Boolean).join('\r\n');}
+function patientCsv(){const d=CASE;const h=['LastName','FirstName','DOB','Phone','Email','Address','ZIP','Reason','Reference'];const r=[d.last,d.first,d.dob,d.phone,d.email,d.address,d.zip,(d.case_type||'')+' — '+(d.injury||''),d.case_id];return h.map(cc).join(',')+'\r\n'+r.map(cc).join(',')+'\r\n';}
 function caseCsv(){const d=CASE;const h=['Reference','FirstName','LastName','Phone','Email','Location','DOB','CaseType','Injury','ReferringFirm','Represented'];const r=[d.case_id,d.first,d.last,d.phone,d.email,d.location,d.dob,d.case_type,d.injury,d.firm,'Yes'];return h.map(cc).join(',')+'\r\n'+r.map(cc).join(',')+'\r\n';}
 function packetText(){const d=CASE;return `MDconcierge referral ${d.case_id}\n\nPatient: ${d.first||''} ${d.last||''}\nDOB: ${d.dob||''}\nPhone: ${d.phone||''}\nEmail: ${d.email||''}\nLocation: ${d.location||''} ${d.zip||''}\nCase type: ${d.case_type||''}\nInjury/area: ${d.injury||''}\nReferring firm: ${d.firm||''}\nRepresented: Yes\n\n— MDconcierge Coordination`;}
 
@@ -74,7 +74,7 @@ function renderAccepted(c){
   const notes=c.notes||'';
   CASE={case_id:c.case_id,first:c.first,last:c.last,phone:c.phone,zip:c.zip,injury:c.injury,case_type:c.case_type,
     email:nf(notes,/(?:Client email|Email):\s*([^|]+)/),dob:nf(notes,/(?:Client )?DOB:\s*([^|]+)/),
-    location:nf(notes,/Location:\s*([^|]+)/),firm:nf(notes,/Referring firm:\s*([^|]+)/)};
+    location:nf(notes,/Location:\s*([^|]+)/),firm:nf(notes,/Referring firm:\s*([^|]+)/),address:nf(notes,/Address:\s*([^|]+)/)};
   const d=CASE;
   card.innerHTML=`<span class="pill">✓ Referral accepted — contact revealed</span>
     <h2 style="margin-top:14px;">${esc((d.first||'')+' '+(d.last||''))}</h2>
@@ -82,6 +82,7 @@ function renderAccepted(c){
     <div class="box">
       <div class="row"><span class="k">Phone</span><span class="v">${esc(d.phone||'—')}</span></div>
       <div class="row"><span class="k">Email</span><span class="v">${esc(d.email||'—')}</span></div>
+      <div class="row"><span class="k">Address</span><span class="v">${esc(d.address||'—')}</span></div>
       <div class="row"><span class="k">Location</span><span class="v">${esc(d.location||'—')} ${esc(d.zip||'')}</span></div>
       <div class="row"><span class="k">DOB</span><span class="v">${esc(d.dob||'—')}</span></div>
       <div class="row"><span class="k">Case type</span><span class="v">${esc(d.case_type||'—')}</span></div>
