@@ -227,9 +227,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="ni" onclick="showView('signups',this)"><span class="ni-ic">📝</span> Sign-ups <span class="nb" id="signup-count" style="display:none;">0</span></button>
     <div class="ns">Analytics</div>
     <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
-    <div class="ns">Settings</div>
-    <button class="ni" onclick="showView('settings',this)"><span class="ni-ic">⚙️</span> Settings</button>
+    <div class="ns">Resources</div>
+    <button class="ni" onclick="showView('tools',this)"><span class="ni-ic">🔗</span> Links &amp; Tools</button>
     <a class="ni" href="demo.html" target="_blank" rel="noopener" style="text-decoration:none;"><span class="ni-ic">🎓</span> Tutorials</a>
+    <button class="ni" onclick="showView('settings',this)"><span class="ni-ic">⚙️</span> Settings</button>
   </div>
   <div class="sb-foot"><div class="u-chip"><div class="u-av">A</div><div><div style="font-size:13px;">Admin</div><div style="font-size:11px;color:var(--muted);">MDconcierge Owner</div></div></div><button onclick="openPw()" style="margin-top:10px;width:100%;padding:8px;background:transparent;border:1px solid var(--border2);color:var(--muted2);border-radius:8px;font-size:12px;cursor:pointer;">Change password</button><button onclick="doLogout()" style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1px solid var(--border2);color:var(--muted2);border-radius:8px;font-size:12px;cursor:pointer;">Sign out</button></div>
 </nav>
@@ -380,6 +381,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <tr><td><div class="ln">Legal Records Plus</div></td><td><span class="ct ct-ssdi">Vendor</span></td><td style="font-family:var(--mono);color:var(--green);">$600/mo</td><td style="color:var(--muted);font-size:12px;">Mar 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
         <tr><td><div class="ln">Metro Orthopedics</div></td><td><span class="ct ct-construct">Provider</span></td><td style="font-family:var(--mono);color:var(--green);">$900/mo</td><td style="color:var(--muted);font-size:12px;">Mar 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
       </tbody></table></div>
+    </div>
+  </div>
+
+  <!-- LINKS & TOOLS VIEW -->
+  <div class="view" id="view-tools">
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="ph"><div class="pt">📤 Share with partners</div><div class="ps">The links you hand out — Open to preview, Copy to paste into an email or text</div></div>
+      <div id="tools-share" style="padding:6px 2px;"></div>
+    </div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="ph"><div class="pt">🎓 Training</div><div class="ps">Narrated walkthroughs — for you and to share</div></div>
+      <div id="tools-train" style="padding:6px 2px;"></div>
+    </div>
+    <div class="panel" style="margin-bottom:0;">
+      <div class="ph"><div class="pt">⚙️ Automatic pages</div><div class="ps">These are sent by the system inside emails — you don't open or share them yourself</div></div>
+      <div style="padding:10px 4px;font-size:13px;color:var(--muted2);">
+        <b>respond.html</b> (referral accept) and <b>status.html</b> (live case status) only work from the secure one-time link the system emails to a specific provider/attorney. Opening them directly just shows “invalid link,” which is by design. Nothing to manage here.
+      </div>
     </div>
   </div>
 
@@ -993,10 +1012,43 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',revenue:'Revenue',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',tools:'Links & Tools',revenue:'Revenue',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
+  if(v==='tools')renderTools();
+}
+const SITE_BASE='https://mdconcierge.net/';
+function copyLink(url){
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(()=>showToast('Link copied ✓'),()=>showToast(url));
+  else showToast(url);
+}
+function toolRow(ic,name,desc,path,share){
+  const url=SITE_BASE+path;
+  return `<div style="display:flex;align-items:center;gap:14px;padding:13px;border:1px solid var(--border2);border-radius:10px;margin-bottom:10px;">
+    <div style="font-size:22px;flex:none;">${ic}</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-weight:700;">${ehtml(name)}</div>
+      <div style="font-size:12.5px;color:var(--muted2,#8b949e);">${ehtml(desc)}</div>
+      <div style="font-size:11px;color:var(--muted);font-family:var(--mono,monospace);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ehtml(url)}</div>
+    </div>
+    <a class="ib" href="${url}" target="_blank" rel="noopener" style="flex:none;">Open ↗</a>
+    ${share?`<button class="ib" onclick="copyLink('${url}')" style="flex:none;">⧉ Copy</button>`:''}
+  </div>`;
+}
+function renderTools(){
+  const share=document.getElementById('tools-share');
+  if(share)share.innerHTML=
+    toolRow('🩺','Provider sign-up form','Send to a medical practice — they enter their own info.','signup.html?type=provider',true)
+   +toolRow('⚖️','Attorney sign-up form','Send to a law firm — they enter their own info.','signup.html?type=attorney',true)
+   +toolRow('📨','Refer a Client','For attorneys to submit a client referral.','refer.html',true)
+   +toolRow('🔐','Partner portal login','Where providers & attorneys sign in to see their cases.','portal.html',true);
+  const train=document.getElementById('tools-train');
+  if(train)train.innerHTML=
+    toolRow('🎬','All tutorials (hub)','Pick the admin, attorney, or provider walkthrough.','demo.html',true)
+   +toolRow('👤','Admin tutorial','How to run the platform (just for you).','demo-admin.html',true)
+   +toolRow('⚖️','Attorney tutorial','Share with attorneys you onboard.','demo-attorney.html',true)
+   +toolRow('🩺','Provider tutorial','Share with providers you onboard.','demo-provider.html',true);
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2800);}
