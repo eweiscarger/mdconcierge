@@ -59,6 +59,7 @@ const SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const params=new URLSearchParams(location.search);
 const setupTok=params.get('setup')||'';
+const keyParam=params.get('key')||'';
 const card=document.getElementById('card');
 const SESS_KEY='mdc_portal_session';
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -109,6 +110,7 @@ function showLogin(msg){
     <label>Password</label><input id="pw" type="password" autocomplete="current-password"/>
     <div class="err" id="e">${msg?esc(msg):''}</div>
     <button class="btn gold" onclick="doLogin()">Sign in</button>
+    <div style="margin-top:14px;"><a onclick="requestLink()" style="font-size:13px;font-weight:600;color:#1a4e8a;cursor:pointer;">✉️ Email me a sign-in link instead (no password)</a></div>
     <p class="muted" style="margin-top:18px;">No account yet? You'll get a one-time setup link by email when a case is routed to you. Questions: <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a></p>`;
   const pw=document.getElementById('pw');
   if(pw)pw.addEventListener('keydown',ev=>{if(ev.key==='Enter')doLogin();});
@@ -120,6 +122,24 @@ async function doLogin(){
   e.textContent='Signing in…';
   const {data,error}=await sb.rpc('portal_login',{p_email:em,p_password:pw});
   if(error||!data||!data.ok){e.textContent='Email or password not recognized.';return;}
+  setSess(data.session_token);
+  loadCases();
+}
+async function requestLink(){
+  const em=(document.getElementById('em').value||'').trim();
+  const e=document.getElementById('e');
+  if(!em){e.textContent='Enter your email above first, then tap the link option.';return;}
+  e.textContent='Sending…';
+  try{ await sb.rpc('portal_request_link',{p_email:em}); }catch(err){}
+  e.style.color='#1e9e6a';
+  e.textContent='If '+em+' is registered, a secure sign-in link is on its way — check your email.';
+}
+async function doKeyLogin(){
+  showLogoutBtn(false);
+  card.innerHTML='<div class="muted">Signing you in…</div>';
+  const {data,error}=await sb.rpc('portal_key_login',{p_key:keyParam});
+  history.replaceState(null,'',location.pathname);
+  if(error||!data||!data.ok){showLogin('That sign-in link is invalid or expired — sign in below, or request a fresh link.');return;}
   setSess(data.session_token);
   loadCases();
 }
@@ -280,7 +300,8 @@ async function saveProfile(role){
 function logout(){setSess('');showLogin('Signed out.');}
 
 // ---------- route ----------
-if(setupTok){showSetup();}
+if(keyParam){doKeyLogin();}
+else if(setupTok){showSetup();}
 else if(getSess()){loadCases();}
 else{showLogin();}
 </script>

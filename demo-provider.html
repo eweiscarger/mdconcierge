@@ -81,13 +81,13 @@ const SITE='https://mdconcierge.net/';
 const STEPS=[
  {k:'Welcome',t:'New patients, with the busywork removed',
   v:`<div class="mock"><div class="m-card"><b>What MDconcierge sends your office</b><div style="color:#6b7583;font-size:12px;margin-top:6px;">Pre-screened, represented patients — plus one-click import into your EHR and a simple way to handle records and reviews. No new software to install.</div></div></div>`,
-  say:"Welcome. MDconcierge sends your office new patients who are already represented by an attorney, along with an easy way to bring them into your system and handle records. There's nothing to install. Let me walk you through exactly what happens when a referral comes in.",
+  say:"Welcome. You're now connected to the MDconcierge network — a coordinated system that sends your office new, attorney-represented patients and handles the back-and-forth for you. Every message we send has one-touch buttons to act on, and you get your own portal to see and manage every case in one place. Nothing to install. Let me show you how it flows.",
   try:null},
 
  {k:'The referral email',t:'You get a privacy-safe notice first',
   v:`<div class="email"><div class="eh">MDconcierge Coordination · New patient referral</div>
      <div class="eb">We have a new <b>auto-injury</b> referral near <b>Philadelphia, PA</b> (reference MDC-A-2026-104872). Injury: lower back. The patient is represented by counsel.<br><span style="color:#6b7583;">Patient details unlock when you accept.</span><br><br><span class="btn-mock btn-acc">✅ Accept &amp; view case</span> <span class="btn-mock btn-dec">Decline</span></div></div>`,
-  say:"First, you get an email about a new referral — but notice there's no patient name or contact info yet. For privacy, you only see the case type, the injury area, and the general location. Two buttons: Accept and view the case, or Decline. Nothing is shared until you choose to accept.",
+  say:"First, you get an email about a new referral — but notice there's no patient name or contact info yet. For privacy, you only see the case type, the injury area, and the general location. You can Accept or Decline right from the email — and at the bottom of every message we send, there's a row of one-touch buttons to request records, report an exam, or jump to your cases. Nothing is shared until you choose to accept.",
   try:null},
 
  {k:'Accept to unlock',t:'Full details + one-click import',
@@ -108,7 +108,7 @@ const STEPS=[
      <div class="m-card"><div class="m-row"><span><b>Maria Lopez</b> · Dr. Lee</span><span class="pill ok">Scheduled</span></div></div>
      <div class="m-card"><div class="m-row"><span><b>James Carter</b> · Dr. Patel</span><span class="pill routed">New — review</span></div></div>
      <div class="note">One front-desk login sees every doctor in your practice.</div></div>`,
-  say:"You can also log into your portal to see every referral for your whole practice in one place — across all your doctors, not just one. The login is created automatically with your first referral, so your front desk has one place to manage everything.",
+  say:"You also get your own portal showing every referral for your whole practice — all your doctors in one place. Getting in is easy: click the secure sign-in link we email you, or use a password — whichever you prefer. You're registered automatically the moment your first case is routed, so there's nothing to set up. And anything you can do from the email buttons, you can also do here by opening a case.",
   try:['See the portal sign-in','portal.html']},
 
  {k:'Reviews & deadlines',t:'Report a UR — we help you beat the clock',
@@ -132,9 +132,12 @@ let I=0, AUTO=true, MUTED=false, SUBS=true, VOICE=null;
 const hasTTS=('speechSynthesis' in window);
 function pickVoice(){
   const vs=speechSynthesis.getVoices()||[];
-  const pref=['Daniel','Google UK English Male','Microsoft Guy Online','Microsoft David','Microsoft Mark','Alex','Arthur','Google US English'];
-  for(const n of pref){const v=vs.find(v=>v.name&&v.name.includes(n));if(v)return v;}
-  return vs.find(v=>/^en/i.test(v.lang)&&/male/i.test(v.name||''))||vs.find(v=>/^en/i.test(v.lang))||vs[0]||null;
+  const en=vs.filter(v=>/^en/i.test(v.lang));
+  let v=en.find(v=>/natural|neural/i.test(v.name||''));   // best quality (esp. Microsoft *Online (Natural)* in Edge)
+  if(v)return v;
+  const pref=['Samantha','Aria','Jenny','Ava','Allison','Google US English','Microsoft Aria','Microsoft Guy','Daniel','Karen','Moira'];
+  for(const n of pref){v=en.find(x=>(x.name||'').includes(n));if(v)return v;}
+  return en[0]||vs[0]||null;
 }
 function speak(text){
   if(!hasTTS){ AUTO=false; return; }
@@ -142,7 +145,7 @@ function speak(text){
   if(MUTED)return;
   const u=new SpeechSynthesisUtterance(text);
   if(VOICE)u.voice=VOICE;
-  u.rate=0.94;u.pitch=0.85;
+  u.rate=1.0;u.pitch=1.0;
   u.onend=()=>{ if(AUTO && !MUTED && I<STEPS.length-1) setTimeout(()=>{ if(AUTO) go(I+1); },800); };
   speechSynthesis.speak(u);
 }

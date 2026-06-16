@@ -164,9 +164,12 @@ let I=0, AUTO=true, MUTED=false, SUBS=true, VOICE=null;
 const hasTTS=('speechSynthesis' in window);
 function pickVoice(){
   const vs=speechSynthesis.getVoices()||[];
-  const pref=['Daniel','Google UK English Male','Microsoft Guy Online','Microsoft David','Microsoft Mark','Alex','Arthur','Google US English'];
-  for(const n of pref){const v=vs.find(v=>v.name&&v.name.includes(n));if(v)return v;}
-  return vs.find(v=>/^en/i.test(v.lang)&&/male/i.test(v.name||''))||vs.find(v=>/^en/i.test(v.lang))||vs[0]||null;
+  const en=vs.filter(v=>/^en/i.test(v.lang));
+  let v=en.find(v=>/natural|neural/i.test(v.name||''));   // best quality (esp. Microsoft *Online (Natural)* in Edge)
+  if(v)return v;
+  const pref=['Samantha','Aria','Jenny','Ava','Allison','Google US English','Microsoft Aria','Microsoft Guy','Daniel','Karen','Moira'];
+  for(const n of pref){v=en.find(x=>(x.name||'').includes(n));if(v)return v;}
+  return en[0]||vs[0]||null;
 }
 function speak(text){
   if(!hasTTS){ AUTO=false; return; }   // no voice support → don't auto-advance into silence
@@ -174,7 +177,7 @@ function speak(text){
   if(MUTED)return;
   const u=new SpeechSynthesisUtterance(text);
   if(VOICE)u.voice=VOICE;
-  u.rate=0.94;u.pitch=0.85;
+  u.rate=1.0;u.pitch=1.0;
   u.onend=()=>{ if(AUTO && !MUTED && I<STEPS.length-1) setTimeout(()=>{ if(AUTO) go(I+1); },800); };
   speechSynthesis.speak(u);
 }

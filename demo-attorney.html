@@ -82,7 +82,7 @@ const SITE='https://mdconcierge.net/';
 const STEPS=[
  {k:'Welcome',t:'MDconcierge coordinates care for your clients',
   v:`<div class="mock"><div class="m-card"><b>What we do for your firm</b><div style="color:#6b7583;font-size:12px;margin-top:6px;">You refer an injured client → we find the right provider, get them scheduled, chase the records, and keep you posted — so your staff stops playing phone tag with doctors' offices.</div></div></div>`,
-  say:"Welcome. MDconcierge takes the medical-coordination headache off your plate. You refer an injured client to us, and we find the right treating provider, get them scheduled, chase down the records, and keep you updated the whole way. Let me show you how simple it is on your end.",
+  say:"Welcome. You're connected to the MDconcierge network. You refer an injured client, and we find the right treating provider, get them scheduled, chase down the records, and keep you posted the whole way. You can request anything or check status two ways — the one-touch buttons in every email we send, or your own portal. Let me show you how simple it is on your end.",
   try:null},
 
  {k:'Refer a client',t:'Two ways to send us a client',
@@ -99,7 +99,7 @@ const STEPS=[
 
  {k:'Your login',t:'Set up your portal — one time',
   v:`<div class="mock"><div class="m-card"><b>Set up your MDconcierge portal login</b><div style="font-size:12px;color:#6b7583;margin:6px 0;">Create a password once. After that, sign in anytime — no hunting through email.</div><div class="btn-mock hl">🔐 Set up my login</div></div></div>`,
-  say:"The first time we coordinate a case for you, you'll get an invitation to set up a portal login. You pick a password once. After that, you can sign in anytime to see your cases — no more digging through your inbox for the right link.",
+  say:"The first time we coordinate a case for you, you become registered — and from then on you can get into your portal two ways: click the secure sign-in link we email you, or set a password. Either way you'll see all your clients' cases in one place, and you can request records or ask a question right there, or from the buttons in any email.",
   try:['See the portal sign-in','portal.html']},
 
  {k:'All your cases',t:'One screen shows every client we’re handling',
@@ -144,9 +144,12 @@ let I=0, AUTO=true, MUTED=false, SUBS=true, VOICE=null;
 const hasTTS=('speechSynthesis' in window);
 function pickVoice(){
   const vs=speechSynthesis.getVoices()||[];
-  const pref=['Daniel','Google UK English Male','Microsoft Guy Online','Microsoft David','Microsoft Mark','Alex','Arthur','Google US English'];
-  for(const n of pref){const v=vs.find(v=>v.name&&v.name.includes(n));if(v)return v;}
-  return vs.find(v=>/^en/i.test(v.lang)&&/male/i.test(v.name||''))||vs.find(v=>/^en/i.test(v.lang))||vs[0]||null;
+  const en=vs.filter(v=>/^en/i.test(v.lang));
+  let v=en.find(v=>/natural|neural/i.test(v.name||''));   // best quality (esp. Microsoft *Online (Natural)* in Edge)
+  if(v)return v;
+  const pref=['Samantha','Aria','Jenny','Ava','Allison','Google US English','Microsoft Aria','Microsoft Guy','Daniel','Karen','Moira'];
+  for(const n of pref){v=en.find(x=>(x.name||'').includes(n));if(v)return v;}
+  return en[0]||vs[0]||null;
 }
 function speak(text){
   if(!hasTTS){ AUTO=false; return; }
@@ -154,7 +157,7 @@ function speak(text){
   if(MUTED)return;
   const u=new SpeechSynthesisUtterance(text);
   if(VOICE)u.voice=VOICE;
-  u.rate=0.94;u.pitch=0.85;
+  u.rate=1.0;u.pitch=1.0;
   u.onend=()=>{ if(AUTO && !MUTED && I<STEPS.length-1) setTimeout(()=>{ if(AUTO) go(I+1); },800); };
   speechSynthesis.speak(u);
 }
