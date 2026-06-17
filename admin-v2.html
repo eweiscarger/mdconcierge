@@ -1277,6 +1277,12 @@ const PROV_TYPES=['Orthopaedic Surgeon','Orthopaedics','Pain Management','Physic
 function suIn(attr,key,val,ph){return `<input class="finput" style="font-size:12.5px;padding:7px 9px;width:100%;box-sizing:border-box;" data-${attr}="${key}" value="${ehtml(val||'')}" placeholder="${ph||''}"/>`;}
 function suCell(lbl,inner){return `<div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">${lbl}</div>${inner}</div>`;}
 function bpChk(imp,part){const w=part.toLowerCase().split(/[^a-z]+/).filter(x=>x.length>3);return w.some(x=>String(imp||'').toLowerCase().includes(x));}
+function msDrop(cls,label,options,selset){
+  const n=options.filter(o=>selset.has(o.toLowerCase())).length;
+  const boxes=options.map(o=>`<label style="display:block;font-size:12.5px;padding:4px 4px;cursor:pointer;"><input type="checkbox" class="${cls}" value="${ehtml(o)}" ${selset.has(o.toLowerCase())?'checked':''} onchange="msCount(this)"/> ${ehtml(o)}</label>`).join('');
+  return `<div class="msd"><button type="button" class="finput" style="text-align:left;cursor:pointer;font-size:12.5px;padding:7px 9px;width:100%;box-sizing:border-box;" onclick="var p=this.nextElementSibling;p.style.display=p.style.display==='block'?'none':'block';">${label} (<span class="mscount">${n}</span> selected) ▾</button><div style="display:none;border:1px solid var(--border2);border-radius:8px;padding:6px;margin-top:4px;max-height:170px;overflow:auto;">${boxes}</div></div>`;
+}
+function msCount(cb){const panel=cb.closest('div');const btn=panel.previousElementSibling;const c=btn&&btn.querySelector('.mscount');if(c)c.textContent=panel.querySelectorAll('input:checked').length;}
 function selOf(list,cur,ph){
   const lc=String(cur||'').toLowerCase();
   let o=`<option value="">${ph||'— select —'}</option>`;
@@ -1285,18 +1291,20 @@ function selOf(list,cur,ph){
   return o;
 }
 function rmHead(cls,label){return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">${label}</span><button type="button" class="btn-sm danger" onclick="this.closest('.${cls}').remove()">✕ Remove</button></div>`;}
-function docEdit(d){d=d||{};const ss='font-size:12.5px;padding:7px 9px;width:100%;box-sizing:border-box;';return `<div class="su-doc" style="border:1px dashed var(--border2);border-radius:8px;padding:11px;margin-bottom:9px;">
+function docEdit(d){d=d||{};const ss='font-size:12.5px;padding:7px 9px;width:100%;box-sizing:border-box;';
+  const bpsel=new Set(BODY_PARTS.filter(b=>bpChk(d.body_parts,b)).map(x=>x.toLowerCase()));
+  const stsel=new Set((String(d.states||'').toUpperCase().match(/PA|DE|NJ/g)||[]).map(x=>x.toLowerCase()));
+  return `<div class="su-doc" style="border:1px dashed var(--border2);border-radius:8px;padding:11px;margin-bottom:9px;">
   ${rmHead('su-doc','Doctor')}
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
    ${suCell('Name',suIn('d','doctor_name',d.doctor_name,'Dr. …'))}
    ${suCell('Specialty',`<select class="finput" style="${ss}" data-d="specialty">${selOf(SPECIALTIES,d.specialty,'— specialty —')}</select>`)}
    ${suCell('Provider type',`<select class="finput" style="${ss}" data-d="provider_type">${selOf(PROVIDER_TYPES,d.provider_type,'— type —')}</select>`)}
-   ${suCell('States',suIn('d','states',d.states,'PA, NJ'))}
+   ${suCell('States (pick any)',msDrop('st','States',['PA','DE','NJ'],stsel))}
    ${suCell('Phone',suIn('d','phone',d.phone,''))}
    ${suCell('Fax',suIn('d','fax',d.fax,''))}
   </div>
-  <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:9px 0 4px;">Body parts / areas treated${d.body_parts?(' — imported: “'+ehtml(d.body_parts)+'”'):''}</div>
-  <div style="display:flex;flex-wrap:wrap;gap:5px;">${BODY_PARTS.map(b=>`<label style="font-size:11.5px;border:1px solid var(--border2);border-radius:14px;padding:3px 9px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;"><input type="checkbox" class="bp" value="${ehtml(b)}" ${bpChk(d.body_parts,b)?'checked':''}/>${ehtml(b)}</label>`).join('')}</div>
+  ${suCell('Body parts / areas treated'+(d.body_parts?(' — imported: “'+ehtml(d.body_parts)+'”'):''),msDrop('bp','Select areas',BODY_PARTS,bpsel))}
 </div>`;}
 function conEdit(c){c=c||{};return `<div class="su-con" style="border:1px dashed var(--border2);border-radius:8px;padding:11px;margin-bottom:9px;">
   ${rmHead('su-con','Contact')}
@@ -1332,7 +1340,7 @@ function collectSubmission(id,type){
   const p={submitter:orig.submitter||{},services:orig.services||[],locations:orig.locations||[],source_url:orig.source_url};
   if(type==='provider'){
     const pr={}; root.querySelectorAll('[data-p]').forEach(x=>pr[x.getAttribute('data-p')]=(x.value||'').trim()); p.practice=pr;
-    p.providers=[...root.querySelectorAll('.su-doc')].map(el=>{const o=rowObj(el,'d');o.body_parts=[...el.querySelectorAll('input.bp:checked')].map(x=>x.value).join(', ');return o;}).filter(d=>d.doctor_name);
+    p.providers=[...root.querySelectorAll('.su-doc')].map(el=>{const o=rowObj(el,'d');o.states=[...el.querySelectorAll('input.st:checked')].map(x=>x.value).join(', ');o.body_parts=[...el.querySelectorAll('input.bp:checked')].map(x=>x.value).join(', ');return o;}).filter(d=>d.doctor_name);
     p.contacts=[...root.querySelectorAll('.su-con')].map(el=>rowObj(el,'c')).filter(c=>c.name||c.email);
   }else{
     const f={}; root.querySelectorAll('[data-f]').forEach(x=>f[x.getAttribute('data-f')]=(x.value||'').trim()); p.firm=f;
