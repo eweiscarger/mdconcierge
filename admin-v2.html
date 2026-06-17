@@ -685,13 +685,21 @@ function openRouteModal(){
 async function confirmRoute(){
   const rep=selLead&&selLead.represented;
   const av=document.getElementById('m-atty').value,pv=document.getElementById('m-prov').value;
-  if(!pv){showToast('Select a provider');return;}
-  const prov=REAL_PROVIDERS.find(p=>String(p.id)===String(pv));
-  const pn=prov?(prov.doctor_name+(prov.practices&&prov.practices.name?(' — '+prov.practices.name):'')):('Provider '+pv);
-  if(prov&&!prov.baa_on_file){if(!confirm('⚠ '+(prov.doctor_name||'This provider')+' has NO BAA on file.\n\nDocuments cannot be coordinated through MDconcierge until a BAA is signed. You can still route the referral, but no records should flow until the BAA is in place.\n\nRoute anyway?'))return;}
+  if(!pv){showToast('Select a provider or practice');return;}
+  let patch, pn;
+  if(String(pv).startsWith('prac:')){
+    const pid=parseInt(pv.slice(5),10); const pr=NET_PRACTICES.find(x=>x.id===pid);
+    pn=(pr?pr.name:'Practice')+' (whole practice — they assign the doctor)';
+    patch={status:'routed',routed_practice_id:pid,routed_provider_id:null,provider_notified:false,placement_date:new Date().toISOString()};
+  }else{
+    const prov=REAL_PROVIDERS.find(p=>String(p.id)===String(pv));
+    pn=prov?(prov.doctor_name+(prov.practices&&prov.practices.name?(' — '+prov.practices.name):'')):('Provider '+pv);
+    if(prov&&!prov.baa_on_file){if(!confirm('⚠ '+(prov.doctor_name||'This provider')+' has NO BAA on file.\n\nDocuments cannot be coordinated through MDconcierge until a BAA is signed. You can still route the referral, but no records should flow until the BAA is in place.\n\nRoute anyway?'))return;}
+    patch={status:'routed',routed_provider_id:parseInt(pv,10),routed_practice_id:null,provider_notified:false,placement_date:new Date().toISOString()};
+  }
   const an=rep?(selLead.referringFirm||'Existing attorney'):(ATTORNEYS.find(a=>a.id===av)?.name||av||'—');
   if(selLead._supa){
-    const {error}=await sbClient.from('cases').update({status:'routed',routed_provider_id:parseInt(pv,10),provider_notified:false,placement_date:new Date().toISOString()}).eq('id',selLead.supaId);
+    const {error}=await sbClient.from('cases').update(patch).eq('id',selLead.supaId);
     if(error){showToast('Route failed: '+error.message);return;}
   }
   selLead.status='routed';selLead.routedTo={attorney:an,provider:pn};
@@ -1109,7 +1117,10 @@ async function loadProviders(){
   }catch(e){console.warn('network load failed',e);}
 }
 function providerOptions(){
-  return '<option value="">— Assign provider —</option>'+REAL_PROVIDERS.map(p=>{const pr=NET_PRACTICES.find(x=>x.id===p.practice_id);return `<option value="${p.id}">${ehtml(p.doctor_name)}${pr?(' — '+ehtml(pr.name)):''}${p.specialty?(' · '+ehtml(p.specialty)):''}${p.baa_on_file?'':'  ⚠ NO BAA'}</option>`;}).join('');
+  const provs=REAL_PROVIDERS.map(p=>{const pr=NET_PRACTICES.find(x=>x.id===p.practice_id);return `<option value="${p.id}">${ehtml(p.doctor_name)}${pr?(' — '+ehtml(pr.name)):''}${p.specialty?(' · '+ehtml(p.specialty)):''}${p.baa_on_file?'':'  ⚠ NO BAA'}</option>`;}).join('');
+  const pracIds=[...new Set(REAL_PROVIDERS.map(p=>p.practice_id).filter(Boolean))];
+  const pracs=pracIds.map(id=>{const pr=NET_PRACTICES.find(x=>x.id===id);return pr?`<option value="prac:${id}">${ehtml(pr.name)} — whole practice (they assign the doctor)</option>`:'';}).join('');
+  return '<option value="">— Assign to —</option>'+(pracs?`<optgroup label="Whole practice / group">${pracs}</optgroup>`:'')+`<optgroup label="Specific provider">${provs}</optgroup>`;
 }
 // ── Partner portal accounts (providers/attorneys who log in to see their own cases) ──
 let PORTAL_ACCTS=[];
