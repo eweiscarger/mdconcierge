@@ -66,6 +66,7 @@
       <div class="fld"><label class="req">Client phone</label><input id="c-ph" type="tel" placeholder="(555) 555-0100"/></div>
     </div>
     <div class="fld"><label>Client email</label><input id="c-em" type="email" placeholder="client@email.com"/></div>
+    <div class="fld"><label>Does the client have backup / health insurance?</label><select id="c-backup"><option value="">Unknown</option><option>Yes</option><option>No</option></select></div>
     <div class="row3">
       <div class="fld"><label class="req">City</label><input id="c-city" type="text" placeholder="City"/></div>
       <div class="fld"><label class="req">State</label><input id="c-st" type="text" placeholder="PA"/></div>
@@ -124,7 +125,7 @@ async function submitReferral(){
   const firm=val('r-firm'), rname=val('r-name'), role=val('r-role'), remail=fmtEmail(val('r-email')), rphone=val('r-phone');
   const fn=val('c-fn'), ln=val('c-ln'), dobR=val('c-dob'), cphone=fmtPhone(val('c-ph')), cemail=val('c-em');
   const city=val('c-city'), st=val('c-st').toUpperCase(), zip=fmtZip(val('c-zip'));
-  const ctype=val('c-type'), desc=val('c-desc');
+  const ctype=val('c-type'), desc=val('c-desc'), backup=val('c-backup');
   const needs=Array.from(document.querySelectorAll('.need:checked')).map(x=>x.value);
   const dob=dobR?fmtDob(dobR):''; // optional, but if provided must be valid
 
@@ -162,6 +163,7 @@ async function submitReferral(){
     cemail?('Client email: '+fmtEmail(cemail)):'',
     dob?('Client DOB: '+dob):'',
     'Location: '+title(city)+', '+st,
+    'Backup insurance: '+(backup||'Unknown'),
     desc?('Details: '+desc):'',
     'Raw: '+JSON.stringify({firm,referrer:{name:title(rname),role,email:remail,phone:rphone},client:{firstName:title(fn),lastName:title(ln),dob,phone:cphone,email:cemail?fmtEmail(cemail):'',city:title(city),state:st,zip},caseType:ctype,needs,description:desc,represented:true,refId})
   ].filter(Boolean).join(' | ');
