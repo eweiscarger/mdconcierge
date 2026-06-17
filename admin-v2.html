@@ -1275,20 +1275,28 @@ function suSec(title,rows){const body=rows.map(r=>suRow(r[0],r[1])).join('');if(
 // ── editable review of a pending sign-up draft (fix wrong fields before approving) ──
 const PROV_TYPES=['Orthopaedic Surgeon','Orthopaedics','Pain Management','Physical Therapy','Chiropractic','Neurology','Neurosurgery','Imaging / Radiology','Primary Care','Podiatry','Psychology / Psychiatry','Dental / Maxillofacial','Other'];
 function suIn(attr,key,val,ph){return `<input class="finput" style="font-size:12.5px;padding:7px 9px;" data-${attr}="${key}" value="${ehtml(val||'')}" placeholder="${ph||''}"/>`;}
-function docEdit(d,dl){d=d||{};return `<div class="su-doc" style="border:1px dashed var(--border2);border-radius:8px;padding:9px 9px 9px;margin-bottom:7px;position:relative;">
-  <button class="btn-sm danger" style="position:absolute;top:5px;right:5px;" onclick="this.closest('.su-doc').remove()">✕</button>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+function selOf(list,cur){
+  const lc=String(cur||'').toLowerCase();
+  let o='<option value="">— select provider type —</option>';
+  if(cur && !list.some(x=>x.toLowerCase()===lc)) o+=`<option value="${ehtml(cur)}" selected>${ehtml(cur)} (keep)</option>`;
+  o+=list.map(x=>`<option ${x.toLowerCase()===lc?'selected':''}>${ehtml(x)}</option>`).join('');
+  return o;
+}
+function rmHead(cls,label){return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">${label}</span><button type="button" class="btn-sm danger" onclick="this.closest('.${cls}').remove()">✕ Remove</button></div>`;}
+function docEdit(d){d=d||{};return `<div class="su-doc" style="border:1px dashed var(--border2);border-radius:8px;padding:11px;margin-bottom:9px;">
+  ${rmHead('su-doc','Doctor')}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
    ${suIn('d','doctor_name',d.doctor_name,'Doctor name')}
-   <input class="finput" style="font-size:12.5px;padding:7px 9px;" list="${dl}" data-d="provider_type" value="${ehtml(d.provider_type||'')}" placeholder="Type (e.g. Pain Management)"/>
+   <select class="finput" style="font-size:12.5px;padding:7px 9px;" data-d="provider_type">${selOf(PROV_TYPES,d.provider_type)}</select>
    ${suIn('d','specialty',d.specialty,'Specialty')}${suIn('d','states',d.states,'States')}
    ${suIn('d','phone',d.phone,'Phone')}${suIn('d','body_parts',d.body_parts,'Body parts')}</div></div>`;}
-function conEdit(c){c=c||{};return `<div class="su-con" style="border:1px dashed var(--border2);border-radius:8px;padding:9px;margin-bottom:7px;position:relative;">
-  <button class="btn-sm danger" style="position:absolute;top:5px;right:5px;" onclick="this.closest('.su-con').remove()">✕</button>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${suIn('c','name',c.name,'Contact name')}${suIn('c','role',c.role,'Role')}${suIn('c','email',c.email,'Email')}${suIn('c','phone',c.phone,'Phone')}</div>
-  <label style="font-size:12px;display:flex;gap:6px;align-items:center;margin-top:5px;"><input type="checkbox" data-c="receives_referrals" ${c.receives_referrals?'checked':''}/> Receives referrals</label></div>`;}
-function attyEdit(a){a=a||{};return `<div class="su-atty" style="border:1px dashed var(--border2);border-radius:8px;padding:9px;margin-bottom:7px;position:relative;">
-  <button class="btn-sm danger" style="position:absolute;top:5px;right:5px;" onclick="this.closest('.su-atty').remove()">✕</button>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">${suIn('a','first_name',a.first_name,'First')}${suIn('a','last_name',a.last_name,'Last')}${suIn('a','email',a.email,'Email')}${suIn('a','phone',a.phone,'Phone')}${suIn('a','states',a.states,'States')}${suIn('a','case_types',a.case_types,'Case types')}</div></div>`;}
+function conEdit(c){c=c||{};return `<div class="su-con" style="border:1px dashed var(--border2);border-radius:8px;padding:11px;margin-bottom:9px;">
+  ${rmHead('su-con','Contact')}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">${suIn('c','name',c.name,'Contact name')}${suIn('c','role',c.role,'Role')}${suIn('c','email',c.email,'Email')}${suIn('c','phone',c.phone,'Phone')}</div>
+  <label style="font-size:12px;display:flex;gap:6px;align-items:center;margin-top:7px;"><input type="checkbox" data-c="receives_referrals" ${c.receives_referrals?'checked':''}/> Receives referrals</label></div>`;}
+function attyEdit(a){a=a||{};return `<div class="su-atty" style="border:1px dashed var(--border2);border-radius:8px;padding:11px;margin-bottom:9px;">
+  ${rmHead('su-atty','Attorney')}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">${suIn('a','first_name',a.first_name,'First')}${suIn('a','last_name',a.last_name,'Last')}${suIn('a','email',a.email,'Email')}${suIn('a','phone',a.phone,'Phone')}${suIn('a','states',a.states,'States')}${suIn('a','case_types',a.case_types,'Case types')}</div></div>`;}
 function addDocEdit(id,dl){document.getElementById('su-docs-'+id).insertAdjacentHTML('beforeend',docEdit({},dl));}
 function addConEdit(id){document.getElementById('su-cons-'+id).insertAdjacentHTML('beforeend',conEdit({}));}
 function addAttyEdit(id){document.getElementById('su-attys-'+id).insertAdjacentHTML('beforeend',attyEdit({}));}
