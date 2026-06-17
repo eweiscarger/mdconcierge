@@ -5,14 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MDconcierge — Attorney Tutorial</title>
 <style>
-  :root{--gold:#c8922a;--navy:#0b0f14;--ink:#1a2230;--muted:#6b7583;--line:#e3e6ea;}
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap');
+  :root{--gold:#c8922a;--navy:#0f1e3d;--cream:#FAF7F2;--steel:#6B9FD4;--border:#DDD5C8;--ink:#1C1917;--muted:#6B6560;--line:#DDD5C8;--serif:'Cormorant Garamond',Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;}
   *{box-sizing:border-box;}
-  body{margin:0;background:#eef0f3;font-family:'Segoe UI',system-ui,Arial,sans-serif;color:var(--ink);}
+  body{margin:0;background:var(--cream);font-family:var(--sans);color:var(--ink);}
   .wrap{max-width:880px;margin:0 auto;padding:20px 16px 40px;}
-  .hdr{background:var(--navy);border-radius:12px 12px 0 0;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
-  .hdr .b{font-size:19px;font-weight:800;color:#fff;}.hdr .b span{color:var(--gold);}
-  .hdr .t{color:#8e97a3;font-size:12px;margin-top:2px;}
-  .hdr .role{font-size:12px;font-weight:700;color:var(--gold);border:1px solid var(--gold);border-radius:20px;padding:4px 12px;}
+  .hdr{background:#fff;border:1px solid var(--border);border-bottom:none;border-radius:12px 12px 0 0;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;}
+  .hdr img{height:42px;display:block;}
+  .hdr .t{color:var(--navy);font-size:11px;margin-top:3px;letter-spacing:.08em;text-transform:uppercase;}
+  .hdr .role{font-size:12px;font-weight:700;color:var(--navy);border:1px solid var(--navy);border-radius:20px;padding:4px 12px;}
+  h2{font-family:var(--serif);}
   .stage{background:#fff;border:1px solid var(--line);border-top:none;padding:0;}
   .prog{height:5px;background:#eef0f2;}
   .prog>div{height:100%;background:var(--gold);transition:width .4s;}
@@ -53,7 +55,7 @@
 <body>
 <div class="wrap">
   <div class="hdr">
-    <div><div class="b">MD<span>concierge</span></div><div class="t">Interactive Tutorial</div></div>
+    <div><img src="logo.jpg" alt="MDconcierge"/><div class="t">Interactive Tutorial</div></div>
     <div class="role">⚖️ For Attorneys</div>
   </div>
   <div class="stage">
