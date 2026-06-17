@@ -94,6 +94,7 @@ function renderAccepted(c){
       <div class="row"><span class="k">Injury / area</span><span class="v">${esc(d.injury||'—')}</span></div>
       <div class="row"><span class="k">Referring firm</span><span class="v">${esc(d.firm||'—')}</span></div>
     </div>
+    <div id="treating-box"></div>
     <button class="btn navy" onclick="intakePacket()" style="margin:0 0 4px;">📋 Open patient intake packet (print / save)</button>
     <div class="box">
       <h3>Import to your EHR</h3>
@@ -147,6 +148,7 @@ function renderAccepted(c){
     </div>
     <p class="muted" style="margin-top:16px;">Our coordination team will follow up to help with scheduling. Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a> anytime.</p>`;
   loadNetwork();
+  loadTreating();
 }
 function intakePacket(){
   const d=CASE; const w=window.open('','_blank');
@@ -170,6 +172,25 @@ function intakePacket(){
   <div class="ft">Coordinated by MDconcierge &middot; referrals@mdconcierge.net<br>The patient is represented by counsel. Claim / authorization details follow separately.</div>
   </body></html>`);
   w.document.close();
+}
+async function loadTreating(){
+  let r; try{r=(await sb.rpc('practice_doctors',{p_token:token})).data;}catch(e){return;}
+  const box=document.getElementById('treating-box'); if(!box||!r||!r.practice_routed)return;
+  const docs=r.doctors||[];
+  box.innerHTML=`<div class="box" style="border:2px solid #c8922a;">
+    <h3>Which provider will be treating this patient?</h3>
+    <div class="muted" style="margin-bottom:8px;">Select the provider at ${esc(r.practice||'your practice')} who will see this patient — we'll let the attorney's office know.</div>
+    <select id="treat-sel" style="width:100%;padding:11px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;margin-bottom:8px;"><option value="">— Select treating provider —</option>${docs.map(d=>`<option value="${d.id}" ${r.treating_provider_id==d.id?'selected':''}>${esc(d.name)}${d.specialty?(' · '+esc(d.specialty)):''}</option>`).join('')}</select>
+    <button class="btn accept" onclick="setTreating()">Confirm treating provider</button>
+    <div class="muted" id="treat-done" style="margin-top:8px;font-weight:600;"></div></div>`;
+}
+async function setTreating(){
+  const id=parseInt(document.getElementById('treat-sel').value,10); const done=document.getElementById('treat-done');
+  if(!id){if(done){done.style.color='#c0392b';done.textContent='Please pick a provider.';}return;}
+  if(done){done.style.color='#6b7583';done.textContent='Saving…';}
+  const {data,error}=await sb.rpc('set_treating_provider',{p_token:token,p_provider_id:id});
+  if(error||!data||!data.ok){if(done){done.style.color='#c0392b';done.textContent='Could not save — please try again.';}return;}
+  if(done){done.style.color='#1e9e6a';done.textContent='✓ '+(data.provider||'Provider')+' set as treating — the attorney will be notified.';}
 }
 let NETPROV=[];
 async function loadNetwork(){
