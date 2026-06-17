@@ -176,8 +176,8 @@ async function loadNetwork(){
   try{const {data}=await sb.rpc('network_providers');NETPROV=data||[];}catch(e){NETPROV=[];}
   const sel=document.getElementById('net-prov');if(!sel)return;
   if(!NETPROV.length){sel.innerHTML='<option value="">No network providers available</option>';return;}
-  const groups={};NETPROV.forEach(p=>{(groups[p.type||'Other']=groups[p.type||'Other']||[]).push(p);});
-  sel.innerHTML='<option value="">— Choose an in-network provider —</option>'+Object.keys(groups).sort().map(t=>`<optgroup label="${esc(t)}">${groups[t].map(p=>`<option value="${p.id}" data-svc="${esc(p.type||'')}">${esc(p.name)}${p.specialty?(' · '+esc(p.specialty)):''}${p.practice?(' ('+esc(p.practice)+')'):''}</option>`).join('')}</optgroup>`).join('');
+  const groups={};NETPROV.forEach(p=>{const g=p.specialty||p.type||'Other';(groups[g]=groups[g]||[]).push(p);});
+  sel.innerHTML='<option value="">— Choose an in-network provider —</option>'+Object.keys(groups).sort().map(t=>`<optgroup label="${esc(t)}">${groups[t].map(p=>`<option value="${p.id}" data-svc="${esc(p.specialty||p.type||'')}">${esc(p.name)}${p.specialty?(' · '+esc(p.specialty)):''}${p.practice?(' ('+esc(p.practice)+')'):''}</option>`).join('')}</optgroup>`).join('');
 }
 async function sendInNetwork(){
   const sel=document.getElementById('net-prov');const pid=parseInt(sel.value,10);const done=document.getElementById('net-done');

@@ -736,7 +736,7 @@ function vendCard(v){
 
 // ── Real provider network (cards + detailed add/edit, solo or group) ──
 const SPECIALTIES=['Orthopedic Surgery','Orthopedics (non-surgical)','Neurosurgery','Spine Surgery','Neurospine','Neurology','Pain Management','Physical Medicine & Rehab (PM&R)','Chiropractic','Physical Therapy','Podiatry','Radiology / Imaging','Psychology / Psychiatry','Internal Medicine','Primary Care','Other'];
-const PROVIDER_TYPES=['MD','DO','DC (Chiropractor)','PT (Physical Therapist)','DPM (Podiatrist)','PA-C','NP','Imaging Center','Surgery Center','Facility','Other'];
+const PROVIDER_TYPES=['MD','DO','DPM','DC','PA-C','NP','DPT','PT','RPh','Imaging Center','Surgery Center','Facility','Other'];
 const BODY_PARTS=['Spine / Back','Neck / Cervical','Shoulder','Elbow','Hand / Wrist','Upper extremity','Hip','Knee','Ankle / Foot','Lower extremity','Head / TBI','Pain management','Other'];
 const PROV_ROLES=['Physician / Provider','Office Manager / Administrator','Medical Assistant','Work-Comp Coordinator','Billing Contact','Scheduler','MSO Contact','Other'];
 function ehtml(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
