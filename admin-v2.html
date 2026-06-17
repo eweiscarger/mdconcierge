@@ -1411,6 +1411,7 @@ function splitList(s){return String(s||'').split(',').map(x=>x.trim()).filter(Bo
 async function approveSignup(id){
   const s=SIGNUPS.find(x=>x.id===id);if(!s)return;
   if(!confirm('Approve and add to your network? (You can set their BAA-on-file flag afterward in the Network tab — records shouldn\'t flow until it\'s signed.)'))return;
+  try{const {data:{session}}=await sbClient.auth.getSession(); if(!session){alert('Your login session has expired — that\'s why approving did nothing. Click "Sign out" (bottom-left), sign back in, then hit Approve again.');return;}}catch(e){}
   const p=collectSubmission(id,s.type)||s.payload||{};   // use your on-screen edits
   try{
     if(s.type==='provider'){
@@ -1456,7 +1457,7 @@ async function approveSignup(id){
     await loadProviders();
     loadSignups();
     showToast('✓ Added to network — set their BAA flag in the Network tab. Portal login is offered automatically at first referral.');
-  }catch(e){showToast('Approve failed: '+(e.message||e));}
+  }catch(e){alert('Approve failed — '+(e.message||e)+'\n\nNothing was added. If this mentions permission/JWT/row-level security, sign out and back in, then retry.');}
 }
 async function loadPortalLeads(){
   try{
