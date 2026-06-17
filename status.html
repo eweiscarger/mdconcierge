@@ -83,6 +83,11 @@ function render(d){
     <div class="box"><h3>Progress</h3>${timeline(d)}</div>
     ${openGaps.length?`<div class="box"><h3>Outstanding items</h3>${openGaps.map(g=>`<div class="item"><span>${esc(g.label)} <span class="muted">· ${esc(g.owner)}</span></span><span class="chip ${g.status==='awaiting'?'c-await':'c-open'}">${g.status==='awaiting'?'awaiting':'needed'}</span></div>`).join('')}</div>`:''}
     ${arts.length?`<div class="box"><h3>Records &amp; documents</h3>${arts.map(a=>`<div class="item"><span>${esc(a.label)}</span><span class="chip ${a.status==='transmitted'?'c-done':'c-await'}">${a.status==='transmitted'?'sent':'requested'}</span></div>`).join('')}</div>`:''}
+    <div class="box"><h3>Records &amp; bills (demand package)</h3>
+      <div class="muted" style="margin-bottom:8px;">Building your demand? One tap requests medical records + itemized bills from every provider on this case — we forward each to you as it arrives and chase anything outstanding.</div>
+      <button class="btn navy" style="margin:0;" onclick="requestDemand()">📑 Request full records &amp; bills package</button>
+      <div class="muted" id="demand-done" style="margin-top:8px;font-weight:600;"></div>
+    </div>
     <div class="box"><h3>Send within the MDconcierge network</h3>
       <div class="muted" style="margin-bottom:8px;">Need to add PT, imaging, pain management, or a specialist for your client? Refer to an in-network provider — we coordinate it.</div>
       <select id="net-prov" style="width:100%;padding:11px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;margin-bottom:8px;"><option>Loading network…</option></select>
@@ -95,6 +100,13 @@ function render(d){
   loadNetwork();
 }
 
+async function requestDemand(){
+  const done=document.getElementById('demand-done');
+  if(done){done.style.color='#6b7583';done.textContent='Requesting…';}
+  const {data,error}=await sb.rpc('request_demand_package',{p_token:token});
+  if(error||!data||!data.ok){if(done){done.style.color='#c0392b';done.textContent='Could not request — please try again.';}return;}
+  if(done){done.style.color='#1e9e6a';done.textContent='✓ Requested records + bills from '+(data.providers||0)+' provider(s). We\'ll forward each to you as it arrives and chase anything still outstanding.';}
+}
 let NETPROV=[];
 async function loadNetwork(){
   try{const {data}=await sb.rpc('network_providers');NETPROV=data||[];}catch(e){NETPROV=[];}
