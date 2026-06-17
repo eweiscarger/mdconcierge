@@ -4,38 +4,43 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MDconcierge — Join the Network</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
 <style>
-  body{margin:0;background:#f4f5f7;font-family:'Segoe UI',system-ui,Arial,sans-serif;color:#1a2230;}
+  :root{--navy:#0f1e3d;--gold:#c8922a;--cream:#FAF7F2;--steel:#6B9FD4;--green:#2D6A4F;--text:#1C1917;--muted:#6B6560;--border:#DDD5C8;--serif:'Cormorant Garamond',Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;}
+  body{margin:0;background:var(--cream);font-family:var(--sans);color:var(--text);}
   .wrap{max-width:720px;margin:0 auto;padding:24px 16px 70px;}
-  .hdr{background:#0b0f14;border-radius:12px 12px 0 0;padding:18px 24px;}
-  .hdr .b{font-size:20px;font-weight:800;color:#fff;}.hdr .b span{color:#c8922a;}
-  .hdr .t{color:#8e97a3;font-size:12px;margin-top:2px;}
-  .card{background:#fff;border:1px solid #e3e6ea;border-top:none;border-radius:0 0 12px 12px;padding:24px;}
-  h1{font-size:21px;margin:0 0 4px;}h2{font-size:14px;margin:0;text-transform:uppercase;letter-spacing:.5px;color:#6b7583;}
-  .muted{color:#6b7583;font-size:13px;}
-  .sec{border:1px solid #e3e6ea;border-radius:11px;padding:18px;margin-top:18px;}
+  .hdr{background:#fff;border:1px solid var(--border);border-bottom:none;border-radius:14px 14px 0 0;padding:22px;text-align:center;}
+  .hdr img{height:78px;display:block;margin:0 auto;}
+  .hdr .t{color:var(--navy);font-size:11.5px;margin-top:8px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;}
+  .card{background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 14px 14px;padding:26px;}
+  h1{font-family:var(--serif);font-size:30px;line-height:1.1;margin:0 0 6px;color:var(--navy);font-weight:700;}
+  h2{font-size:13px;margin:0;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);font-weight:700;}
+  .muted{color:var(--muted);font-size:13px;}
+  .sec{border:1px solid var(--border);border-radius:11px;padding:18px;margin-top:18px;}
   .sec-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
-  label{display:block;font-size:12.5px;font-weight:600;margin:12px 0 4px;}
+  label{display:block;font-size:12.5px;font-weight:500;margin:12px 0 4px;}
   label .req{color:#c0392b;}
-  input,select,textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;font-family:inherit;}
-  input:focus,select:focus,textarea:focus{outline:none;border-color:#c8922a;}
+  input,select,textarea{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;color:var(--text);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--steel);box-shadow:0 0 0 3px rgba(107,159,212,.18);}
   .g2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px;}
   .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 14px;}
   @media(max-width:560px){.g2,.g3{grid-template-columns:1fr;}}
   .chkrow{display:flex;align-items:center;gap:8px;margin-top:12px;}
   .chkrow input{width:auto;}.chkrow label{margin:0;font-weight:600;}
-  .rep{border:1px dashed #cdd3da;border-radius:9px;padding:14px;margin-top:12px;position:relative;}
+  .rep{border:1px dashed var(--border);border-radius:9px;padding:14px;margin-top:12px;position:relative;}
   .rep .rm{position:absolute;top:8px;right:10px;background:none;border:none;color:#c0392b;font-size:13px;cursor:pointer;font-weight:700;}
-  .add{background:#eef5fc;border:1px solid #b8d4ee;color:#1a4e8a;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-top:12px;}
+  .add{background:#eef3fb;border:1px solid #c3d8ef;color:var(--navy);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-top:12px;}
   .btn{display:inline-block;padding:13px 26px;margin-top:22px;border:none;border-radius:9px;font-size:16px;font-weight:700;cursor:pointer;}
-  .gold{background:#c8922a;color:#fff;}.gold:hover{background:#b07f1f;}
+  .gold{background:var(--navy);color:#fff;}.gold:hover{background:#16294f;}
   .err{color:#c0392b;font-size:13px;margin-top:12px;font-weight:600;min-height:16px;}
-  .hint{font-size:11.5px;color:#9aa3af;margin-top:3px;}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:3px;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="hdr"><div class="b">MD<span>concierge</span></div><div class="t">Medical-Legal Coordination · Network Onboarding</div></div>
+  <div class="hdr"><img src="logo.jpg" alt="MDconcierge"/><div class="t">Medical-Legal Coordination · Network Onboarding</div></div>
   <div class="card" id="card"><div class="muted">Loading…</div></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
