@@ -74,7 +74,7 @@ function renderAccepted(c){
   const notes=c.notes||'';
   CASE={case_id:c.case_id,first:c.first,last:c.last,phone:c.phone,zip:c.zip,injury:c.injury,case_type:c.case_type,
     email:nf(notes,/(?:Client email|Email):\s*([^|]+)/),dob:nf(notes,/(?:Client )?DOB:\s*([^|]+)/),
-    location:nf(notes,/Location:\s*([^|]+)/),firm:nf(notes,/Referring firm:\s*([^|]+)/),address:nf(notes,/Address:\s*([^|]+)/)};
+    location:nf(notes,/Location:\s*([^|]+)/),firm:nf(notes,/Referring firm:\s*([^|]+)/),address:nf(notes,/Address:\s*([^|]+)/),backup:nf(notes,/Backup insurance:\s*([^|]+)/)};
   const d=CASE;
   card.innerHTML=`<span class="pill">✓ Referral accepted — contact revealed</span>
     <h2 style="margin-top:14px;">${esc((d.first||'')+' '+(d.last||''))}</h2>
@@ -86,6 +86,7 @@ function renderAccepted(c){
       <div class="row"><span class="k">Location</span><span class="v">${esc(d.location||'—')} ${esc(d.zip||'')}</span></div>
       <div class="row"><span class="k">DOB</span><span class="v">${esc(d.dob||'—')}</span></div>
       <div class="row"><span class="k">Case type</span><span class="v">${esc(d.case_type||'—')}</span></div>
+      <div class="row"><span class="k">Backup insurance</span><span class="v">${esc(d.backup||'Unknown')}</span></div>
       <div class="row"><span class="k">Injury / area</span><span class="v">${esc(d.injury||'—')}</span></div>
       <div class="row"><span class="k">Referring firm</span><span class="v">${esc(d.firm||'—')}</span></div>
     </div>
@@ -161,7 +162,7 @@ function intakePacket(){
   <div class="sec">Patient</div>
   <table>${row('Name',name)}${row('Date of birth',d.dob)}${row('Phone',d.phone)}${row('Email',d.email)}${row('Address',d.address)}${row('Location',((d.location||'')+' '+(d.zip||'')).trim())}</table>
   <div class="sec">Case</div>
-  <table>${row('Reference #',d.case_id)}${row('Case type',d.case_type)}${row('Injury / area',d.injury)}${row('Represented by',d.firm||'Counsel')}</table>
+  <table>${row('Reference #',d.case_id)}${row('Case type',d.case_type)}${row('Injury / area',d.injury)}${row('Backup insurance',d.backup||'Unknown')}${row('Represented by',d.firm||'Counsel')}</table>
   <div class="ft">Coordinated by MDconcierge &middot; referrals@mdconcierge.net<br>The patient is represented by counsel. Claim / authorization details follow separately.</div>
   </body></html>`);
   w.document.close();
