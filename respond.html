@@ -89,6 +89,7 @@ function renderAccepted(c){
       <div class="row"><span class="k">Injury / area</span><span class="v">${esc(d.injury||'—')}</span></div>
       <div class="row"><span class="k">Referring firm</span><span class="v">${esc(d.firm||'—')}</span></div>
     </div>
+    <button class="btn navy" onclick="intakePacket()" style="margin:0 0 4px;">📋 Open patient intake packet (print / save)</button>
     <div class="box">
       <h3>Import to your EHR</h3>
       <div class="muted">Pick your system — works with any (downloads a ready-to-import file).</div>
@@ -141,6 +142,29 @@ function renderAccepted(c){
     </div>
     <p class="muted" style="margin-top:16px;">Our coordination team will follow up to help with scheduling. Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a> anytime.</p>`;
   loadNetwork();
+}
+function intakePacket(){
+  const d=CASE; const w=window.open('','_blank');
+  if(!w){alert('Please allow pop-ups to open the intake packet.');return;}
+  const row=(k,v)=>v?`<tr><td class="k">${esc(k)}</td><td>${esc(v)}</td></tr>`:'';
+  const name=((d.first||'')+' '+(d.last||'')).trim();
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Intake — ${esc(name||d.case_id||'')}</title>
+  <style>body{font-family:'Segoe UI',Arial,sans-serif;color:#1a2230;max-width:720px;margin:22px auto;padding:0 20px;}
+  .hdr{background:#0b0f14;color:#fff;padding:14px 18px;border-radius:8px;font-size:18px;font-weight:800;}.hdr span{color:#c8922a;}.hdr small{font-weight:400;color:#cfd6df;font-size:13px;}
+  .sec{font-weight:700;color:#c8922a;text-transform:uppercase;font-size:12px;letter-spacing:.05em;margin:18px 0 2px;}
+  table{width:100%;border-collapse:collapse;}td{padding:9px 10px;border-bottom:1px solid #e3e6ea;font-size:14px;}td.k{color:#6b7583;width:38%;}
+  .bar{margin:14px 0;}button{background:#c8922a;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;}
+  .ft{color:#6b7583;font-size:12px;margin-top:22px;border-top:1px solid #e3e6ea;padding-top:10px;}
+  @media print{.noprint{display:none;}}</style></head><body>
+  <div class="hdr">MD<span>concierge</span> &nbsp; <small>Patient Intake Packet</small></div>
+  <div class="bar noprint"><button onclick="window.print()">🖨 Print / Save as PDF</button></div>
+  <div class="sec">Patient</div>
+  <table>${row('Name',name)}${row('Date of birth',d.dob)}${row('Phone',d.phone)}${row('Email',d.email)}${row('Address',d.address)}${row('Location',((d.location||'')+' '+(d.zip||'')).trim())}</table>
+  <div class="sec">Case</div>
+  <table>${row('Reference #',d.case_id)}${row('Case type',d.case_type)}${row('Injury / area',d.injury)}${row('Represented by',d.firm||'Counsel')}</table>
+  <div class="ft">Coordinated by MDconcierge &middot; referrals@mdconcierge.net<br>The patient is represented by counsel. Claim / authorization details follow separately.</div>
+  </body></html>`);
+  w.document.close();
 }
 let NETPROV=[];
 async function loadNetwork(){
