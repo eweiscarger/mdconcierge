@@ -227,6 +227,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <button class="ni" onclick="showView('signups',this)"><span class="ni-ic">📝</span> Sign-ups <span class="nb" id="signup-count" style="display:none;">0</span></button>
     <div class="ns">Analytics</div>
     <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
+    <button class="ni" onclick="showView('analytics',this)"><span class="ni-ic">📊</span> Analytics</button>
     <div class="ns">Resources</div>
     <a class="ni" href="overview.html" target="_blank" rel="noopener" style="text-decoration:none;"><span class="ni-ic">📊</span> Platform Overview</a>
     <button class="ni" onclick="showView('tools',this)"><span class="ni-ic">🔗</span> Links &amp; Tools</button>
@@ -383,6 +384,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
         <tr><td><div class="ln">Metro Orthopedics</div></td><td><span class="ct ct-construct">Provider</span></td><td style="font-family:var(--mono);color:var(--green);">$900/mo</td><td style="color:var(--muted);font-size:12px;">Mar 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
       </tbody></table></div>
     </div>
+  </div>
+
+  <!-- ANALYTICS VIEW -->
+  <div class="view" id="view-analytics">
+    <div id="analytics-body" style="color:var(--muted);padding:8px 2px;">Loading analytics…</div>
   </div>
 
   <!-- LINKS & TOOLS VIEW -->
@@ -1027,11 +1033,71 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',tools:'Links & Tools',revenue:'Revenue',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
   if(v==='tools')renderTools();
+  if(v==='analytics')loadAnalytics();
+}
+async function loadAnalytics(){
+  const box=document.getElementById('analytics-body');
+  box.innerHTML='Loading analytics…';
+  const {data:cases,error}=await sbClient.from('cases').select('*');
+  if(error){box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Could not load: '+ehtml(error.message)+'</div>';return;}
+  const [{data:provs},{data:practices}]=await Promise.all([
+    sbClient.from('providers').select('id,doctor_name,practice_id'),
+    sbClient.from('practices').select('id,name')
+  ]);
+  const rows=(cases||[]).filter(c=>!/^TEST-/i.test(c.case_id||''));
+  const provMap={},practiceName={};
+  (provs||[]).forEach(p=>provMap[p.id]=p);
+  (practices||[]).forEach(p=>practiceName[p.id]=p.name);
+  const DAY=86400000,now=Date.now();
+  const age=c=>c.created_at?(now-new Date(c.created_at).getTime()):null;
+  const closed=new Set(['closed','declined','archived','duplicate']);
+  const sched=new Set(['scheduled','treating']);
+  const active=rows.filter(c=>!closed.has(c.status));
+  const thisWk=rows.filter(c=>{const a=age(c);return a!=null&&a<=7*DAY;}).length;
+  const lastWk=rows.filter(c=>{const a=age(c);return a!=null&&a>7*DAY&&a<=14*DAY;}).length;
+  const reached=rows.filter(c=>sched.has(c.status)).length;
+  const conv=rows.length?Math.round(100*reached/rows.length):0;
+  const routedCases=rows.filter(c=>c.routed_provider_id);
+  const avgRem=routedCases.length?(routedCases.reduce((s,c)=>s+(c.followup_count||0),0)/routedCases.length):0;
+  // pipeline funnel
+  const order=[['new','New'],['review','In review'],['routed','Sent to provider'],['in_coordination','In coordination'],['scheduled','Scheduled'],['treating','In treatment'],['escalated','Needs attention'],['closed','Closed']];
+  const cnt={};rows.forEach(c=>{cnt[c.status]=(cnt[c.status]||0)+1;});
+  const maxc=Math.max(1,...order.map(([k])=>cnt[k]||0));
+  const funnel=order.filter(([k])=>cnt[k]).map(([k,lbl])=>{
+    const n=cnt[k]||0,w=Math.round(100*n/maxc);
+    return `<div style="display:flex;align-items:center;gap:10px;margin:7px 0;"><div style="width:130px;font-size:13px;color:var(--muted2);flex:none;">${lbl}</div><div style="flex:1;background:var(--border2);border-radius:6px;overflow:hidden;"><div style="width:${w}%;min-width:24px;background:var(--gold);color:#1a1305;font-weight:700;font-size:12px;padding:3px 8px;border-radius:6px;">${n}</div></div></div>`;
+  }).join('')||'<div style="color:var(--muted);font-size:13px;">No cases yet.</div>';
+  // case mix
+  const mix={};rows.forEach(c=>{const t=(c.case_type||'other').toLowerCase();mix[t]=(mix[t]||0)+1;});
+  const mixLabel={wc:"Workers' comp",auto:'Auto',truck:'Truck',slip:'Slip & fall',pi:'Personal injury',other:'Other'};
+  const mixHtml=Object.entries(mix).sort((a,b)=>b[1]-a[1]).map(([t,n])=>`<span style="display:inline-block;background:var(--border2);border-radius:14px;padding:4px 12px;margin:3px 6px 3px 0;font-size:12px;">${ehtml(mixLabel[t]||t)}: <b>${n}</b></span>`).join('')||'<span style="color:var(--muted);font-size:13px;">No cases yet.</span>';
+  // practice scorecard
+  const byP={};
+  routedCases.forEach(c=>{const p=provMap[c.routed_provider_id];const key=p&&p.practice_id?('p'+p.practice_id):('d'+c.routed_provider_id);
+    const name=(p&&p.practice_id&&practiceName[p.practice_id])||(p&&p.doctor_name)||'Unknown';
+    byP[key]=byP[key]||{name,routed:0,scheduled:0,rem:0};byP[key].routed++;if(sched.has(c.status))byP[key].scheduled++;byP[key].rem+=(c.followup_count||0);});
+  const scoreRows=Object.values(byP).sort((a,b)=>b.routed-a.routed).map(p=>{
+    const rate=p.routed?Math.round(100*p.scheduled/p.routed):0;const ar=(p.rem/p.routed).toFixed(1);
+    const rc=rate>=70?'var(--green)':rate>=40?'var(--gold)':'#c0392b';
+    return `<tr><td><div class="ln">${ehtml(p.name)}</div></td><td>${p.routed}</td><td>${p.scheduled}</td><td style="color:${rc};font-weight:700;">${rate}%</td><td>${ar}</td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="color:var(--muted);font-size:13px;padding:14px;">No routed cases yet — this fills in as you route referrals to practices.</td></tr>';
+  const deltaTxt=thisWk>=lastWk?`↑ vs ${lastWk} last week`:`↓ vs ${lastWk} last week`;
+  box.innerHTML=`
+    <div class="kpi-row">
+      <div class="kpi blue"><div class="kpi-lbl">Active cases</div><div class="kpi-v">${active.length}</div><div class="kpi-d">${rows.length} total all-time</div></div>
+      <div class="kpi gold"><div class="kpi-lbl">New this week</div><div class="kpi-v">${thisWk}</div><div class="kpi-d ${thisWk>=lastWk?'up':''}">${deltaTxt}</div></div>
+      <div class="kpi green"><div class="kpi-lbl">Reached scheduling</div><div class="kpi-v">${conv}%</div><div class="kpi-d">${reached} of ${rows.length} cases</div></div>
+      <div class="kpi purple"><div class="kpi-lbl">Avg reminders to respond</div><div class="kpi-v">${avgRem.toFixed(1)}</div><div class="kpi-d">lower = more responsive</div></div>
+    </div>
+    <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">Pipeline</div><div class="ps">Where every case sits right now</div></div><div style="padding:14px 16px;">${funnel}</div></div>
+    <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">Case mix</div><div class="ps">By type — WC should dominate</div></div><div style="padding:14px 16px;">${mixHtml}</div></div>
+    <div class="panel" style="margin-bottom:0;"><div class="ph"><div class="pt">Practice scorecard</div><div class="ps">Responsiveness & quality — rank your network on this, never on money</div></div>
+      <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Practice</th><th>Routed</th><th>Scheduled</th><th>Response rate</th><th>Avg reminders</th></tr></thead><tbody>${scoreRows}</tbody></table></div></div>`;
 }
 const SITE_BASE='https://mdconcierge.net/';
 function copyLink(url){
