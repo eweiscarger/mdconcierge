@@ -91,6 +91,7 @@ function render(d){
       ${[['si-doi','Date of injury',d.date_of_injury],['si-claim','Claim number',d.claim_number],['si-cstatus','Claim status (e.g. NCP / accepted / denied)',d.claim_status],['si-aname','Adjuster name',d.adjuster_name],['si-aphone','Adjuster phone',d.adjuster_phone],['si-emp','Employer (workers’ comp)',''],['si-body','Injury / body part',d.injury_type]].map(([id,ph,v])=>`<input id="${id}" placeholder="${esc(ph)}" value="${esc(v||'')}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;margin-bottom:8px;"/>`).join('')}
       <button class="btn navy" style="margin:0;" onclick="submitInfo()">Save these details</button>
       <div class="muted" id="si-done" style="margin-top:8px;font-weight:600;"></div>
+      <div class="muted" style="margin-top:12px;border-top:1px solid #eee;padding-top:10px;">Want all your cases in one place? <a href="portal.html" style="color:#1a4e8a;font-weight:600;">Sign in or create your MDconcierge portal login →</a></div>
     </div>
     ${arts.length?`<div class="box"><h3>Records &amp; documents</h3>${arts.map(a=>`<div class="item"><span>${esc(a.label)}</span><span class="chip ${a.status==='transmitted'?'c-done':'c-await'}">${a.status==='transmitted'?'sent':'requested'}</span></div>`).join('')}</div>`:''}
     <div class="box"><h3>Records &amp; bills (demand package)</h3>
