@@ -86,6 +86,12 @@ function render(d){
     ${events.length?`<div style="margin-top:14px;">${events.map(e=>`<div class="ev"><b>${esc(e.type)} reported</b>${e.deadline?(' — due '+esc(e.deadline)):''}. Our team is coordinating this.</div>`).join('')}</div>`:''}
     <div class="box"><h3>Progress</h3>${timeline(d)}</div>
     ${openGaps.length?`<div class="box"><h3>Outstanding items</h3>${openGaps.map(g=>`<div class="item"><span>${esc(g.label)} <span class="muted">· ${esc(g.owner)}</span></span><span class="chip ${g.status==='awaiting'?'c-await':'c-open'}">${g.status==='awaiting'?'awaiting':'needed'}</span></div>`).join('')}</div>`:''}
+    <div class="box"><h3>Add or update case details</h3>
+      <div class="muted" style="margin-bottom:10px;">Save time — enter the case info we need right here instead of emailing it. These are non-medical case details only; once you save, we stop sending reminders for what you've provided and pass it to the treating provider.</div>
+      ${[['si-doi','Date of injury',d.date_of_injury],['si-claim','Claim number',d.claim_number],['si-cstatus','Claim status (e.g. NCP / accepted / denied)',d.claim_status],['si-aname','Adjuster name',d.adjuster_name],['si-aphone','Adjuster phone',d.adjuster_phone],['si-emp','Employer (workers’ comp)',''],['si-body','Injury / body part',d.injury_type]].map(([id,ph,v])=>`<input id="${id}" placeholder="${esc(ph)}" value="${esc(v||'')}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;margin-bottom:8px;"/>`).join('')}
+      <button class="btn navy" style="margin:0;" onclick="submitInfo()">Save these details</button>
+      <div class="muted" id="si-done" style="margin-top:8px;font-weight:600;"></div>
+    </div>
     ${arts.length?`<div class="box"><h3>Records &amp; documents</h3>${arts.map(a=>`<div class="item"><span>${esc(a.label)}</span><span class="chip ${a.status==='transmitted'?'c-done':'c-await'}">${a.status==='transmitted'?'sent':'requested'}</span></div>`).join('')}</div>`:''}
     <div class="box"><h3>Records &amp; bills (demand package)</h3>
       <div class="muted" style="margin-bottom:8px;">Building your demand? One tap requests medical records + itemized bills from every provider on this case — we forward each to you as it arrives and chase anything outstanding.</div>
@@ -104,6 +110,17 @@ function render(d){
   loadNetwork();
 }
 
+function val(id){const el=document.getElementById(id);return el?(el.value||'').trim():'';}
+async function submitInfo(){
+  const done=document.getElementById('si-done');
+  const f={date_of_injury:val('si-doi'),claim_number:val('si-claim'),claim_status:val('si-cstatus'),adjuster_name:val('si-aname'),adjuster_phone:val('si-aphone'),employer:val('si-emp'),body_part:val('si-body')};
+  if(!Object.values(f).some(Boolean)){done.style.color='#c0392b';done.textContent='Enter at least one detail first.';return;}
+  done.style.color='#6b7583';done.textContent='Saving…';
+  const {data,error}=await sb.rpc('submit_case_info',{p_token:token,p_fields:f});
+  if(error||!data||!data.ok){done.style.color='#c0392b';done.textContent='Could not save — please try again or reply to referrals@mdconcierge.net.';return;}
+  done.style.color='#1e9e6a';done.textContent='✓ Saved — thank you! We\'ve updated the case and you won\'t get further reminders for what you provided.';
+  setTimeout(load,1400);
+}
 async function requestDemand(){
   const done=document.getElementById('demand-done');
   if(done){done.style.color='#6b7583';done.textContent='Requesting…';}
