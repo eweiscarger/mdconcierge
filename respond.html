@@ -168,7 +168,7 @@ function renderAccepted(c){
     </div>
     ${!/auto|truck|slip|liability|^pi$/i.test(d.case_type||'') ? `<div class="box">
       <h3>💊 Refer to pharmacy — Excel Pharmacy (Workers' Comp)</h3>
-      <div class="muted" style="margin-bottom:10px;">Mail-order WC pharmacy that ships medications directly to the patient. Send it from your own EHR — nothing needs to come to MDconcierge.</div>
+      <div class="muted" style="margin-bottom:10px;">Mail-order WC pharmacy that ships medications directly to the patient. Send it from your own EHR, <b>or route it through MDconcierge</b> — we send it to Excel as part of the network and handle any records or info Excel needs back, routed straight to you or the attorney.</div>
       <div style="background:#f7f9fc;border:1px solid #dbe3ec;border-radius:8px;padding:13px 15px;font-size:14px;line-height:1.75;">
         <div><b>In your EHR:</b> search <b>&ldquo;Excel Pharmacy&rdquo;</b> and confirm it by the address below.</div>
         <div style="margin-top:9px;">
@@ -178,7 +178,8 @@ function renderAccepted(c){
         </div>
         <div class="muted" style="margin-top:9px;">No e-prescribe? Fax the script + treatment notes to the fax number above.</div>
       </div>
-      <a class="btn navy" href="excel-pharmacy-wc-formulary.pdf" target="_blank" rel="noopener" style="margin-top:10px;">📋 View Excel WC formulary</a>
+      <a class="btn navy" href="mailto:referrals@mdconcierge.net?subject=${encodeURIComponent('Excel Pharmacy — '+(d.case_id||''))}&body=${encodeURIComponent('Attach the prescription + any treatment notes, then send. MDconcierge will route it to Excel Pharmacy as part of the network — and if Excel needs records or more info, we route their request straight back to you (or the attorney).\n\nCase: '+(d.case_id||'')+'\n\n')}" style="margin-top:10px;">📤 Route to Excel through MDconcierge</a>
+      <a class="btn" href="excel-pharmacy-wc-formulary.pdf" target="_blank" rel="noopener" style="margin-top:10px;background:#EEF4FC;color:#08214C;">📋 View Excel WC formulary</a>
     </div>` : ''}
     <p class="muted" style="margin-top:16px;">Our coordination team will follow up to help with scheduling. Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a> anytime.</p>`;
   NetReferral.mount({sb:sb,token:token,container:'net-ref',ref:d.case_id,patient:{zip:d.zip},preselect:params.get('refer')||''});
