@@ -5,9 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MDconcierge — Referral</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="brand.css"/>
+<link rel="icon" href="assets/brand/favicon.ico" sizes="any"/>
+<link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32"/>
+<link rel="apple-touch-icon" href="assets/brand/favicon-180.png"/>
 <style>
-  :root{--navy:#0f1e3d;--gold:#c8922a;--cream:#FAF7F2;--steel:#6B9FD4;--border:#DDD5C8;--serif:'Cormorant Garamond',Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;}
+  :root{--navy:#08214C;--gold:#2F5EA8;--cream:#F6F9FD;--steel:#6B95D4;--border:#DCE6F2;--serif:'Inter',system-ui,sans-serif;--sans:'Inter',system-ui,sans-serif;}
   body{margin:0;background:var(--cream);font-family:var(--sans);color:#1C1917;}
   .wrap{max-width:620px;margin:0 auto;padding:24px 16px 60px;}
   .hdr{background:#fff;border:1px solid var(--border);border-bottom:none;border-radius:14px 14px 0 0;padding:20px;text-align:center;}
@@ -19,22 +23,22 @@
   .muted{color:#6b7583;font-size:13px;}
   .btn{display:inline-block;padding:12px 20px;margin:8px 10px 8px 0;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;}
   .accept{background:#2ecc8a;color:#06351f;}.decline{background:#fff;border:1px solid #e0556b;color:#e0556b;}
-  .navy{background:#1a2230;color:#fff;}
+  .navy{background:#08214C;color:#fff;}
   .row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eef0f2;font-size:14px;}
   .row .k{color:#6b7583;}.row .v{font-weight:600;text-align:right;}
   .box{border:1px solid #e3e6ea;border-radius:10px;padding:16px;margin-top:16px;}
   .pill{display:inline-block;background:#eef7f1;color:#1e9e6a;border:1px solid #2ecc8a;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:700;}
   .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0;}
   .tile{padding:12px 6px;border:2px solid #e3e6ea;border-radius:9px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;background:#fff;}
-  .tile:hover{border-color:#c8922a;}
-  .tile.sel{border-color:#c8922a;background:#fdf6e8;color:#8a5a00;}
+  .tile:hover{border-color:#08214C;}
+  .tile.sel{border-color:#08214C;background:#EEF4FC;color:#08214C;}
   .tile .ic{font-size:18px;display:block;margin-bottom:3px;}
   @media(max-width:560px){.grid{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="hdr"><img src="logo.jpg" alt="MDconcierge"/><div class="t">Medical-Legal Coordination · Referral</div></div>
+  <div class="hdr"><img src="assets/brand/logo.png" alt="MDconcierge"/><div class="t">Medical-Legal Coordination · Referral</div></div>
   <div class="card" id="card"><div class="muted">Loading…</div></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -54,8 +58,26 @@ let CASE=null, ehrSel=null, cmSel=null;
 const EHR=['Epic','athenahealth','eClinicalWorks','DrChrono','Kareo','Jane App','Email Packet','Download PDF'];
 const EHR_IC={Epic:'🏥',athenahealth:'⚕️',eClinicalWorks:'📋',DrChrono:'🩺',Kareo:'📊','Jane App':'💚','Email Packet':'📧','Download PDF':'⬇️'};
 const CM=['Clio','Filevine','CASEpeer','SmartAdvocate','MyCase','CSV / other'];
+const EHR_HINT={
+  'Epic':"Two files download. Open the .vcf to add the patient as a contact. Epic doesn't allow CSV patient imports — register the patient from the intake packet.",
+  'athenahealth':"Open the .vcf to add the contact. Create the chart in athenahealth → Patients → Add (or import the CSV if your plan allows).",
+  'eClinicalWorks':"Open the .vcf to add the contact. In eCW, create the patient via the Registry, or key in from the intake packet.",
+  'DrChrono':"Open the .vcf to add the contact. In DrChrono → Patients → Import, upload the CSV.",
+  'Kareo':"Open the .vcf to add the contact. In Kareo/Tebra → Patients → Import, upload the CSV.",
+  'Jane App':"Open the .vcf to add the contact. In Jane → Patients → Import, upload the CSV.",
+  'Email Packet':"Opens a pre-filled email with the patient details — forward it to your front desk to register the patient.",
+  'Download PDF':"Opens the intake packet to print or save as PDF — register the patient from it."
+};
+const CM_HINT={
+  'Clio':"A CSV downloads. In Clio → Settings → Import → Contacts (or Matters), upload the CSV and map the columns.",
+  'Filevine':"A CSV downloads. Use Filevine's data import tool (or your admin) to load the contact/project from the CSV.",
+  'CASEpeer':"A CSV downloads. Use CASEpeer's import/intake tool to load the case from the CSV.",
+  'SmartAdvocate':"A CSV downloads. Use SmartAdvocate's import utility to load the case from the CSV.",
+  'MyCase':"A CSV downloads. In MyCase → Contacts → Import (or Cases), upload the CSV and map the columns.",
+  'CSV / other':"A standard CSV downloads — import it wherever you track cases and map the columns."
+};
 const ANCILLARY=[['🔬 Imaging / MRI','Imaging / MRI'],['🏃 Physical Therapy','Physical Therapy'],['🧠 Pain Management','Pain Management'],['🦴 Orthopaedic','Orthopaedic'],['🔄 Chiropractic','Chiropractic'],['💊 Pharmacy','Pharmacy'],['📋 Request records','Medical records'],['📄 Request bills','Billing'],['📡 Carrier relay','Carrier relay'],['➕ Other','Other ancillary service']];
-function pillsHtml(ref){return ANCILLARY.map(p=>`<a href="mailto:referrals@mdconcierge.net?subject=${encodeURIComponent('Request: '+p[1]+' — '+ref)}&body=${encodeURIComponent('Please coordinate '+p[1]+' for referral '+ref+'.\n\n')}" style="display:inline-block;font-size:12px;padding:6px 12px;margin:4px 6px 4px 0;background:#eef5fc;border:1px solid #b8d4ee;border-radius:14px;color:#1a2230;text-decoration:none;">${p[0]}</a>`).join('');}
+function pillsHtml(ref){return ANCILLARY.map(p=>`<a href="mailto:referrals@mdconcierge.net?subject=${encodeURIComponent('Request: '+p[1]+' — '+ref)}&body=${encodeURIComponent('Please coordinate '+p[1]+' for referral '+ref+'.\n\n')}" style="display:inline-block;font-size:12px;padding:6px 12px;margin:4px 6px 4px 0;background:#eef5fc;border:1px solid #b8d4ee;border-radius:14px;color:#08214C;text-decoration:none;">${p[0]}</a>`).join('');}
 
 function vcard(){const d=CASE;const name=((d.first||'')+' '+(d.last||'')).trim();
   return ['BEGIN:VCARD','VERSION:3.0','N:'+(d.last||'')+';'+(d.first||''),'FN:'+name,d.phone?('TEL;TYPE=CELL:'+d.phone):'',d.email?('EMAIL:'+d.email):'',(d.address||d.zip)?('ADR;TYPE=HOME:;;'+(d.address||'')+';;;'+(d.zip||'')+';'):'','NOTE:MDconcierge '+(d.case_id||'')+' — '+(d.case_type||'')+' — '+(d.injury||''),'END:VCARD'].filter(Boolean).join('\r\n');}
@@ -63,8 +85,8 @@ function patientCsv(){const d=CASE;const h=['LastName','FirstName','DOB','Phone'
 function caseCsv(){const d=CASE;const h=['Reference','FirstName','LastName','Phone','Email','Location','DOB','CaseType','Injury','ReferringFirm','Represented'];const r=[d.case_id,d.first,d.last,d.phone,d.email,d.location,d.dob,d.case_type,d.injury,d.firm,'Yes'];return h.map(cc).join(',')+'\r\n'+r.map(cc).join(',')+'\r\n';}
 function packetText(){const d=CASE;return `MDconcierge referral ${d.case_id}\n\nPatient: ${d.first||''} ${d.last||''}\nDOB: ${d.dob||''}\nPhone: ${d.phone||''}\nEmail: ${d.email||''}\nLocation: ${d.location||''} ${d.zip||''}\nCase type: ${d.case_type||''}\nInjury/area: ${d.injury||''}\nReferring firm: ${d.firm||''}\nRepresented: Yes\n\n— MDconcierge Coordination`;}
 
-function selEhr(el,name){ehrSel=name;document.querySelectorAll('#ehr-grid .tile').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');const b=document.getElementById('ehr-go');b.disabled=false;b.style.opacity=1;b.textContent='⬆ Import to '+name;}
-function selCm(el,name){cmSel=name;document.querySelectorAll('#cm-grid .tile').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');const b=document.getElementById('cm-go');b.disabled=false;b.style.opacity=1;b.textContent='⬆ Import to '+name;}
+function selEhr(el,name){ehrSel=name;document.querySelectorAll('#ehr-grid .tile').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');const b=document.getElementById('ehr-go');b.disabled=false;b.style.opacity=1;b.textContent='⬆ Import to '+name;const h=document.getElementById('ehr-hint');if(h)h.innerHTML='<b>How to import:</b> '+(EHR_HINT[name]||'Open the .vcf for the contact, or import the CSV into your system.');}
+function selCm(el,name){cmSel=name;document.querySelectorAll('#cm-grid .tile').forEach(t=>t.classList.remove('sel'));el.classList.add('sel');const b=document.getElementById('cm-go');b.disabled=false;b.style.opacity=1;b.textContent='⬆ Import to '+name;const h=document.getElementById('cm-hint');if(h)h.innerHTML='<b>How to import:</b> '+(CM_HINT[name]||'Import the CSV into your system and map the columns.');}
 function ehrImport(){const d=CASE;if(!ehrSel)return;
   if(ehrSel==='Download PDF'){window.print();return;}
   if(ehrSel==='Email Packet'){location.href='mailto:?subject='+encodeURIComponent('MDconcierge case '+(d.case_id||''))+'&body='+encodeURIComponent(packetText());return;}
@@ -101,6 +123,7 @@ function renderAccepted(c){
       <h3>Import to your EHR</h3>
       <div class="muted">Pick your system — works with any (downloads a ready-to-import file).</div>
       <div class="grid" id="ehr-grid">${EHR.map(s=>`<div class="tile" onclick="selEhr(this,'${s}')"><span class="ic">${EHR_IC[s]}</span>${s}</div>`).join('')}</div>
+      <div class="muted" id="ehr-hint" style="margin:8px 0;font-size:12px;line-height:1.55;"></div>
       <button class="btn navy" id="ehr-go" onclick="ehrImport()" disabled style="opacity:.4;">⬆ Select a system</button>
       <div class="muted" id="ehr-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
     </div>
@@ -108,6 +131,7 @@ function renderAccepted(c){
       <h3>Import to case management</h3>
       <div class="muted">For the attorney / case manager — pick the system (downloads a CSV).</div>
       <div class="grid" id="cm-grid">${CM.map(s=>`<div class="tile" onclick="selCm(this,'${s}')"><span class="ic">📁</span>${s}</div>`).join('')}</div>
+      <div class="muted" id="cm-hint" style="margin:8px 0;font-size:12px;line-height:1.55;"></div>
       <button class="btn navy" id="cm-go" onclick="cmImport()" disabled style="opacity:.4;">⬆ Select a system</button>
       <div class="muted" id="cm-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
     </div>
@@ -115,8 +139,8 @@ function renderAccepted(c){
       <h3>Update scheduling</h3>
       <div class="muted" style="margin-bottom:8px;">One tap — we relay it to the attorney's office.</div>
       <a class="btn accept" onclick="showSchedPicker()">✅ Scheduled</a>
-      <a class="btn" style="background:#eef5fc;color:#1a2230;" onclick="schedFromPage('pending')">Pending patient contact</a>
-      <a class="btn" style="background:#eef5fc;color:#1a2230;" onclick="schedFromPage('unable')">Unable to reach</a>
+      <a class="btn" style="background:#eef5fc;color:#08214C;" onclick="schedFromPage('pending')">Pending patient contact</a>
+      <a class="btn" style="background:#eef5fc;color:#08214C;" onclick="schedFromPage('unable')">Unable to reach</a>
       <a class="btn decline" onclick="schedFromPage('cannot')">Cannot accept</a>
       <div id="sched-picker" style="display:none;margin-top:12px;padding:13px;border:1px solid #e3e6ea;border-radius:9px;background:#fafbfc;">
         <div style="font-size:13px;font-weight:600;margin-bottom:9px;">Pick the appointment date &amp; time:</div>
@@ -149,11 +173,6 @@ function renderAccepted(c){
       </div>
       <a class="btn navy" href="excel-pharmacy-wc-formulary.pdf" target="_blank" rel="noopener" style="margin-top:10px;">📋 View Excel WC formulary</a>
     </div>` : ''}
-    <div class="box">
-      <h3>Request ancillary services</h3>
-      <div class="muted" style="margin-bottom:8px;">One-click — we coordinate the rest.</div>
-      ${pillsHtml(d.case_id||'')}
-    </div>
     <p class="muted" style="margin-top:16px;">Our coordination team will follow up to help with scheduling. Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a> anytime.</p>`;
   NetReferral.mount({sb:sb,token:token,container:'net-ref',ref:d.case_id,patient:{zip:d.zip},preselect:params.get('refer')||''});
   loadTreating();
@@ -164,11 +183,11 @@ function intakePacket(){
   const row=(k,v)=>v?`<tr><td class="k">${esc(k)}</td><td>${esc(v)}</td></tr>`:'';
   const name=((d.first||'')+' '+(d.last||'')).trim();
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Intake — ${esc(name||d.case_id||'')}</title>
-  <style>body{font-family:'Segoe UI',Arial,sans-serif;color:#1a2230;max-width:720px;margin:22px auto;padding:0 20px;}
-  .hdr{background:#0b0f14;color:#fff;padding:14px 18px;border-radius:8px;font-size:18px;font-weight:800;}.hdr span{color:#c8922a;}.hdr small{font-weight:400;color:#cfd6df;font-size:13px;}
-  .sec{font-weight:700;color:#c8922a;text-transform:uppercase;font-size:12px;letter-spacing:.05em;margin:18px 0 2px;}
+  <style>body{font-family:'Segoe UI',Arial,sans-serif;color:#08214C;max-width:720px;margin:22px auto;padding:0 20px;}
+  .hdr{background:#0b0f14;color:#fff;padding:14px 18px;border-radius:8px;font-size:18px;font-weight:800;}.hdr span{color:#08214C;}.hdr small{font-weight:400;color:#cfd6df;font-size:13px;}
+  .sec{font-weight:700;color:#08214C;text-transform:uppercase;font-size:12px;letter-spacing:.05em;margin:18px 0 2px;}
   table{width:100%;border-collapse:collapse;}td{padding:9px 10px;border-bottom:1px solid #e3e6ea;font-size:14px;}td.k{color:#6b7583;width:38%;}
-  .bar{margin:14px 0;}button{background:#c8922a;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;}
+  .bar{margin:14px 0;}button{background:#08214C;color:#fff;border:none;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;}
   .ft{color:#6b7583;font-size:12px;margin-top:22px;border-top:1px solid #e3e6ea;padding-top:10px;}
   @media print{.noprint{display:none;}}</style></head><body>
   <div class="hdr">MD<span>concierge</span> &nbsp; <small>Patient Intake Packet</small></div>
@@ -185,7 +204,7 @@ async function loadTreating(){
   let r; try{r=(await sb.rpc('practice_doctors',{p_token:token})).data;}catch(e){return;}
   const box=document.getElementById('treating-box'); if(!box||!r||!r.practice_routed)return;
   const docs=r.doctors||[];
-  box.innerHTML=`<div class="box" style="border:2px solid #c8922a;">
+  box.innerHTML=`<div class="box" style="border:2px solid #08214C;">
     <h3>Which provider will be treating this patient?</h3>
     <div class="muted" style="margin-bottom:8px;">Select the provider at ${esc(r.practice||'your practice')} who will see this patient — we'll let the attorney's office know.</div>
     <select id="treat-sel" style="width:100%;padding:11px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;margin-bottom:8px;"><option value="">— Select treating provider —</option>${docs.map(d=>`<option value="${d.id}" ${r.treating_provider_id==d.id?'selected':''}>${esc(d.name)}${d.specialty?(' · '+esc(d.specialty)):''}</option>`).join('')}</select>

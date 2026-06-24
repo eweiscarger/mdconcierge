@@ -5,9 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MDconcierge — Case Status</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="brand.css"/>
+<link rel="icon" href="assets/brand/favicon.ico" sizes="any"/>
+<link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32"/>
+<link rel="apple-touch-icon" href="assets/brand/favicon-180.png"/>
 <style>
-  :root{--navy:#0f1e3d;--gold:#c8922a;--cream:#FAF7F2;--steel:#6B9FD4;--border:#DDD5C8;--serif:'Cormorant Garamond',Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;}
+  :root{--navy:#08214C;--gold:#2F5EA8;--cream:#F6F9FD;--steel:#6B95D4;--border:#DCE6F2;--serif:'Inter',system-ui,sans-serif;--sans:'Inter',system-ui,sans-serif;}
   body{margin:0;background:var(--cream);font-family:var(--sans);color:#1C1917;}
   .wrap{max-width:620px;margin:0 auto;padding:24px 16px 60px;}
   .hdr{background:#fff;border:1px solid var(--border);border-bottom:none;border-radius:14px 14px 0 0;padding:20px;text-align:center;}
@@ -28,7 +32,7 @@
   .step:last-child:before{display:none;}
   .dot{position:absolute;left:0;top:1px;width:18px;height:18px;border-radius:50%;border:2px solid #cdd3da;background:#fff;}
   .step.done .dot{background:#2ecc8a;border-color:#2ecc8a;}
-  .step.active .dot{background:#c8922a;border-color:#c8922a;box-shadow:0 0 0 4px #fdf0d6;}
+  .step.active .dot{background:#08214C;border-color:#08214C;box-shadow:0 0 0 4px #DCE8F7;}
   .step .lbl{font-size:14px;font-weight:600;}
   .step.future .lbl{color:#9aa3af;font-weight:500;}
   .step .sub{font-size:12px;color:#6b7583;margin-top:1px;}
@@ -39,12 +43,12 @@
   .ev{background:#fff7e8;border:1px solid #f0d79a;border-radius:9px;padding:10px 12px;margin-top:8px;font-size:13px;}
   .ev b{color:#9a6700;}
   .btn{display:inline-block;padding:11px 18px;margin:10px 8px 0 0;border-radius:8px;font-size:14px;font-weight:700;text-decoration:none;}
-  .navy{background:#1a2230;color:#fff;}
+  .navy{background:#08214C;color:#fff;}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="hdr"><img src="logo.jpg" alt="MDconcierge"/><div class="t">Medical-Legal Coordination · Case Status</div></div>
+  <div class="hdr"><img src="assets/brand/logo.png" alt="MDconcierge"/><div class="t">Medical-Legal Coordination · Case Status</div></div>
   <div class="card" id="card"><div class="muted">Loading…</div></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -58,7 +62,7 @@ const card=document.getElementById('card');
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function cap(s){s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1);}
 const STATUS_LABEL={new:'Received',review:'In review',routed:'With provider',scheduled:'Scheduled',accepted:'Accepted',declined:'Declined',closed:'Closed',escalated:'Needs attention'};
-const STATUS_COLOR={new:'#eef5fc;#1a4e8a',review:'#fef6e7;#9a6700',routed:'#eef7f1;#1e7a52',scheduled:'#eaf7f0;#1e9e6a',accepted:'#eaf7f0;#1e9e6a',closed:'#eef0f2;#6b7583',declined:'#fdeceb;#c0392b',escalated:'#fdeceb;#c0392b'};
+const STATUS_COLOR={new:'#eef5fc;#2F5EA8',review:'#fef6e7;#9a6700',routed:'#eef7f1;#1e7a52',scheduled:'#eaf7f0;#1e9e6a',accepted:'#eaf7f0;#1e9e6a',closed:'#eef0f2;#6b7583',declined:'#fdeceb;#c0392b',escalated:'#fdeceb;#c0392b'};
 
 function timeline(d){
   const accepted = ['scheduled','accepted','closed'].includes(d.status) || !!d.schedule_status;
@@ -92,7 +96,7 @@ function render(d){
       ${[['si-doi','Date of injury',d.date_of_injury],['si-claim','Claim number',d.claim_number],['si-cstatus','Claim status (e.g. NCP / accepted / denied)',d.claim_status],['si-aname','Adjuster name',d.adjuster_name],['si-aphone','Adjuster phone',d.adjuster_phone],['si-emp','Employer (workers’ comp)',d.employer],['si-body','Injury / body part',d.injury_type]].map(([id,ph,v])=>`<input id="${id}" placeholder="${esc(ph)}" value="${esc(v||'')}" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;margin-bottom:8px;"/>`).join('')}
       <button class="btn navy" style="margin:0;" onclick="submitInfo()">Save these details</button>
       <div class="muted" id="si-done" style="margin-top:8px;font-weight:600;"></div>
-      <div class="muted" style="margin-top:12px;border-top:1px solid #eee;padding-top:10px;">Want all your cases in one place? <a href="portal.html" style="color:#1a4e8a;font-weight:600;">Sign in or create your MDconcierge portal login →</a></div>
+      <div class="muted" style="margin-top:12px;border-top:1px solid #eee;padding-top:10px;">Want all your cases in one place? <a href="portal.html" style="color:#2F5EA8;font-weight:600;">Sign in or create your MDconcierge portal login →</a></div>
     </div>
     ${arts.length?`<div class="box"><h3>Records &amp; documents</h3>${arts.map(a=>`<div class="item"><span>${esc(a.label)}</span><span class="chip ${a.status==='transmitted'?'c-done':'c-await'}">${a.status==='transmitted'?'sent':'requested'}</span></div>`).join('')}</div>`:''}
     <div class="box"><h3>Records &amp; bills (demand package)</h3>

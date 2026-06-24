@@ -5,9 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MDconcierge — Partner Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="brand.css"/>
+<link rel="icon" href="assets/brand/favicon.ico" sizes="any"/>
+<link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32"/>
+<link rel="apple-touch-icon" href="assets/brand/favicon-180.png"/>
 <style>
-  :root{--navy:#0f1e3d;--gold:#c8922a;--cream:#FAF7F2;--steel:#6B9FD4;--border:#DDD5C8;--serif:'Cormorant Garamond',Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;}
+  :root{--navy:#08214C;--gold:#2F5EA8;--cream:#F6F9FD;--steel:#6B95D4;--border:#DCE6F2;--serif:'Inter',system-ui,sans-serif;--sans:'Inter',system-ui,sans-serif;}
   body{margin:0;background:var(--cream);font-family:var(--sans);color:#1C1917;}
   .wrap{max-width:680px;margin:0 auto;padding:24px 16px 60px;}
   .hdr{background:#fff;border:1px solid var(--border);border-bottom:none;border-radius:14px 14px 0 0;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;}
@@ -21,13 +25,13 @@
   .muted{color:#6b7583;font-size:13px;}
   label{display:block;font-size:13px;font-weight:600;margin:14px 0 5px;}
   input{width:100%;box-sizing:border-box;padding:11px 13px;border:1px solid #cdd3da;border-radius:9px;font-size:15px;}
-  input:focus{outline:none;border-color:#c8922a;}
+  input:focus{outline:none;border-color:#08214C;}
   .btn{display:inline-block;padding:12px 22px;margin:16px 0 0;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;}
-  .gold{background:#c8922a;color:#fff;}.gold:hover{background:#b07f1f;}
-  .navy{background:#1a2230;color:#fff;}
+  .gold{background:#08214C;color:#fff;}.gold:hover{background:#0E2E63;}
+  .navy{background:#08214C;color:#fff;}
   .err{color:#c0392b;font-size:13px;margin-top:10px;font-weight:600;min-height:16px;}
   .cs{border:1px solid #e3e6ea;border-radius:11px;padding:16px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;}
-  .cs:hover{border-color:#c8922a;}
+  .cs:hover{border-color:#08214C;}
   .cs .info{min-width:0;}
   .cs .nm{font-size:15px;font-weight:700;}
   .cs .rf{font-size:12px;color:#6b7583;margin-top:2px;}
@@ -41,7 +45,7 @@
   .psec h3{margin:0 0 6px;}
   .prep{border:1px dashed #cdd3da;border-radius:9px;padding:14px;margin-top:12px;position:relative;}
   .prm{position:absolute;top:8px;right:10px;background:none;border:none;color:#c0392b;font-size:12px;font-weight:700;cursor:pointer;}
-  .padd{background:#eef5fc;border:1px solid #b8d4ee;color:#1a4e8a;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-top:12px;}
+  .padd{background:#eef5fc;border:1px solid #b8d4ee;color:#2F5EA8;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-top:12px;}
   .g2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;}
   .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px;align-items:center;}
   @media(max-width:560px){.g2,.g3{grid-template-columns:1fr;}}
@@ -53,7 +57,7 @@
 <body>
 <div class="wrap">
   <div class="hdr">
-    <div><img src="logo.jpg" alt="MDconcierge"/><div class="t">Partner Portal</div></div>
+    <div><img src="assets/brand/logo.png" alt="MDconcierge"/><div class="t">Partner Portal</div></div>
     <a class="out" id="logout" style="display:none;" onclick="logout()">Sign out</a>
   </div>
   <div class="card" id="card"><div class="muted">Loading…</div></div>
@@ -76,7 +80,7 @@ function setSess(t){try{t?localStorage.setItem(SESS_KEY,t):localStorage.removeIt
 function showLogoutBtn(on){document.getElementById('logout').style.display=on?'inline':'none';}
 
 const STATUS_LABEL={new:'Received',review:'In review',routed:'With you',scheduled:'Scheduled',accepted:'Accepted',declined:'Declined',closed:'Closed',escalated:'Needs attention'};
-const STATUS_COLOR={new:'#eef5fc;#1a4e8a',review:'#fef6e7;#9a6700',routed:'#eef7f1;#1e7a52',scheduled:'#eaf7f0;#1e9e6a',accepted:'#eaf7f0;#1e9e6a',closed:'#eef0f2;#6b7583',declined:'#fdeceb;#c0392b',escalated:'#fdeceb;#c0392b'};
+const STATUS_COLOR={new:'#eef5fc;#2F5EA8',review:'#fef6e7;#9a6700',routed:'#eef7f1;#1e7a52',scheduled:'#eaf7f0;#1e9e6a',accepted:'#eaf7f0;#1e9e6a',closed:'#eef0f2;#6b7583',declined:'#fdeceb;#c0392b',escalated:'#fdeceb;#c0392b'};
 
 // ---------- set-password (from invite link) ----------
 function showSetup(){
@@ -117,7 +121,7 @@ function showLogin(msg){
     <label>Password</label><input id="pw" type="password" autocomplete="current-password"/>
     <div class="err" id="e">${msg?esc(msg):''}</div>
     <button class="btn gold" onclick="doLogin()">Sign in</button>
-    <div style="margin-top:14px;"><a onclick="requestLink()" style="font-size:13px;font-weight:600;color:#1a4e8a;cursor:pointer;">✉️ Email me a sign-in link instead (no password)</a></div>
+    <div style="margin-top:14px;"><a onclick="requestLink()" style="font-size:13px;font-weight:600;color:#2F5EA8;cursor:pointer;">✉️ Email me a sign-in link instead (no password)</a></div>
     <p class="muted" style="margin-top:18px;">No account yet? You'll get a one-time setup link by email when a case is routed to you. Questions: <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a></p>`;
   const pw=document.getElementById('pw');
   if(pw)pw.addEventListener('keydown',ev=>{if(ev.key==='Enter')doLogin();});
@@ -210,7 +214,7 @@ function renderCases(d){
       + (done.length?`<h3 style="margin-top:24px;">Closed</h3>`+done.map(caseRow).join(''):'');
   }
   card.innerHTML=`<h2>${hi}</h2>
-    <div style="margin:2px 0 8px;"><a onclick="showProfile()" style="font-size:13px;font-weight:600;color:#1a4e8a;cursor:pointer;">✏️ Edit my ${d.role==='provider'?'practice info':'firm info'}</a></div>
+    <div style="margin:2px 0 8px;"><a onclick="showProfile()" style="font-size:13px;font-weight:600;color:#2F5EA8;cursor:pointer;">✏️ Edit my ${d.role==='provider'?'practice info':'firm info'}</a></div>
     <p class="muted">${d.role==='provider'?'Cases referred to your practice.':'Cases we\'re coordinating for your clients.'} Click any case to open it.</p>
     ${body}
     <p class="muted" style="margin-top:22px;">Questions on any case? Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a>.</p>`;
@@ -264,7 +268,7 @@ async function showProfile(){
   renderProfile(data);
 }
 function renderProfile(d){
-  let html=`<a onclick="loadCases()" style="font-size:13px;font-weight:600;color:#1a4e8a;cursor:pointer;">← Back to my cases</a><h2 style="margin-top:8px;">My information</h2>
+  let html=`<a onclick="loadCases()" style="font-size:13px;font-weight:600;color:#2F5EA8;cursor:pointer;">← Back to my cases</a><h2 style="margin-top:8px;">My information</h2>
     <p class="muted">Update your details anytime — changes save instantly and the MDconcierge team is notified. (Your signed-agreement status is managed by MDconcierge.)</p>`;
   if(d.role==='provider'){
     const p=d.practice||{};
@@ -321,7 +325,7 @@ async function saveProfile(role){
   const {data,error}=await sb.rpc('portal_save_profile',{p_token:tok,p_payload:payload});
   if(error||!data||!data.ok){e.textContent='Could not save — please try again.';return;}
   card.innerHTML=`<h2>✓ Saved</h2><p class="muted">Your changes are live, and we've let the MDconcierge team know. Thank you for keeping your information current.</p>
-    <a class="btn navy" onclick="showProfile()">Edit again</a> <a class="btn" style="background:#eef5fc;color:#1a2230;" onclick="loadCases()">Back to my cases</a>`;
+    <a class="btn navy" onclick="showProfile()">Edit again</a> <a class="btn" style="background:#eef5fc;color:#08214C;" onclick="loadCases()">Back to my cases</a>`;
   window.scrollTo(0,0);
 }
 function logout(){setSess('');showLogin('Signed out.');}
