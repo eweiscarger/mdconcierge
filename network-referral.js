@@ -21,9 +21,9 @@
   function norm(s){return String(s==null?'':s).toLowerCase();}
 
   /* Service types the referrer can request. Controlled list — edit here. */
-  var SERVICES=['Physical Therapy','Imaging / MRI','Pain Management','Orthopaedics','Orthopedic Spine','Neurosurgery','Chiropractic','Pharmacy','Podiatry / Foot & Ankle'];
+  var SERVICES=['Physical Therapy','PM&R','Imaging / MRI','Pain Management','Orthopaedics','Orthopedic Spine','Neurosurgery','Chiropractic','Pharmacy','Podiatry / Foot & Ankle'];
   var ICONS={
-    'physical therapy':'🏃','imaging / mri':'🔬','pain management':'💉','orthopaedics':'🦴',
+    'physical therapy':'🏃','pm&r':'🩺','imaging / mri':'🔬','pain management':'💉','orthopaedics':'🦴',
     'orthopedic spine':'🩻','neurosurgery':'🧠',
     'chiropractic':'🔄','pharmacy':'💊','podiatry / foot & ankle':'🦶'
   };
