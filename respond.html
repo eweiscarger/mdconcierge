@@ -159,6 +159,13 @@ function renderAccepted(c){
       <div class="muted" id="report-done" style="margin-top:8px;color:#1e9e6a;font-weight:600;"></div>
     </div>
     <div id="net-ref"></div>
+    <div class="box">
+      <h3>Message the attorney</h3>
+      <div class="muted" style="margin-bottom:8px;">Send a note to the referring attorney's office — we relay it through MDconcierge and route any reply back to you.</div>
+      <textarea id="msg-body" placeholder="Type your message…" style="width:100%;box-sizing:border-box;min-height:84px;padding:10px 12px;border:1px solid #DCE6F2;border-radius:8px;font-size:14px;font-family:inherit;"></textarea>
+      <button class="btn navy" style="margin-top:8px;" onclick="sendCaseMessage()">Send message</button>
+      <div class="muted" id="msg-done" style="margin-top:8px;font-weight:600;"></div>
+    </div>
     ${!/auto|truck|slip|liability|^pi$/i.test(d.case_type||'') ? `<div class="box">
       <h3>💊 Refer to pharmacy — Excel Pharmacy (Workers' Comp)</h3>
       <div class="muted" style="margin-bottom:10px;">Mail-order WC pharmacy that ships medications directly to the patient. Send it from your own EHR — nothing needs to come to MDconcierge.</div>
@@ -218,6 +225,16 @@ async function setTreating(){
   const {data,error}=await sb.rpc('set_treating_provider',{p_token:token,p_provider_id:id});
   if(error||!data||!data.ok){if(done){done.style.color='#c0392b';done.textContent='Could not save — please try again.';}return;}
   if(done){done.style.color='#1e9e6a';done.textContent='✓ '+(data.provider||'Provider')+' set as treating — the attorney will be notified.';}
+}
+async function sendCaseMessage(){
+  const ta=document.getElementById('msg-body'),done=document.getElementById('msg-done');
+  const txt=(ta&&ta.value||'').trim();
+  if(!txt){if(done){done.style.color='#c0392b';done.textContent='Type a message first.';}return;}
+  if(done){done.style.color='#5C6B85';done.textContent='Sending…';}
+  const {data,error}=await sb.functions.invoke('send-case-message',{body:{token:token,body:txt}});
+  if(error||!data||!data.ok){if(done){done.style.color='#c0392b';done.textContent='Could not send — please try again or reply to referrals@mdconcierge.net.';}return;}
+  if(done){done.style.color='#1e9e6a';done.textContent='✓ Sent — we relayed it to the attorney. Any reply comes back to you by email.';}
+  ta.value='';
 }
 async function doAccept(){card.innerHTML='<div class="muted">Accepting…</div>';
   const {data,error}=await sb.rpc('accept_referral',{p_token:token});

@@ -105,6 +105,12 @@ function render(d){
       <div class="muted" id="demand-done" style="margin-top:8px;font-weight:600;"></div>
     </div>
     <div id="net-ref"></div>
+    ${d.provider?`<div class="box"><h3>Message the provider</h3>
+      <div class="muted" style="margin-bottom:8px;">Send a note to ${esc(d.provider)}'s office — we relay it through MDconcierge and route any reply back to you.</div>
+      <textarea id="msg-body" placeholder="Type your message…" style="width:100%;box-sizing:border-box;min-height:84px;padding:10px 12px;border:1px solid #DCE6F2;border-radius:8px;font-size:14px;font-family:inherit;"></textarea>
+      <button class="btn navy" style="margin-top:8px;" onclick="sendCaseMessage()">Send message</button>
+      <div class="muted" id="msg-done" style="margin-top:8px;font-weight:600;"></div>
+    </div>`:''}
     <a class="btn navy" href="mailto:referrals@mdconcierge.net?subject=${encodeURIComponent('Re: '+(d.case_id||'')+' — status')}&body=${encodeURIComponent('Hello, regarding referral '+(d.case_id||'')+':\n\n')}">Reply to our team</a>
     <p class="muted" style="margin-top:16px;">This page updates as your case progresses. Questions? Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a> anytime.</p>`;
   NetReferral.mount({sb:sb,token:token,container:'net-ref',ref:d.case_id,patient:{zip:d.zip||d.patient_zip||d.zip_code},preselect:new URLSearchParams(location.search).get('refer')||''});
@@ -127,6 +133,16 @@ async function requestDemand(){
   const {data,error}=await sb.rpc('request_demand_package',{p_token:token});
   if(error||!data||!data.ok){if(done){done.style.color='#c0392b';done.textContent='Could not request — please try again.';}return;}
   if(done){done.style.color='#1e9e6a';done.textContent='✓ Requested records + bills from '+(data.providers||0)+' provider(s). We\'ll forward each to you as it arrives and chase anything still outstanding.';}
+}
+async function sendCaseMessage(){
+  const ta=document.getElementById('msg-body'),done=document.getElementById('msg-done');
+  const txt=(ta&&ta.value||'').trim();
+  if(!txt){if(done){done.style.color='#c0392b';done.textContent='Type a message first.';}return;}
+  if(done){done.style.color='#5C6B85';done.textContent='Sending…';}
+  const {data,error}=await sb.functions.invoke('send-case-message',{body:{token:token,body:txt}});
+  if(error||!data||!data.ok){if(done){done.style.color='#c0392b';done.textContent='Could not send — please try again or reply to referrals@mdconcierge.net.';}return;}
+  if(done){done.style.color='#1e9e6a';done.textContent='✓ Sent — we relayed it to the provider. Any reply comes back to you by email.';}
+  ta.value='';
 }
 async function load(){
   if(!token){card.innerHTML='<h2>Invalid link</h2><p class="muted">Missing status token.</p>';return;}
