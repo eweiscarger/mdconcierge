@@ -34,6 +34,8 @@
   .badge{display:inline-block;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700;margin-top:6px;}
   .lock{display:inline-block;font-size:11px;color:#9a6700;background:#fef6e7;border:1px solid #f0d79a;border-radius:20px;padding:3px 10px;margin-top:6px;}
   .open{white-space:nowrap;}
+  .box{border:1px solid #e3e6ea;border-radius:11px;padding:16px;margin-top:0;}
+  .csw{border-bottom:1px solid #f0f2f4;padding-bottom:6px;}
   .empty{text-align:center;color:#6b7583;padding:30px 10px;}
   .psec{border:1px solid #e3e6ea;border-radius:11px;padding:16px;margin-top:16px;}
   .psec h3{margin:0 0 6px;}
@@ -57,6 +59,7 @@
   <div class="card" id="card"><div class="muted">Loading…</div></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="network-referral.js?v=6"></script>
 <script>
 const SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
 const SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
@@ -167,15 +170,35 @@ function caseRow(c){
   const appt = c.appointment_at ? `<div class="rf">Appt: ${esc(c.appointment_at)}</div>` : '';
   const url = (c.link_role==='provider'?'respond.html?t=':'status.html?t=')+encodeURIComponent(c.token||'');
   const openLbl = c.link_role==='provider' ? (c.locked?'Review &amp; accept':'Open case') : 'View status';
-  return `<div class="cs"><div class="info">
+  const canRefer = !c.locked && !['closed','declined'].includes(c.status);
+  const rk = 'nr-'+(c._rk||'0');
+  const referUI = canRefer ? `<div style="margin-top:8px;">
+      <button class="padd" style="margin-top:0;" data-host="${rk}" data-tok="${esc(c.token||'')}" data-cid="${esc(c.case_id||'')}" data-zip="${esc(c.zip||'')}" onclick="toggleRefer(this)">↳ Refer this patient in-network</button>
+      <div id="${rk}" style="display:none;margin-top:10px;"></div>
+    </div>` : '';
+  return `<div class="csw">
+    <div class="cs"><div class="info">
       <div class="nm">${name}</div>
       <div class="rf">Reference ${esc(c.case_id||'')}</div>${appt}
       <div>${stat}${lock}</div>
     </div>
-    <a class="btn navy open" style="margin:0;" href="${url}" target="_blank" rel="noopener">${openLbl}</a></div>`;
+    <a class="btn navy open" style="margin:0;" href="${url}" target="_blank" rel="noopener">${openLbl}</a></div>
+    ${referUI}
+  </div>`;
+}
+function toggleRefer(btn){
+  const host=document.getElementById(btn.getAttribute('data-host'));
+  if(!host)return;
+  if(host.style.display==='none'||!host.style.display){
+    host.style.display='block'; btn.textContent='✕ Close';
+    if(!host.dataset.mounted){host.dataset.mounted='1';
+      NetReferral.mount({sb:sb,token:btn.getAttribute('data-tok'),container:host.id,ref:btn.getAttribute('data-cid'),patient:{zip:btn.getAttribute('data-zip')||''}});
+    }
+  }else{host.style.display='none'; btn.textContent='↳ Refer this patient in-network';}
 }
 function renderCases(d){
   const cases=d.cases||[];
+  cases.forEach((c,i)=>{c._rk='rk'+i;});
   const hi = d.name ? ('Welcome, '+esc(d.name)) : 'Your cases';
   let body;
   if(!cases.length){
