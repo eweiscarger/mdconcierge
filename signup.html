@@ -6,9 +6,13 @@
 <title>MDconcierge — Join the Network</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="brand.css"/>
+<link rel="icon" href="assets/brand/favicon.ico" sizes="any"/>
+<link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32"/>
+<link rel="apple-touch-icon" href="assets/brand/favicon-180.png"/>
 <style>
-  :root{--navy:#0f1e3d;--gold:#c8922a;--cream:#FAF7F2;--steel:#6B9FD4;--green:#2D6A4F;--text:#1C1917;--muted:#6B6560;--border:#DDD5C8;--serif:'Cormorant Garamond',Georgia,serif;--sans:'DM Sans',system-ui,sans-serif;}
+  :root{--navy:#08214C;--gold:#2F5EA8;--cream:#F6F9FD;--steel:#6B95D4;--green:#1e8e5a;--text:#14213D;--muted:#5C6B85;--border:#DCE6F2;--serif:'Inter',system-ui,sans-serif;--sans:'Inter',system-ui,sans-serif;}
   body{margin:0;background:var(--cream);font-family:var(--sans);color:var(--text);}
   .wrap{max-width:720px;margin:0 auto;padding:24px 16px 70px;}
   .hdr{background:#fff;border:1px solid var(--border);border-bottom:none;border-radius:14px 14px 0 0;padding:22px;text-align:center;}
@@ -40,7 +44,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="hdr"><img src="logo.jpg" alt="MDconcierge"/><div class="t">Medical-Legal Coordination · Network Onboarding</div></div>
+  <div class="hdr"><img src="assets/brand/logo.png" alt="MDconcierge"/><div class="t">Medical-Legal Coordination · Network Onboarding</div></div>
   <div class="card" id="card"><div class="muted">Loading…</div></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -149,7 +153,7 @@ async function autofillFromSite(){
 function renderProvider(){
   card.innerHTML=`<h1>Join the MDconcierge provider network</h1>
     <p class="muted">Tell us about your practice and how you'd like referrals routed. It takes a few minutes — and saves a lot of back-and-forth later. Fields marked <span style="color:#c0392b;">*</span> are required.</p>
-    <a href="demo-provider.html" target="_blank" rel="noopener" style="display:inline-block;font-size:13px;font-weight:600;color:#1a4e8a;text-decoration:none;background:#eef5fc;border:1px solid #b8d4ee;border-radius:8px;padding:7px 13px;margin:2px 0 4px;">▶ See how it works (quick tour)</a>
+    <a href="demo-provider.html" target="_blank" rel="noopener" style="display:inline-block;font-size:13px;font-weight:600;color:#2F5EA8;text-decoration:none;background:#eef5fc;border:1px solid #b8d4ee;border-radius:8px;padding:7px 13px;margin:2px 0 4px;">▶ See how it works (quick tour)</a>
     <div class="sec" style="background:#fdf6e8;border-color:#f0d79a;">
       <h2 style="color:#8a5a00;">⚡ Save time — paste your website</h2>
       <p class="hint">Have a practice website? Paste it and we'll auto-fill your doctors and services for you. Then just fix anything that's off below.</p>
@@ -200,7 +204,7 @@ function renderProvider(){
 function renderAttorney(){
   card.innerHTML=`<h1>Join the MDconcierge attorney network</h1>
     <p class="muted">Tell us about your firm and team so we can coordinate care for your clients smoothly. Fields marked <span style="color:#c0392b;">*</span> are required.</p>
-    <a href="demo-attorney.html" target="_blank" rel="noopener" style="display:inline-block;font-size:13px;font-weight:600;color:#1a4e8a;text-decoration:none;background:#eef5fc;border:1px solid #b8d4ee;border-radius:8px;padding:7px 13px;margin:2px 0 4px;">▶ See how it works (quick tour)</a>
+    <a href="demo-attorney.html" target="_blank" rel="noopener" style="display:inline-block;font-size:13px;font-weight:600;color:#2F5EA8;text-decoration:none;background:#eef5fc;border:1px solid #b8d4ee;border-radius:8px;padding:7px 13px;margin:2px 0 4px;">▶ See how it works (quick tour)</a>
     <div class="sec">
       <h2>Your firm</h2>
       <label>Firm name <span class="req">*</span></label><input id="f_name"/>
