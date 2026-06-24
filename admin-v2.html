@@ -253,6 +253,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
     <div class="ns">Analytics</div>
     <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
     <button class="ni" onclick="showView('analytics',this)"><span class="ni-ic">📊</span> Analytics</button>
+    <button class="ni" onclick="showView('access',this)"><span class="ni-ic">🛡️</span> Access Log</button>
     <div class="ns">Resources</div>
     <a class="ni" href="overview.html" target="_blank" rel="noopener" style="text-decoration:none;"><span class="ni-ic">📊</span> Platform Overview</a>
     <button class="ni" onclick="showView('tools',this)"><span class="ni-ic">🔗</span> Links &amp; Tools</button>
@@ -415,6 +416,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
   <!-- ANALYTICS VIEW -->
   <div class="view" id="view-analytics">
     <div id="analytics-body" style="color:var(--muted);padding:8px 2px;">Loading analytics…</div>
+  </div>
+
+  <!-- ACCESS LOG VIEW -->
+  <div class="view" id="view-access">
+    <div class="panel" style="margin-bottom:0;">
+      <div class="ph"><div class="pt">Access &amp; activity log</div><div class="ps">Every case open, accept, reveal &amp; access across all cases — newest first. Sensitive events are flagged.</div></div>
+      <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>When</th><th>Case</th><th>Event</th><th>Detail</th><th>Source</th></tr></thead><tbody id="access-body"></tbody></table></div>
+    </div>
   </div>
 
   <!-- LINKS & TOOLS VIEW -->
@@ -708,6 +717,20 @@ async function loadAudit(supaId){
 }
 function renderActivity(){
   document.getElementById('act-feed').innerHTML=ACTIVITY.map(a=>`<div class="ai"><div class="ai-ic ic-${a.t==='new'?'new':a.t==='rt'?'rt':'dq'}">${a.ic}</div><div><div class="ai-txt">${a.tx}</div><div class="ai-time">${a.time}</div></div></div>`).join('');
+}
+async function loadAccessLog(){
+  const tb=document.getElementById('access-body'); if(!tb)return;
+  tb.innerHTML='<tr><td colspan="5" style="color:var(--muted);padding:14px;">Loading…</td></tr>';
+  const {data,error}=await sbClient.from('audit_log').select('action,detail,source,created_at,case_id,cases(case_id)').order('created_at',{ascending:false}).limit(200);
+  if(error){tb.innerHTML='<tr><td colspan="5" style="color:var(--red);padding:14px;">'+ehtml(error.message)+'</td></tr>';return;}
+  if(!data||!data.length){tb.innerHTML='<tr><td colspan="5" style="color:var(--muted);padding:14px;">No access events logged yet.</td></tr>';return;}
+  const HOT=['contact_revealed','access_denied','portal_access_denied','login_failed','accept_attempt_expired'];
+  tb.innerHTML=data.map(a=>{
+    let ts='';try{ts=new Date(a.created_at).toLocaleString();}catch(e){ts=a.created_at;}
+    const ref=(a.cases&&a.cases.case_id)||('#'+(a.case_id==null?'?':a.case_id));
+    const hot=HOT.includes(a.action);
+    return `<tr${hot?' style="background:var(--amber-bg);"':''}><td style="font-size:11px;color:var(--muted2);white-space:nowrap;">${ehtml(ts)}</td><td style="font-size:12px;font-family:var(--mono);">${ehtml(ref)}</td><td style="font-size:12px;font-weight:500;">${hot?'⚠ ':''}${ehtml((a.action||'').replace(/_/g,' '))}</td><td style="font-size:12px;color:var(--muted2);">${ehtml(a.detail||'')}</td><td style="font-size:11px;color:var(--muted2);">${ehtml(a.source||'')}</td></tr>`;
+  }).join('');
 }
 
 function openRouteModal(){
@@ -1069,12 +1092,13 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',access:'Access Log',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
   if(v==='tools')renderTools();
   if(v==='analytics')loadAnalytics();
+  if(v==='access')loadAccessLog();
 }
 async function loadAnalytics(){
   const box=document.getElementById('analytics-body');
