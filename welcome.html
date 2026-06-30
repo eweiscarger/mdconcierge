@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Welcome to MDconcierge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/brand/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32">
+<style>
+  :root{
+    --navy:#08214C; --navy2:#0E2E63; --blue:#6B95D4; --link:#2F5EA8;
+    --blue50:#EEF4FC; --ink:#14213D; --muted:#5C6B85; --border:#DCE6F2; --surface:#F6F9FD; --green:#1e8e5a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:#05132e;font-family:'Inter',system-ui,sans-serif;color:#fff;overflow:hidden}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+
+  #fit{position:relative}
+  #stage{position:relative;width:1280px;height:720px;overflow:hidden;border-radius:14px;
+    background:radial-gradient(120% 120% at 50% 0%, #0E2E63 0%, #08214C 45%, #05132e 100%);
+    box-shadow:0 30px 90px rgba(0,0,0,.55);}
+  #stage::before{content:"";position:absolute;inset:-20%;
+    background:radial-gradient(40% 40% at 30% 30%, rgba(107,149,212,.16), transparent 70%),
+               radial-gradient(40% 40% at 75% 70%, rgba(107,149,212,.12), transparent 70%);
+    animation:drift 20s ease-in-out infinite alternate;}
+  @keyframes drift{0%{transform:translate(0,0)}100%{transform:translate(-30px,-20px)}}
+
+  .scene{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+         opacity:0;transition:opacity .7s ease;}
+  .scene.active{opacity:1;}
+  .cap{position:absolute;left:0;right:0;bottom:48px;text-align:center;font-size:27px;font-weight:500;
+       letter-spacing:.2px;color:#eaf1fc;text-shadow:0 2px 18px rgba(0,0,0,.6);padding:0 90px;line-height:1.35}
+  .cap b{color:#fff;font-weight:700}
+
+  /* generic inner reveal base */
+  .scene .r{opacity:0}
+
+  /* ===== S1 intro ===== */
+  #s1 .logo{height:88px;filter:drop-shadow(0 8px 30px rgba(0,0,0,.4))}
+  #s1 .wm{font-size:48px;font-weight:800;letter-spacing:-.5px;margin-top:8px}
+  #s1 .wm span{color:var(--blue)}
+  #s1 .tag{margin-top:10px;color:#bcccea;font-size:18px;letter-spacing:3px;text-transform:uppercase}
+  .scene#s1.active .logo{animation:pop 1s ease .2s both}
+  .scene#s1.active .wm{animation:rise 1s ease .7s both}
+  .scene#s1.active .tag{animation:rise 1s ease 1.2s both}
+
+  /* ===== S2 busywork ===== */
+  #burden{position:relative;width:820px;height:320px}
+  #burden .chip{position:absolute;display:flex;gap:9px;align-items:center;background:rgba(255,255,255,.06);
+    border:1px solid rgba(150,170,210,.4);color:#dce8f7;padding:12px 18px;border-radius:12px;font-weight:600;font-size:18px;opacity:0}
+  .scene#s2.active #burden .chip{animation:chipIn .6s ease var(--d) both, sway 4.5s ease-in-out calc(var(--d) + .6s) infinite}
+
+  /* ===== S3 referral email ===== */
+  .panel{background:#fff;color:var(--ink);border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.4);overflow:hidden}
+  #emailCard{width:760px}
+  .mailbar{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 22px;display:flex;align-items:center;gap:10px;font-weight:700;color:var(--navy)}
+  .dot{width:11px;height:11px;border-radius:50%}
+  .mailbody{padding:18px 24px}
+  .fld{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #eef2f8;font-size:17px}
+  .fld .k{color:var(--muted);width:74px;font-weight:600}
+  .ln{font-size:16.5px;color:#36435f;padding:6px 0;opacity:0}
+  .sendrow{display:flex;justify-content:flex-end;padding:12px 24px 20px}
+  #sendBtn{background:var(--navy);color:#fff;font-weight:700;font-size:16px;padding:12px 26px;border-radius:9px;border:none;box-shadow:0 8px 20px rgba(8,33,76,.3)}
+  .scene#s3.active #emailCard{animation:rise .8s ease .2s both, liftAway 1.1s ease 5.4s both}
+  .scene#s3.active .ln1{animation:lineIn .5s ease 1.0s both}
+  .scene#s3.active .ln2{animation:lineIn .5s ease 1.5s both}
+  .scene#s3.active .ln3{animation:lineIn .5s ease 2.0s both}
+  .scene#s3.active .ln4{animation:lineIn .5s ease 2.5s both}
+  .scene#s3.active #sendBtn{animation:press .5s ease 4.4s both}
+
+  /* ===== S4 coordination network + action chips ===== */
+  #net{position:relative;width:660px;height:360px}
+  #net .core{position:absolute;left:50%;top:50%;width:124px;height:124px;margin:-62px 0 0 -62px;border-radius:50%;
+    background:linear-gradient(160deg,#0E2E63,#08214C);border:2px solid rgba(107,149,212,.6);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0}
+  #net .core img{height:28px}
+  #net .core .mdc{font-weight:800;font-size:14px;margin-top:5px;color:#cfe0fb}
+  #net .line{position:absolute;left:50%;top:50%;height:3px;width:0;border-radius:3px;transform-origin:0 50%;
+    background:linear-gradient(90deg,rgba(107,149,212,.15),rgba(107,149,212,.85))}
+  #net .tile{position:absolute;width:152px;padding:13px;border-radius:13px;background:rgba(255,255,255,.06);
+    border:1px solid rgba(107,149,212,.45);text-align:center;opacity:0}
+  #net .tile .t{font-weight:700;font-size:16px;color:#fff}
+  #net .tile .s{font-size:12.5px;color:#aebfdf;margin-top:3px}
+  #net .tile .ic{font-size:22px;margin-bottom:3px}
+  #acts{position:absolute;bottom:6px;left:0;right:0;display:flex;gap:12px;justify-content:center}
+  #acts .a{opacity:0;background:rgba(30,142,90,.16);border:1px solid rgba(40,180,110,.5);color:#bdf0d4;
+    font-weight:600;font-size:14.5px;padding:8px 14px;border-radius:20px}
+  .scene#s4.active #net .core{animation:pop .7s ease .3s both, pulse 2.4s ease-in-out 1.2s infinite}
+  .scene#s4.active #net .l1{animation:grow .6s ease 1.0s both}
+  .scene#s4.active #net .l2{animation:grow .6s ease 1.3s both}
+  .scene#s4.active #net .l3{animation:grow .6s ease 1.6s both}
+  .scene#s4.active #net .l4{animation:grow .6s ease 1.9s both}
+  .scene#s4.active #net .t1{animation:tilePop .6s cubic-bezier(.2,1.3,.4,1) 1.2s both}
+  .scene#s4.active #net .t2{animation:tilePop .6s cubic-bezier(.2,1.3,.4,1) 1.5s both}
+  .scene#s4.active #net .t3{animation:tilePop .6s cubic-bezier(.2,1.3,.4,1) 1.8s both}
+  .scene#s4.active #net .t4{animation:tilePop .6s cubic-bezier(.2,1.3,.4,1) 2.1s both}
+  .scene#s4.active #acts .a1{animation:rise .5s ease 5.5s both}
+  .scene#s4.active #acts .a2{animation:rise .5s ease 6.6s both}
+  .scene#s4.active #acts .a3{animation:rise .5s ease 7.7s both}
+
+  /* ===== S5 working together (hub + flowing connectors) ===== */
+  #hub{position:relative;width:820px;height:300px;display:flex;align-items:center;justify-content:center;gap:0}
+  #hub .center{z-index:2;width:150px;height:150px;border-radius:50%;background:linear-gradient(160deg,#0E2E63,#08214C);
+    border:2px solid rgba(107,149,212,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0}
+  #hub .center img{height:30px}
+  #hub .center .mdc{font-weight:800;color:#cfe0fb;font-size:14px;margin-top:5px}
+  #hub .node{position:absolute;background:rgba(255,255,255,.07);border:1px solid rgba(107,149,212,.45);
+    color:#eaf1fc;font-weight:700;font-size:15px;padding:11px 16px;border-radius:11px;opacity:0}
+  #hub .conn{position:absolute;height:4px;border-radius:4px;background:linear-gradient(90deg,rgba(107,149,212,0),rgba(107,149,212,.9),rgba(107,149,212,0));
+    background-size:200% 100%;opacity:0}
+  .scene#s5.active #hub .center{animation:pop .7s ease .2s both}
+  .scene#s5.active #hub .node{animation:rise .6s ease var(--d) both}
+  .scene#s5.active #hub .conn{animation:fadeIn .6s ease var(--d) both, flow 2.2s linear calc(var(--d) + .4s) infinite}
+
+  /* ===== S-value (what you get) ===== */
+  #valgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;width:900px}
+  .vcard{background:rgba(255,255,255,.06);border:1px solid rgba(107,149,212,.4);border-radius:14px;padding:20px 16px;text-align:center;opacity:0}
+  .vcard .ic{font-size:30px}
+  .vcard .t{font-weight:700;font-size:17px;margin-top:8px;color:#fff}
+  .vcard .s{font-size:13px;color:#aebfdf;margin-top:4px}
+  .scene#sval.active .vcard{animation:pop .55s cubic-bezier(.2,1.3,.4,1) var(--d) both}
+
+  /* ===== S6 live status ===== */
+  #statusCard{width:820px}
+  .stHead{background:var(--navy);color:#fff;padding:16px 22px;display:flex;align-items:center;justify-content:space-between}
+  .stHead .ttl{font-weight:700;font-size:18px}
+  .stHead .case{font-size:13px;color:#a9bfe6}
+  .stBody{padding:18px 22px 20px;color:var(--ink)}
+  .prog{height:9px;background:var(--blue50);border-radius:6px;overflow:hidden;margin:2px 0 16px}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--navy));border-radius:6px}
+  .srow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eef2f8;opacity:0}
+  .srow .lbl{font-size:16px;color:var(--ink);font-weight:500}
+  .pill{font-size:13px;font-weight:700;padding:6px 13px;border-radius:20px;position:relative}
+  .pill .a{display:block}.pill .b{position:absolute;inset:6px 13px;opacity:0;white-space:nowrap}
+  .pill.amber{background:#FCEFD6;color:#9A6B12}.pill.green{background:#DCF1E6;color:#1e7a4d}
+  .updated{margin-top:12px;font-size:13px;color:var(--muted);display:flex;align-items:center;gap:7px}
+  .updated .live{width:9px;height:9px;border-radius:50%;background:#27c08a;box-shadow:0 0 0 0 rgba(39,192,138,.6);animation:blip 1.8s ease-in-out infinite}
+  .scene#s6.active #statusCard{animation:rise .8s ease .2s both}
+  .scene#s6.active .prog i{animation:fill 3.2s ease 1.0s both}
+  .scene#s6.active .q1{animation:lineIn .5s ease .8s both}
+  .scene#s6.active .q2{animation:lineIn .5s ease 1.2s both}
+  .scene#s6.active .q3{animation:lineIn .5s ease 1.6s both}
+  .scene#s6.active .flip .a{animation:flipOut .6s ease 4.2s both}
+  .scene#s6.active .flip .b{animation:flipIn .6s ease 4.2s both}
+
+  /* ===== S7 end ===== */
+  #s7 .glow{position:absolute;width:560px;height:560px;border-radius:50%;
+    background:radial-gradient(closest-side,rgba(107,149,212,.28),transparent);opacity:0}
+  #s7 .logo{height:96px}
+  #s7 .tag{font-size:36px;font-weight:800;margin-top:18px;letter-spacing:-.3px}
+  #s7 .tag span{color:var(--blue)}
+  #s7 .url{margin-top:14px;color:#bcccea;font-size:19px;letter-spacing:.5px}
+  .scene#s7.active .glow{animation:fadeIn 2.2s ease .2s both}
+  .scene#s7.active .logo{animation:pop 1s ease .4s both}
+  .scene#s7.active .tag{animation:rise 1s ease 1.1s both}
+  .scene#s7.active .url{animation:rise 1s ease 1.7s both}
+
+  /* keyframes */
+  @keyframes pop{0%{opacity:0;transform:scale(.82)}100%{opacity:1;transform:scale(1)}}
+  @keyframes rise{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}
+  @keyframes fadeIn{0%{opacity:0}100%{opacity:1}}
+  @keyframes lineIn{0%{opacity:0;transform:translateX(-10px)}100%{opacity:1;transform:translateX(0)}}
+  @keyframes chipIn{0%{opacity:0;transform:scale(.7) translateY(8px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+  @keyframes sway{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes press{0%{transform:scale(1)}40%{transform:scale(.93)}100%{transform:scale(1)}}
+  @keyframes liftAway{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-90px) scale(.92)}}
+  @keyframes grow{0%{width:0;opacity:0}100%{opacity:1}}
+  @keyframes tilePop{0%{opacity:0;transform:scale(.6)}100%{opacity:1;transform:scale(1)}}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(107,149,212,.35)}50%{box-shadow:0 0 0 16px rgba(107,149,212,0)}}
+  @keyframes flow{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  @keyframes fill{0%{width:0}100%{width:76%}}
+  @keyframes flipOut{0%{opacity:1}50%{opacity:0}100%{opacity:0}}
+  @keyframes flipIn{0%{opacity:0}50%{opacity:0}100%{opacity:1}}
+  @keyframes blip{0%,100%{box-shadow:0 0 0 0 rgba(39,192,138,.6)}50%{box-shadow:0 0 0 7px rgba(39,192,138,0)}}
+
+  #ctrl{display:flex;align-items:center;gap:16px;color:#9fb3d6;font-size:14px}
+  #ctrl button{background:#0E2E63;color:#fff;border:1px solid #2a4a86;padding:9px 18px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
+  #ctrl button:hover{background:#16387a}
+  .hint{max-width:1100px;text-align:center;color:#7f93b8;font-size:13px;line-height:1.5}
+  .hint b{color:#aebfdf}
+</style>
+</head>
+<body>
+
+  <div id="fit">
+    <div id="stage">
+
+      <!-- S1 -->
+      <div class="scene" id="s1">
+        <img class="logo" src="assets/brand/logo-white.png" alt="MDconcierge" onerror="this.style.display='none'">
+        <div class="wm">MD<span>concierge</span></div>
+        <div class="tag">Medical-Legal Coordination</div>
+        <div class="cap">Every injury case depends on coordination — <b>the right care, documented, delivered on time.</b></div>
+      </div>
+
+      <!-- S2 -->
+      <div class="scene" id="s2">
+        <div id="burden">
+          <div class="chip" style="--d:.15s; left:40px;  top:20px">🔎 Finding specialists</div>
+          <div class="chip" style="--d:.35s; right:60px; top:10px">📅 Scheduling care</div>
+          <div class="chip" style="--d:.55s; left:120px;top:130px">📄 Records requests</div>
+          <div class="chip" style="--d:.95s; left:300px;top:240px">🔁 Constant follow-up</div>
+          <div class="chip" style="--d:1.15s;right:200px;top:235px">⏱ Status updates</div>
+        </div>
+        <div class="cap">Specialists, scheduling, records, follow-up — <b>it pulls your team from the work that matters.</b></div>
+      </div>
+
+      <!-- S3 -->
+      <div class="scene" id="s3">
+        <div class="panel" id="emailCard">
+          <div class="mailbar">
+            <span class="dot" style="background:#ED6A5E"></span><span class="dot" style="background:#F4BF4F"></span><span class="dot" style="background:#61C554"></span>
+            <span style="margin-left:8px">New referral</span>
+          </div>
+          <div class="mailbody">
+            <div class="fld"><span class="k">To</span><span>eric@mdconcierge.net</span></div>
+            <div class="fld"><span class="k">Subject</span><span>New referral — Maria Gonzalez</span></div>
+            <div class="ln ln1">Client: Maria Gonzalez · DOI 5/2/2026</div>
+            <div class="ln ln2">Injury: lumbar spine — needs ortho eval + PT</div>
+            <div class="ln ln3">Employer: Keystone Logistics · Claim WC-2026-44817</div>
+            <div class="ln ln4">Please coordinate. Thank you.</div>
+          </div>
+          <div class="sendrow"><button id="sendBtn">Send ➤</button></div>
+        </div>
+        <div class="cap">MDconcierge takes it off your plate. <b>One referral is all we need.</b></div>
+      </div>
+
+      <!-- S4 -->
+      <div class="scene" id="s4">
+        <div id="net">
+          <div class="line l1"></div><div class="line l2"></div><div class="line l3"></div><div class="line l4"></div>
+          <div class="core"><img src="assets/brand/logo-white.png" alt="" onerror="this.style.display='none'"><div class="mdc">MDC</div></div>
+          <div class="tile t1" style="left:0;top:6px"><div class="ic">🦴</div><div class="t">Orthopaedics</div><div class="s">Spine eval</div></div>
+          <div class="tile t2" style="right:0;top:6px"><div class="ic">🩺</div><div class="t">Pain Mgmt</div><div class="s">Injections</div></div>
+          <div class="tile t3" style="left:0;top:150px"><div class="ic">🏃</div><div class="t">Physical Therapy</div><div class="s">Rehab plan</div></div>
+          <div class="tile t4" style="right:0;top:150px"><div class="ic">🧲</div><div class="t">Imaging / MRI</div><div class="s">Lumbar MRI</div></div>
+          <div id="acts">
+            <div class="a a1">✅ Appointments booked</div>
+            <div class="a a2">📄 Records requested</div>
+            <div class="a a3">🩺 Treatment underway</div>
+          </div>
+        </div>
+        <div class="cap">We coordinate the entire medical side — <b>specialists, appointments, and records.</b></div>
+      </div>
+
+      <!-- S5 -->
+      <div class="scene" id="s5">
+        <div id="hub">
+          <div class="conn" style="--d:.6s; width:230px; left:170px; top:90px;  transform:rotate(-18deg)"></div>
+          <div class="conn" style="--d:.8s; width:230px; right:170px;top:90px;  transform:rotate(18deg)"></div>
+          <div class="conn" style="--d:1.0s;width:230px; left:170px; top:200px; transform:rotate(18deg)"></div>
+          <div class="conn" style="--d:1.2s;width:230px; right:170px;top:200px; transform:rotate(-18deg)"></div>
+          <div class="center"><img src="assets/brand/logo-white.png" alt="" onerror="this.style.display='none'"><div class="mdc">MDC</div></div>
+          <div class="node" style="--d:.5s; left:30px;  top:50px">Orthopaedics</div>
+          <div class="node" style="--d:.7s; right:30px; top:50px">Pain Mgmt</div>
+          <div class="node" style="--d:.9s; left:30px;  top:210px">Physical Therapy</div>
+          <div class="node" style="--d:1.1s;right:30px; top:210px">Imaging / MRI</div>
+        </div>
+        <div class="cap">Every provider aligned, every step managed — <b>quietly, behind the scenes.</b></div>
+      </div>
+
+      <!-- S value -->
+      <div class="scene" id="sval">
+        <div id="valgrid">
+          <div class="vcard" style="--d:.30s"><div class="ic">🩺</div><div class="t">Vetted specialists</div><div class="s">In-network &amp; trusted</div></div>
+          <div class="vcard" style="--d:.45s"><div class="ic">📅</div><div class="t">Fast scheduling</div><div class="s">Appointments booked</div></div>
+          <div class="vcard" style="--d:.60s"><div class="ic">📄</div><div class="t">Records handled</div><div class="s">Gathered &amp; organized</div></div>
+          <div class="vcard" style="--d:.75s"><div class="ic">☎️</div><div class="t">One point of contact</div><div class="s">We manage it all</div></div>
+          <div class="vcard" style="--d:.90s"><div class="ic">📊</div><div class="t">Real-time visibility</div><div class="s">Live case status</div></div>
+          <div class="vcard" style="--d:1.05s"><div class="ic">🤝</div><div class="t">Smoother journey</div><div class="s">Better outcomes</div></div>
+        </div>
+        <div class="cap">What that means for your practice — <b>specialists, scheduling, records, and visibility, handled.</b></div>
+      </div>
+
+      <!-- S6 -->
+      <div class="scene" id="s6">
+        <div class="panel" id="statusCard">
+          <div class="stHead"><span class="ttl">Live Case Status</span><span class="case">MDC-A-2026-880042 · Maria Gonzalez</span></div>
+          <div class="stBody">
+            <div class="prog"><i></i></div>
+            <div class="srow q1"><span class="lbl">Orthopaedic evaluation</span><span class="pill green"><span class="a">Scheduled</span></span></div>
+            <div class="srow q2 flip"><span class="lbl">Physical therapy</span><span class="pill amber"><span class="a">Pending</span><span class="b" style="color:#1e7a4d">In Treatment</span></span></div>
+            <div class="srow q3"><span class="lbl">Lumbar MRI &middot; records gathered</span><span class="pill green"><span class="a">Complete</span></span></div>
+            <div class="updated"><span class="live"></span> Updated just now &middot; in real time</div>
+          </div>
+        </div>
+        <div class="cap">You stay informed throughout — <b>a live view of the case, in real time.</b></div>
+      </div>
+
+      <!-- S7 -->
+      <div class="scene" id="s7">
+        <div class="glow"></div>
+        <img class="logo" src="assets/brand/logo-white.png" alt="MDconcierge" onerror="this.style.display='none'">
+        <div class="tag">Coordinated care. <span>Better outcomes.</span></div>
+        <div class="url">mdconcierge.net</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="ctrl">
+    <button onclick="replay()">▶ Play with sound (≈1:00)</button>
+    <span>Eric (natural voice) + Vers l'Avant + the platform demo — just click.</span>
+  </div>
+  <div class="hint">
+    To make a file you can email: press <b>Win + Alt + R</b> (built into Windows), then click ▶ Play, let it run, and stop the recording.
+  </div>
+
+  <!-- audio -->
+  <audio id="music" preload="auto" src="assets/audio/music.mp3"></audio>
+
+<script>
+  function fit(){
+    var s = Math.min((window.innerWidth-40)/1280, (window.innerHeight-150)/720, 1);
+    var f=document.getElementById('fit'); f.style.transform='scale('+s+')'; f.style.transformOrigin='top center';
+  }
+  window.addEventListener('resize', fit); fit();
+
+  var SCENES = [
+    {id:'s1',t:0},{id:'s2',t:6700},{id:'s3',t:13900},{id:'s4',t:19100},
+    {id:'s5',t:27300},{id:'sval',t:32500},{id:'s6',t:43700},{id:'s7',t:49900}
+  ];
+  var VO = [
+    {t:800,a:new Audio('assets/audio/vo1.mp3')},
+    {t:7000,a:new Audio('assets/audio/vo2.mp3')},
+    {t:14200,a:new Audio('assets/audio/vo3.mp3')},
+    {t:19400,a:new Audio('assets/audio/vo4.mp3')},
+    {t:27600,a:new Audio('assets/audio/vo5.mp3')},
+    {t:32800,a:new Audio('assets/audio/vo8.mp3')},
+    {t:44000,a:new Audio('assets/audio/vo6.mp3')},
+    {t:50200,a:new Audio('assets/audio/vo7.mp3')}
+  ];
+  VO.forEach(function(v){ v.a.preload='auto'; v.a.volume=1.0; });
+  var music = document.getElementById('music');
+
+  var timers = [], fades = [];
+  function clearAll(){
+    timers.forEach(clearTimeout); timers=[];
+    fades.forEach(clearInterval); fades=[];
+  }
+  function fadeMusic(to, ms){
+    if(!music) return; var steps=30, i=0, from=music.volume, dt=Math.max(16,ms/steps);
+    var iv=setInterval(function(){ i++; music.volume=Math.max(0,Math.min(1, from+(to-from)*i/steps)); if(i>=steps) clearInterval(iv); }, dt);
+    fades.push(iv);
+  }
+  function activate(id){
+    var list=document.querySelectorAll('.scene');
+    for(var i=0;i<list.length;i++) list[i].classList.remove('active');
+    var el=document.getElementById(id); if(el) el.classList.add('active');
+  }
+  function stopEverything(){
+    clearAll();
+    VO.forEach(function(v){ try{ v.a.pause(); v.a.currentTime=0; }catch(e){} });
+    if(music){ try{ music.pause(); music.currentTime=0; music.volume=0; }catch(e){} }
+    var list=document.querySelectorAll('.scene'); for(var i=0;i<list.length;i++) list[i].classList.remove('active');
+  }
+  function play(withSound){
+    stopEverything();
+    SCENES.forEach(function(s){ timers.push(setTimeout(function(){ activate(s.id); }, s.t)); });
+    if(withSound){
+      music.currentTime=0; music.volume=0;
+      var p=music.play(); if(p&&p.catch) p.catch(function(){});
+      fadeMusic(0.30, 2500);
+      timers.push(setTimeout(function(){ fadeMusic(0, 3500); }, 58000));
+      VO.forEach(function(v){ timers.push(setTimeout(function(){ try{ v.a.currentTime=0; v.a.play(); }catch(e){} }, v.t)); });
+    }
+  }
+  function replay(){ play(true); }
+  window.addEventListener('load', function(){ play(false); });
+</script>
+</body>
+</html>
