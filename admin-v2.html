@@ -470,8 +470,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="panel" style="margin-bottom:14px;">
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 14px;">
         <div id="crm-stages" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-        <div style="flex:1;min-width:160px;"></div>
-        <input id="crm-search" oninput="crmSearch=this.value;renderCrm()" placeholder="Search attorney, firm, email…" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;min-width:200px;">
+        <div style="flex:1;min-width:40px;"></div>
+        <select id="crm-state" onchange="crmState=this.value;renderCrm()" title="Filter by state" style="padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;"><option value="">All states</option></select>
+        <input id="crm-city" oninput="crmCity=this.value;renderCrm()" placeholder="City" title="City contains" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;width:130px;">
+        <input id="crm-zip" oninput="crmZip=this.value;renderCrm()" placeholder="Zip" title="Zip starts with" inputmode="numeric" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;width:80px;">
+        <input id="crm-search" oninput="crmSearch=this.value;renderCrm()" placeholder="Search attorney, firm, email…" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;min-width:180px;">
         <button class="ib" onclick="crmExport()" title="Download the currently shown attorneys as CSV">⬇ Export CSV</button>
         <button class="ib" onclick="loadCrm()" title="Reload from database">↻ Refresh</button>
       </div>
@@ -1229,6 +1232,7 @@ function renderTools(){
 }
 // ── Attorney CRM (prospect_firms + attorney_contacts) ──────────────────────────
 let CRM_FIRMS=[], CRM_ATTYS=[], crmStatusFilter='all', crmSearch='', crmOpen=new Set();
+let crmCity='', crmState='', crmZip='';
 const CRM_STAGES=[['new_prospect','New prospect','#6B9FD4'],['warming','Warming','#c8922a'],['active_referrer','Active referrer','#2D6A4F'],['gone_quiet','Gone quiet','#8b949e']];
 function crmStageMeta(s){return CRM_STAGES.find(x=>x[0]===s)||['','',(s||'')];}
 async function loadCrm(){
@@ -1241,16 +1245,28 @@ async function loadCrm(){
   if(fe||ae){body.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load CRM: '+ehtml((fe||ae).message)+'</div>';return;}
   CRM_FIRMS=firms||[]; CRM_ATTYS=atts||[];
   const c=document.getElementById('crm-count'); if(c){c.textContent=CRM_ATTYS.length;c.style.display=CRM_ATTYS.length?'':'none';}
+  crmFillStates();
   renderCrm();
 }
 function crmVisible(){
   const q=crmSearch.trim().toLowerCase();
   const fById={}; CRM_FIRMS.forEach(f=>fById[f.id]=f);
+  const city=crmCity.trim().toLowerCase(), zip=crmZip.trim();
   return CRM_ATTYS.filter(a=>{
     if(crmStatusFilter!=='all' && a.relationship_status!==crmStatusFilter) return false;
-    if(q){const f=fById[a.prospect_firm_id];const hay=((a.first_name||'')+' '+(a.last_name||'')+' '+(f?f.name:'')+' '+(a.email||'')).toLowerCase();if(hay.indexOf(q)<0)return false;}
+    const f=fById[a.prospect_firm_id]||{};
+    if(crmState && (f.state||'')!==crmState) return false;
+    if(city && (f.city||'').toLowerCase().indexOf(city)<0) return false;
+    if(zip && !String(f.zip||'').startsWith(zip)) return false;
+    if(q){const hay=((a.first_name||'')+' '+(a.last_name||'')+' '+(f.name||'')+' '+(a.email||'')+' '+(f.city||'')+' '+(f.zip||'')).toLowerCase();if(hay.indexOf(q)<0)return false;}
     return true;
   });
+}
+function crmFillStates(){
+  const sel=document.getElementById('crm-state'); if(!sel) return;
+  const states=[...new Set(CRM_FIRMS.map(f=>f.state).filter(Boolean))].sort();
+  const cur=crmState;
+  sel.innerHTML='<option value="">All states</option>'+states.map(s=>`<option value="${ehtml(s)}"${s===cur?' selected':''}>${ehtml(s)}</option>`).join('');
 }
 function renderCrm(){
   // KPIs
@@ -1279,7 +1295,8 @@ function renderCrm(){
     const open=crmOpen.has(k);
     const stageChips=CRM_STAGES.map(([s,,c])=>{const n=list.filter(a=>a.relationship_status===s).length;return n?`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-left:3px;" title="${n} ${s}"></span>`:'';}).join('');
     const fname=f?ehtml(f.name):'(no firm matched)';
-    const meta=f?[f.city,f.phone].filter(Boolean).map(ehtml).join(' · '):'';
+    const geo=f?[[f.city,f.state].filter(Boolean).join(', '),f.zip].filter(Boolean).join(' '):'';
+    const meta=[geo,f&&f.phone].filter(Boolean).map(ehtml).join(' · ');
     const site=f&&f.website?` · <a href="${ehtml(f.website)}" target="_blank" rel="noopener" style="color:var(--steel,#6B9FD4);">site ↗</a>`:'';
     const rows=list.map(a=>{
       const sm=crmStageMeta(a.relationship_status);
@@ -1329,9 +1346,9 @@ async function crmPromote(id){
 function crmExport(){
   const fById={}; CRM_FIRMS.forEach(f=>fById[f.id]=f);
   const vis=crmVisible();
-  const head=['Firm','First name','Last name','Title','Email','Phone','City','State','Relationship','In network','Source URL'];
+  const head=['Firm','First name','Last name','Title','Email','Phone','City','State','Zip','Relationship','In network','Source URL'];
   const rows=[head];
-  vis.forEach(a=>{const f=fById[a.prospect_firm_id]||{};rows.push([f.name||'',a.first_name||'',a.last_name||'',a.title||'',a.email||'',a.phone||'',f.city||'',a.states||f.state||'',a.relationship_status||'',a.converted_attorney_id?'yes':'no',a.source_url||'']);});
+  vis.forEach(a=>{const f=fById[a.prospect_firm_id]||{};rows.push([f.name||'',a.first_name||'',a.last_name||'',a.title||'',a.email||'',a.phone||'',f.city||'',a.states||f.state||'',f.zip||'',a.relationship_status||'',a.converted_attorney_id?'yes':'no',a.source_url||'']);});
   const csv=rows.map(r=>r.map(c=>`"${String(c==null?'':c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent('﻿'+csv);a.download='mdconcierge_attorney_crm.csv';a.click();
   showToast('Exported '+vis.length+' attorneys');
