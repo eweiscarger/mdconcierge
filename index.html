@@ -5,19 +5,23 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MDconcierge, Medical-Legal Coordination</title>
 <meta name="description" content="MDconcierge coordinates medical care for workers&#39; compensation and personal injury cases. Attorneys and providers, one email, zero friction.">
-<link href="./index_files/css2" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="brand.css">
+<link rel="icon" href="assets/brand/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/brand/favicon-180.png">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --navy:#0f1e3d;--navy2:#1B2E5E;--navy3:#243a72;
-  --gold:#c8922a;--gold2:#e8b84b;
-  --cream:#FAF7F2;--cream2:#F2EDE5;
-  --steel:#6B9FD4;
-  --green:#2D6A4F;--green-bg:#eef8f3;--green-bdr:#a3d9b8;
-  --text:#1C1917;--muted:#6B6560;--border:#DDD5C8;
+  --navy:#08214C;--navy2:#0E2E63;--navy3:#0E2E63;
+  --gold:#6B95D4;--gold2:#2F5EA8;
+  --cream:#F6F9FD;--cream2:#EEF4FC;
+  --steel:#6B95D4;
+  --green:#1e8e5a;--green-bg:#e7f6ef;--green-bdr:#a3d9b8;
+  --text:#14213D;--muted:#5C6B85;--border:#DCE6F2;
   --white:#fff;
-  --serif:'Cormorant Garamond',Georgia,serif;
-  --sans:'DM Sans',system-ui,sans-serif;
+  --serif:'Inter',system-ui,sans-serif;
+  --sans:'Inter',system-ui,sans-serif;
   --r:10px;
 }
 html{font-size:16px;-webkit-font-smoothing:antialiased;scroll-behavior:smooth;}
@@ -35,9 +39,9 @@ nav{position:sticky;top:0;z-index:100;background:rgba(15,30,61,.97);backdrop-fil
 .nav-cta:hover{background:var(--gold2);}
 
 /* HERO */
-.hero{background:linear-gradient(155deg,var(--navy) 0%,var(--navy2) 55%,#1a3060 100%);min-height:90vh;display:flex;align-items:center;position:relative;overflow:hidden;}
-.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 65% 45%,rgba(200,146,42,.07) 0%,transparent 65%);}
-.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(200,146,42,.3),transparent);}
+.hero{background:linear-gradient(155deg,var(--navy) 0%,var(--navy2) 55%,#0E2E63 100%);min-height:90vh;display:flex;align-items:center;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 65% 45%,rgba(107,149,212,.07) 0%,transparent 65%);}
+.hero::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(107,149,212,.3),transparent);}
 .hero-inner{max-width:1100px;margin:0 auto;padding:100px 48px;display:grid;grid-template-columns:1.1fr .9fr;gap:80px;align-items:center;position:relative;}
 .hero-centered{max-width:820px;margin:0 auto;padding:100px 48px;text-align:center;position:relative;}
 .hero-logo-wrap{margin-bottom:36px;display:flex;justify-content:center;}
@@ -60,7 +64,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(15,30,61,.97);backdrop-fil
 .trust-dot{width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;}
 .hero-right{display:flex;flex-direction:column;gap:12px;}
 .hero-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:22px 26px;transition:border-color .2s;}
-.hero-card:hover{border-color:rgba(200,146,42,.2);}
+.hero-card:hover{border-color:rgba(107,149,212,.2);}
 .hero-card-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.25);margin-bottom:8px;}
 .hero-card-val{font-family:var(--serif);font-size:20px;color:#fff;font-weight:500;line-height:1.35;}
 .hero-card-val em{font-style:italic;color:var(--gold);}
@@ -194,7 +198,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
 <!-- NAV -->
 <nav>
   <div class="nav-inner">
-    <div class="nav-logo-wrap"><img class="nav-logo" src="logo.jpg" alt="MDconcierge"></div>
+    <div class="nav-logo-wrap"><img class="nav-logo" src="assets/brand/logo.png" alt="MDconcierge"></div>
     <div class="nav-links">
       <a href="#how" class="nav-link">How it works</a>
       <a href="#join" class="nav-link">Join the network</a>
@@ -208,7 +212,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
 <section class="hero">
   <div class="hero-centered fade-in">
     <div class="hero-logo-wrap">
-      <img src="logo.jpg" class="hero-logo-img" alt="MDconcierge">
+      <img src="assets/brand/logo-white.png" class="hero-logo-img" alt="MDconcierge">
     </div>
     <h1 class="hero-tagline fade-in-2">Connecting attorneys and physicians<br>for the treatment of their injured clients.</h1>
     <p class="hero-context fade-in-3">MDconcierge handles everything between a referral and a treated patient. We match, place, introduce, and coordinate so attorneys and providers can focus on what they do best. One email address. No portal. No friction.</p>
@@ -370,7 +374,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
 <!-- FOOTER -->
 <footer>
   <div class="footer-inner">
-    <div class="footer-logo-wrap"><img class="footer-logo" src="logo.jpg" alt="MDconcierge"></div>
+    <div class="footer-logo-wrap"><img class="footer-logo" src="assets/brand/logo.png" alt="MDconcierge"></div>
     <div class="footer-text">© 2026 MDconcierge LLC · referrals@mdconcierge.net · MDconcierge was founded by Eric Weiscarger. MDconcierge is not a law firm, medical practice, or healthcare provider. All coordination services are administrative in nature.</div>
   </div>
 </footer>

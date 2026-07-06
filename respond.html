@@ -166,6 +166,7 @@ function renderAccepted(c){
       <button class="btn navy" style="margin-top:8px;" onclick="sendCaseMessage()">Send message</button>
       <div class="muted" id="msg-done" style="margin-top:8px;font-weight:600;"></div>
     </div>
+    <div id="req-box"></div>
     ${!/auto|truck|slip|liability|^pi$/i.test(d.case_type||'') ? `<div class="box">
       <h3>💊 Refer to pharmacy — Excel Pharmacy (Workers' Comp)</h3>
       <div class="muted" style="margin-bottom:10px;">Mail-order WC pharmacy that ships medications directly to the patient. Send it from your own EHR, <b>or route it through MDconcierge</b> — we send it to Excel as part of the network and handle any records or info Excel needs back, routed straight to you or the attorney.</div>
@@ -184,6 +185,59 @@ function renderAccepted(c){
     <p class="muted" style="margin-top:16px;">Our coordination team will follow up to help with scheduling. Reply to <a href="mailto:referrals@mdconcierge.net">referrals@mdconcierge.net</a> anytime.</p>`;
   NetReferral.mount({sb:sb,token:token,container:'net-ref',ref:d.case_id,patient:{zip:d.zip},preselect:params.get('refer')||''});
   loadTreating();
+  loadRequests();
+}
+const REQ_TYPES_PROVIDER=['Need claim info','Need auth / adjuster approval','Missing case information','Question for attorney','Other'];
+async function loadRequests(){
+  const {data,error}=await sb.rpc('get_case_requests_provider',{p_token:token});
+  if(error||!data||!data.ok)return;
+  renderRequests(data.requests||[]);
+}
+function reqListHtml(reqs,myRole){
+  if(!reqs.length)return'';
+  return'<div style="margin-bottom:12px;">'+reqs.map(r=>{
+    const fromYou=r.from_role===myRole;
+    const label=fromYou?'From you':'From attorney';
+    const sc=r.status==='open'?'background:#fef6e7;color:#9a6700':'background:#eaf7f0;color:#1e9e6a';
+    const dt=r.created_at?new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'';
+    return`<div style="border:1px solid #e3e6ea;border-radius:9px;padding:11px 13px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <span style="font-size:13px;font-weight:700;color:#1C1917;">${esc(label)} · ${esc(r.request_type)}</span>
+        <span style="flex:none;font-size:11px;font-weight:700;padding:2px 9px;border-radius:11px;${sc};">${r.status==='open'?'Open':'Answered'}</span>
+      </div>
+      ${r.message?`<div style="font-size:13px;color:#6b7583;margin-top:5px;">${esc(r.message)}</div>`:''}
+      ${dt?`<div style="font-size:11px;color:#9aa3af;margin-top:4px;">${dt}</div>`:''}
+    </div>`;
+  }).join('')+'</div>';
+}
+function renderRequests(reqs){
+  const box=document.getElementById('req-box');if(!box)return;
+  const hasOpen=reqs.some(r=>r.status==='open'&&r.from_role==='attorney');
+  const badge=hasOpen?` <span style="background:#fdeceb;color:#c0392b;font-size:11px;font-weight:700;padding:2px 8px;border-radius:11px;margin-left:6px;">action needed</span>`:'';
+  box.innerHTML=`<div class="box">
+    <h3>Requests${badge}</h3>
+    <div class="muted" style="margin-bottom:10px;">Send a request to the attorney — or see what they've sent you. MDconcierge notifies them by email.</div>
+    ${reqListHtml(reqs,'provider')}
+    <select id="req-type" style="width:100%;padding:10px 12px;border:1px solid #cdd3da;border-radius:8px;font-size:14px;margin-bottom:8px;font-family:inherit;">
+      <option value="">— Select request type —</option>
+      ${REQ_TYPES_PROVIDER.map(t=>`<option>${esc(t)}</option>`).join('')}
+    </select>
+    <textarea id="req-msg" placeholder="Optional note…" style="width:100%;box-sizing:border-box;min-height:64px;padding:10px 12px;border:1px solid #DCE6F2;border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:8px;"></textarea>
+    <button class="btn navy" style="margin:0;" onclick="submitRequest()">Send request</button>
+    <div class="muted" id="req-done" style="margin-top:8px;font-weight:600;"></div>
+  </div>`;
+}
+async function submitRequest(){
+  const type=(document.getElementById('req-type').value||'').trim();
+  const msg=(document.getElementById('req-msg').value||'').trim();
+  const done=document.getElementById('req-done');
+  if(!type){if(done){done.style.color='#c0392b';done.textContent='Select a request type first.';}return;}
+  if(done){done.style.color='#6b7583';done.textContent='Sending…';}
+  const {data,error}=await sb.rpc('submit_request_provider',{p_token:token,p_type:type,p_message:msg});
+  if(error||!data||!data.ok){if(done){done.style.color='#c0392b';done.textContent='Could not send — please try again.';}return;}
+  if(done){done.style.color='#1e9e6a';done.textContent='✓ Request sent — we\'ve notified the attorney\'s office.';}
+  document.getElementById('req-type').value='';document.getElementById('req-msg').value='';
+  setTimeout(()=>loadRequests(),800);
 }
 function intakePacket(){
   const d=CASE; const w=window.open('','_blank');
