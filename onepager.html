@@ -6,18 +6,20 @@
 <title>MDconcierge — Coordination for Attorneys & Providers</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/brand/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32">
 <style>
   :root{
-    --navy:#0f1e3d; --gold:#c8922a; --cream:#FAF7F2; --steel:#6B9FD4;
-    --green:#2D6A4F; --border:#DDD5C8; --ink:#2b2b2b; --muted:#5b5b5b;
+    --navy:#08214C; --gold:#2F5EA8; --cream:#F6F9FD; --steel:#6B95D4;
+    --green:#1e8e5a; --border:#DCE6F2; --ink:#14213D; --muted:#5C6B85;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{
-    font-family:'DM Sans',sans-serif; color:var(--ink); background:#e9e6e0;
+    font-family:'Inter',sans-serif; color:var(--ink); background:#F6F9FD;
     line-height:1.45; -webkit-print-color-adjust:exact; print-color-adjust:exact;
   }
-  h1,h2,h3,.serif{font-family:'Cormorant Garamond',serif}
+  h1,h2,h3,.serif{font-family:'Inter',serif}
 
   .sheet{
     width:8.5in; min-height:11in; margin:24px auto; background:var(--cream);
@@ -32,7 +34,7 @@
   }
   .head img{height:46px}
   .head .tag{text-align:right}
-  .head .tag .k{font-family:'Cormorant Garamond',serif; font-size:20px; color:var(--navy); font-weight:700; line-height:1.1}
+  .head .tag .k{font-family:'Inter',serif; font-size:20px; color:var(--navy); font-weight:700; line-height:1.1}
   .head .tag .s{font-size:11px; color:var(--muted); letter-spacing:.3px}
 
   /* ---- hero ---- */
@@ -63,7 +65,7 @@
   .col .quote{
     margin-top:11px; padding:9px 11px; background:var(--cream);
     border-left:3px solid var(--steel); border-radius:0 6px 6px 0;
-    font-family:'Cormorant Garamond',serif; font-style:italic; font-size:13.5px; color:var(--navy);
+    font-family:'Inter',serif; font-style:italic; font-size:13.5px; color:var(--navy);
   }
 
   /* ---- why grid ---- */
@@ -74,7 +76,7 @@
     flex:1; background:var(--navy); color:#fff; border-radius:9px; padding:11px 12px; text-align:center;
   }
   .card .ic{font-size:20px; margin-bottom:5px}
-  .card .t{font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:700; color:#fff; margin-bottom:3px}
+  .card .t{font-family:'Inter',serif; font-size:16px; font-weight:700; color:#fff; margin-bottom:3px}
   .card .d{font-size:10.5px; color:#c9d3e6; line-height:1.35}
 
   /* ---- footer ---- */
@@ -82,7 +84,7 @@
     margin-top:auto; border-top:2px solid var(--gold); padding-top:11px;
     display:flex; align-items:center; justify-content:space-between;
   }
-  .foot .price{font-family:'Cormorant Garamond',serif; font-size:16px; color:var(--navy); font-weight:700}
+  .foot .price{font-family:'Inter',serif; font-size:16px; color:var(--navy); font-weight:700}
   .foot .price span{color:var(--green)}
   .foot .contact{font-size:11.5px; color:var(--muted); text-align:right}
   .foot .contact b{color:var(--navy)}
@@ -91,7 +93,7 @@
   .printbar{text-align:center; margin:18px}
   .printbar button{
     background:var(--gold); color:#fff; border:none; padding:11px 26px; border-radius:8px;
-    font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer;
+    font-family:'Inter',sans-serif; font-size:14px; font-weight:600; cursor:pointer;
   }
   .printbar button:hover{background:#b07f22}
   @page{size:letter; margin:0}
@@ -107,7 +109,7 @@
 <div class="sheet">
 
   <div class="head">
-    <img src="logo.jpg" alt="MDconcierge">
+    <img src="assets/brand/logo.png" alt="MDconcierge">
     <div class="tag">
       <div class="k">Medical-Legal Coordination</div>
       <div class="s">Attorneys · Treating Providers · One Platform</div>
