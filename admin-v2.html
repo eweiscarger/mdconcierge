@@ -472,7 +472,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div id="crm-stages" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
         <div style="flex:1;min-width:40px;"></div>
         <select id="crm-state" onchange="crmState=this.value;renderCrm()" title="Filter by state" style="padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;"><option value="">All states</option></select>
-        <input id="crm-city" oninput="crmCity=this.value;renderCrm()" placeholder="City" title="City contains" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;width:130px;">
+        <select id="crm-region" onchange="crmRegion=this.value;crmFillCities();renderCrm()" title="Filter by metro region" style="padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;"><option value="">All regions</option></select>
+        <select id="crm-city-sel" onchange="crmCity=this.value;renderCrm()" title="Filter by city" style="padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;max-width:180px;"><option value="">All cities</option></select>
+        <button class="ib" onclick="crmClearFilters()" title="Clear region, state, city, zip and search">✕ Clear</button>
         <input id="crm-zip" oninput="crmZip=this.value;renderCrm()" placeholder="Zip" title="Zip starts with" inputmode="numeric" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;width:80px;">
         <input id="crm-search" oninput="crmSearch=this.value;renderCrm()" placeholder="Search attorney, firm, email…" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;min-width:180px;">
         <button class="ib" onclick="crmExport()" title="Download the currently shown attorneys as CSV">⬇ Export CSV</button>
@@ -1232,8 +1234,27 @@ function renderTools(){
 }
 // ── Attorney CRM (prospect_firms + attorney_contacts) ──────────────────────────
 let CRM_FIRMS=[], CRM_ATTYS=[], crmStatusFilter='all', crmSearch='', crmOpen=new Set();
-let crmCity='', crmState='', crmZip='';
+let crmCity='', crmState='', crmZip='', crmRegion='';
 const CRM_STAGES=[['new_prospect','New prospect','#6B9FD4'],['warming','Warming','#c8922a'],['active_referrer','Active referrer','#2D6A4F'],['gone_quiet','Gone quiet','#8b949e']];
+// PA metro regions: [key, label, Set(cities lowercased), Set(3-digit zip prefixes)]. City match wins; zip3 is fallback.
+const CRM_REGIONS=[
+  ['philly','Philadelphia + suburbs',new Set(['philadelphia','bala cynwyd','king of prussia','norristown','media','west chester','doylestown','blue bell','jenkintown','conshohocken','west conshohocken','plymouth meeting','wayne','radnor','ardmore','bryn mawr','newtown','langhorne','feasterville','feasterville-trevose','trevose','huntingdon valley','willow grove','fort washington','lansdale','pottstown','phoenixville','chester','upper darby','drexel hill','springfield','exton','malvern','paoli','kennett square','bensalem','warrington','warminster','southampton','elkins park','glenside','abington','ambler','collegeville','morrisville','yardley','penndel','wynnewood','narberth','villanova','chalfont','hatboro','horsham','dresher','flourtown','oreland']),new Set(['190','191','193','194'])],
+  ['lehigh','Lehigh Valley',new Set(['allentown','bethlehem','easton','whitehall','emmaus','nazareth','macungie','catasauqua','hellertown','northampton','coplay','fogelsville']),new Set(['180','181'])],
+  ['pgh','Pittsburgh / Western PA',new Set(['pittsburgh','mckeesport','monroeville','wexford','cranberry township','cranberry','greensburg','washington','canonsburg','sewickley','bethel park','mount lebanon','moon township','moon','coraopolis','butler','beaver','aliquippa','indiana','johnstown','altoona','uniontown','new castle','carnegie','robinson township','robinson','south park','mcmurray','peters township','murrysville','gibsonia','allison park','wexford','pleasant hills']),new Set(['150','151','152','153','156'])],
+  ['central','Central PA (Harrisburg/Lancaster/York/Reading)',new Set(['harrisburg','lancaster','york','reading','camp hill','carlisle','mechanicsburg','hershey','lebanon','hanover','chambersburg','state college','lewisburg','sunbury','pottsville','wyomissing','lemoyne','new cumberland','dillsburg','gettysburg','williamsport','bloomsburg','shippensburg','ephrata','lititz','wormleysburg','enola']),new Set(['170','171','172','173','174','175','176','177','178','179'])],
+  ['nepa','NEPA (Scranton/Wilkes-Barre)',new Set(['scranton','wilkes-barre','wilkes barre','kingston','pittston','hazleton','stroudsburg','east stroudsburg','honesdale','tunkhannock','clarks summit','dunmore','dickson city','moosic','tannersville','mount pocono','milford','olyphant','old forge','nanticoke','carbondale']),new Set(['184','185','186','187','188'])],
+  ['erie','Erie / Northwest',new Set(['erie','meadville','oil city','franklin','warren','bradford','corry','edinboro']),new Set(['164','165'])],
+];
+function crmRegionOf(f){
+  if(!f) return 'unknown';
+  if(f.state && String(f.state).toUpperCase()!=='PA') return 'oos';
+  const city=String(f.city||'').trim().toLowerCase();
+  const zip3=String(f.zip||'').replace(/[^0-9]/g,'').slice(0,3);
+  for(const [k,,cities] of CRM_REGIONS) if(city && cities.has(city)) return k;
+  if(zip3) for(const [k,,,zips] of CRM_REGIONS) if(zips.has(zip3)) return k;
+  return (f.state && String(f.state).toUpperCase()==='PA') ? 'other_pa' : 'unknown';
+}
+function crmRegionLabel(k){const r=CRM_REGIONS.find(x=>x[0]===k);if(r)return r[1];return k==='oos'?'Out of state':k==='other_pa'?'Other PA':'Unassigned';}
 function crmStageMeta(s){return CRM_STAGES.find(x=>x[0]===s)||['','',(s||'')];}
 async function loadCrm(){
   const body=document.getElementById('crm-body');
@@ -1244,8 +1265,9 @@ async function loadCrm(){
   ]);
   if(fe||ae){body.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load CRM: '+ehtml((fe||ae).message)+'</div>';return;}
   CRM_FIRMS=firms||[]; CRM_ATTYS=atts||[];
+  CRM_FIRMS.forEach(f=>{f._region=crmRegionOf(f);});
   const c=document.getElementById('crm-count'); if(c){c.textContent=CRM_ATTYS.length;c.style.display=CRM_ATTYS.length?'':'none';}
-  crmFillStates();
+  crmFillStates(); crmFillRegions(); crmFillCities();
   renderCrm();
 }
 function crmVisible(){
@@ -1255,6 +1277,7 @@ function crmVisible(){
   return CRM_ATTYS.filter(a=>{
     if(crmStatusFilter!=='all' && a.relationship_status!==crmStatusFilter) return false;
     const f=fById[a.prospect_firm_id]||{};
+    if(crmRegion && (f._region||crmRegionOf(f))!==crmRegion) return false;
     if(crmState && (f.state||'')!==crmState) return false;
     if(city && (f.city||'').toLowerCase().indexOf(city)<0) return false;
     if(zip && !String(f.zip||'').startsWith(zip)) return false;
@@ -1267,6 +1290,24 @@ function crmFillStates(){
   const states=[...new Set(CRM_FIRMS.map(f=>f.state).filter(Boolean))].sort();
   const cur=crmState;
   sel.innerHTML='<option value="">All states</option>'+states.map(s=>`<option value="${ehtml(s)}"${s===cur?' selected':''}>${ehtml(s)}</option>`).join('');
+}
+function crmFillRegions(){
+  const sel=document.getElementById('crm-region'); if(!sel) return;
+  // count firms per region
+  const cnt={}; CRM_FIRMS.forEach(f=>{const r=f._region||crmRegionOf(f);cnt[r]=(cnt[r]||0)+1;});
+  // ordered: defined PA metros first (only if present), then Other PA, Out of state, Unassigned
+  const order=[...CRM_REGIONS.map(r=>r[0]),'other_pa','oos','unknown'];
+  const opts=order.filter(k=>cnt[k]).map(k=>`<option value="${k}"${k===crmRegion?' selected':''}>${ehtml(crmRegionLabel(k))} (${cnt[k]})</option>`).join('');
+  sel.innerHTML='<option value="">All regions</option>'+opts;
+}
+function crmFillCities(){
+  const sel=document.getElementById('crm-city-sel'); if(!sel) return;
+  // cities within the selected region (or all firms if no region), sorted
+  const pool=CRM_FIRMS.filter(f=>!crmRegion || (f._region||crmRegionOf(f))===crmRegion);
+  const cities=[...new Set(pool.map(f=>(f.city||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const cur=cities.some(c=>c===crmCity)?crmCity:'';
+  if(cur!==crmCity) crmCity=cur; // reset if the current city isn't in the chosen region
+  sel.innerHTML='<option value="">All cities</option>'+cities.map(c=>`<option value="${ehtml(c)}"${c===cur?' selected':''}>${ehtml(c)}</option>`).join('');
 }
 function renderCrm(){
   // KPIs
@@ -1296,7 +1337,8 @@ function renderCrm(){
     const stageChips=CRM_STAGES.map(([s,,c])=>{const n=list.filter(a=>a.relationship_status===s).length;return n?`<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${c};margin-left:3px;" title="${n} ${s}"></span>`:'';}).join('');
     const fname=f?ehtml(f.name):'(no firm matched)';
     const geo=f?[[f.city,f.state].filter(Boolean).join(', '),f.zip].filter(Boolean).join(' '):'';
-    const meta=[geo,f&&f.phone].filter(Boolean).map(ehtml).join(' · ');
+    const region=f?crmRegionLabel(f._region||crmRegionOf(f)):'';
+    const meta=[geo,region,f&&f.phone].filter(Boolean).map(ehtml).join(' · ');
     const site=f&&f.website?` · <a href="${ehtml(f.website)}" target="_blank" rel="noopener" style="color:var(--steel,#6B9FD4);">site ↗</a>`:'';
     const rows=list.map(a=>{
       const sm=crmStageMeta(a.relationship_status);
@@ -1326,6 +1368,12 @@ function renderCrm(){
   }).join('');
   document.getElementById('crm-body').innerHTML=html;
 }
+function crmClearFilters(){
+  crmRegion='';crmState='';crmCity='';crmZip='';crmSearch='';crmStatusFilter='all';
+  const z=document.getElementById('crm-zip');if(z)z.value='';
+  const s=document.getElementById('crm-search');if(s)s.value='';
+  crmFillStates();crmFillRegions();crmFillCities();renderCrm();
+}
 function crmToggle(k){k=String(k);if(crmOpen.has(k))crmOpen.delete(k);else crmOpen.add(k);renderCrm();}
 async function crmSetStatus(id,val){
   const {error}=await sbClient.from('attorney_contacts').update({relationship_status:val,status_updated_at:new Date().toISOString()}).eq('id',id);
@@ -1346,9 +1394,9 @@ async function crmPromote(id){
 function crmExport(){
   const fById={}; CRM_FIRMS.forEach(f=>fById[f.id]=f);
   const vis=crmVisible();
-  const head=['Firm','First name','Last name','Title','Email','Phone','City','State','Zip','Relationship','In network','Source URL'];
+  const head=['Firm','First name','Last name','Title','Email','Phone','City','State','Zip','Region','Relationship','In network','Source URL'];
   const rows=[head];
-  vis.forEach(a=>{const f=fById[a.prospect_firm_id]||{};rows.push([f.name||'',a.first_name||'',a.last_name||'',a.title||'',a.email||'',a.phone||'',f.city||'',a.states||f.state||'',f.zip||'',a.relationship_status||'',a.converted_attorney_id?'yes':'no',a.source_url||'']);});
+  vis.forEach(a=>{const f=fById[a.prospect_firm_id]||{};rows.push([f.name||'',a.first_name||'',a.last_name||'',a.title||'',a.email||'',a.phone||'',f.city||'',a.states||f.state||'',f.zip||'',crmRegionLabel(f._region||crmRegionOf(f)),a.relationship_status||'',a.converted_attorney_id?'yes':'no',a.source_url||'']);});
   const csv=rows.map(r=>r.map(c=>`"${String(c==null?'':c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent('﻿'+csv);a.download='mdconcierge_attorney_crm.csv';a.click();
   showToast('Exported '+vis.length+' attorneys');
