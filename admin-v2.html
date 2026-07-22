@@ -1421,13 +1421,20 @@ function crmExport(){
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 /* ============================ MDRx Pharmacy CRM (Prompt 2: screens) ============================ */
-let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], mdrxTab='board', mdrxSearch='', mdrxOpenId=null;
+let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], mdrxTab='due', mdrxSearch='', mdrxOpenId=null;
 const MDRX_STAGES=[['target','Target','#6B95D4'],['contacted','Contacted','#c8922a'],['meeting','Meeting','#7a5cd0'],['document_review','Doc review','#d08a2c'],['signed','Signed','#2D6A4F']];
 const MDRX_BUCKETS=[['','—'],['cold','Cold'],['warm','Warm'],['previously_engaged','Previously engaged'],['existing_low_util','Existing low-util']];
 const MDRX_STATUS=[['active','Active'],['dormant','Dormant'],['lost','Lost']];
 const MDRX_PHARM=['','PDRx','MDRx','EZmeds'];
 const MDRX_COMPET=['','PDRx','EZMeds','RescueMeds','Rx Development','Advanced Rx','Other'];
 const MDRX_CLAIMS=['unknown','yes','no'];
+// Cadence rules (editable; stored on this device). Days-between-touches, max touches before nurture, nurture interval.
+const MDRX_CADENCE_DEFAULT={cold:{interval:12,max:3,nurture:49},warm:{interval:10,max:2,nurture:21},previously_engaged:{interval:21,max:99,nurture:21},existing_low_util:{interval:90,max:99,nurture:90}};
+function mdrxLoadCadence(){try{const s=localStorage.getItem('mdrx_cadence');if(s)return Object.assign(JSON.parse(JSON.stringify(MDRX_CADENCE_DEFAULT)),JSON.parse(s));}catch(e){}return JSON.parse(JSON.stringify(MDRX_CADENCE_DEFAULT));}
+let MDRX_CADENCE=mdrxLoadCadence();
+function mdrxSaveCadenceStore(){try{localStorage.setItem('mdrx_cadence',JSON.stringify(MDRX_CADENCE));}catch(e){}}
+function mdrxAddDays(n){const d=new Date();d.setDate(d.getDate()+(n||0));return d.toISOString().slice(0,10);}
+function mdrxSuggest(p,prior){const cad=MDRX_CADENCE[p.relationship_bucket]||{interval:14,max:3,nurture:49};const touchNum=(prior||0)+1;let days,label;if(touchNum>=cad.max){days=cad.nurture;label='Nurture touch, bring a fresh reason or angle';}else{days=cad.interval;label='Touch '+(touchNum+1)+', new angle (value, patient benefit, compliance, or a call)';}return {date:mdrxAddDays(days),action:label};}
 function mdrxToday(){return new Date().toISOString().slice(0,10);}
 function mdrxProvName(p){return ((((p.first_name||'')+' '+(p.last_name||'')).trim())||'(no name)')+(p.credentials?(', '+p.credentials):'');}
 function mdrxPracName(id){const pr=MDRX_PRAC.find(x=>x.id===id);return pr?(pr.name||''):'';}
@@ -1462,13 +1469,15 @@ function mdrxKpis(){
 }
 function renderMdrx(){
   const k=document.getElementById('mdrx-kpis'); if(k)k.innerHTML=mdrxKpis();
-  const tabs=[['board','▦ Pipeline'],['providers','👤 Providers'],['practices','🏢 Practices']];
+  const tabs=[['due','⏰ Due today'],['board','▦ Pipeline'],['providers','👤 Providers'],['practices','🏢 Practices'],['cadence','⚙ Cadence']];
   const tb=document.getElementById('mdrx-tabs');
   if(tb)tb.innerHTML=tabs.map(([key,lbl])=>{const on=(mdrxTab===key&&mdrxOpenId===null);return `<button onclick="mdrxOpenId=null;mdrxTab='${key}';renderMdrx()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:${on?'#2b3550':'transparent'};color:${on?'#fff':'var(--muted2)'};font-weight:700;font-size:13px;cursor:pointer;">${lbl}</button>`;}).join('');
   const body=document.getElementById('mdrx-body'); if(!body)return;
   if(mdrxOpenId!==null){ body.innerHTML=mdrxDetailHtml(mdrxOpenId); mdrxLoadTimeline(mdrxOpenId); return; }
-  if(mdrxTab==='board') body.innerHTML=mdrxBoardHtml();
+  if(mdrxTab==='due') body.innerHTML=mdrxDueHtml();
+  else if(mdrxTab==='board') body.innerHTML=mdrxBoardHtml();
   else if(mdrxTab==='providers') body.innerHTML=mdrxListHtml();
+  else if(mdrxTab==='cadence') body.innerHTML=mdrxCadenceHtml();
   else body.innerHTML=mdrxPracticesHtml();
 }
 function mdrxMatch(p){
@@ -1531,6 +1540,37 @@ function mdrxPracticesHtml(){
 function mdrxOpen(id){mdrxOpenId=id;renderMdrx();}
 function mdrxNew(){mdrxOpenId=0;renderMdrx();}
 function mdrxNewUrl(){mdrxNew();setTimeout(()=>{const e=document.getElementById('mdrx-imp-url');if(e)e.focus();},60);}
+const MDRX_STATE_MAP={alabama:'AL',alaska:'AK',arizona:'AZ',arkansas:'AR',california:'CA',colorado:'CO',connecticut:'CT',delaware:'DE',florida:'FL',georgia:'GA',hawaii:'HI',idaho:'ID',illinois:'IL',indiana:'IN',iowa:'IA',kansas:'KS',kentucky:'KY',louisiana:'LA',maine:'ME',maryland:'MD',massachusetts:'MA',michigan:'MI',minnesota:'MN',mississippi:'MS',missouri:'MO',montana:'MT',nebraska:'NE',nevada:'NV','new hampshire':'NH','new jersey':'NJ','new mexico':'NM','new york':'NY','north carolina':'NC','north dakota':'ND',ohio:'OH',oklahoma:'OK',oregon:'OR',pennsylvania:'PA','rhode island':'RI','south carolina':'SC','south dakota':'SD',tennessee:'TN',texas:'TX',utah:'UT',vermont:'VT',virginia:'VA',washington:'WA','west virginia':'WV',wisconsin:'WI',wyoming:'WY','district of columbia':'DC'};
+function mdrxParseAddr(str){
+  const out={building:'',address:'',city:'',state:'',zip:''};
+  let s=String(str||'').replace(/\s+/g,' ').trim(); if(!s)return out;
+  let m=s.match(/(\d{5}(?:-\d{4})?)\s*$/); if(m){out.zip=m[1];s=s.slice(0,m.index).replace(/[,\s]+$/,'').trim();}
+  m=s.match(/[,\s]([A-Za-z]{2})$/);
+  if(m){out.state=m[1].toUpperCase();s=s.slice(0,m.index).replace(/[,\s]+$/,'').trim();}
+  else{for(const nm in MDRX_STATE_MAP){const re=new RegExp('[,\\s]'+nm.replace(/ /g,'\\s+')+'$','i');const mm=s.match(re);if(mm){out.state=MDRX_STATE_MAP[nm];s=s.slice(0,mm.index).replace(/[,\s]+$/,'').trim();break;}}}
+  const parts=s.split(',').map(x=>x.trim()).filter(Boolean);
+  if(parts.length>1)out.city=parts.pop();
+  let rest=parts;
+  const bIdx=rest.findIndex(x=>/^(suite|ste\.?|unit|apt\.?|bldg|building|floor|fl\.?|room|rm|#)\b/i.test(x));
+  if(bIdx>=0)out.building=rest.splice(bIdx,1)[0];
+  out.address=rest.join(', ').trim();
+  if(!out.building){const mm=out.address.match(/\s(#\s*[\w-]+|(?:suite|ste\.?|unit|apt\.?|bldg|building|floor|fl\.?|room|rm)\.?\s*[\w-]+)$/i);if(mm){out.building=mm[1].trim();out.address=out.address.slice(0,mm.index).trim();}}
+  if(!out.city&&!out.address)out.address=s;
+  return out;
+}
+function mdrxLocRow(loc){
+  loc=(loc&&typeof loc==='object')?loc:{}; const v=k=>ehtml(loc[k]||'');
+  const f='padding:7px 9px;border:1px solid var(--border2);border-radius:7px;background:var(--card,#0d1830);color:var(--text);font-size:12.5px;';
+  return `<div class="mdrx-loc" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;border:1px solid var(--border2);border-radius:8px;padding:8px;margin-bottom:8px;">
+    <input class="lb" placeholder="Building/Suite" value="${v('building')}" style="${f}width:120px;">
+    <input class="la" placeholder="Street address" value="${v('address')}" style="${f}flex:1;min-width:150px;">
+    <input class="lc" placeholder="City" value="${v('city')}" style="${f}width:110px;">
+    <input class="ls" placeholder="ST" value="${v('state')}" maxlength="2" style="${f}width:48px;text-transform:uppercase;">
+    <input class="lz" placeholder="Zip" value="${v('zip')}" style="${f}width:72px;">
+    <button class="ib" type="button" onclick="this.closest('.mdrx-loc').remove()">✕</button>
+  </div>`;
+}
+function mdrxAddLoc(loc){const c=document.getElementById('mdrx-locations');if(c)c.insertAdjacentHTML('beforeend',mdrxLocRow(loc&&typeof loc==='object'?loc:null));}
 async function mdrxReadUrl(){
   let url=(document.getElementById('mdrx-imp-url').value||'').trim();
   const st=document.getElementById('mdrx-imp-status');
@@ -1548,10 +1588,16 @@ async function mdrxReadUrl(){
     const set=(id,v)=>{const el=document.getElementById('mdrx-f-'+id);if(el&&v!=null&&v!=='')el.value=v;};
     set('first_name',first);set('last_name',last);set('credentials',creds);
     set('specialty',prov.specialty||prac.specialty);set('email',prov.email);set('office_phone',prov.phone||prac.phone);
-    set('address',prac.address);
-    set('state',Array.isArray(prac.states)?prac.states[0]:(prac.states||''));
+    // Locations: only what the page actually returned. First = primary (parsed into fields); the rest = extra rows.
+    const locs=(data.locations||[]).map(l=>typeof l==='string'?l:((l&&(l.address||[l.name,l.address,l.city,l.state].filter(Boolean).join(', ')))||'')).filter(Boolean);
+    const primaryStr=prac.address||locs[0]||'';
+    const pa=mdrxParseAddr(primaryStr);
+    set('building',pa.building);set('address',pa.address);set('city',pa.city||prac.city);
+    set('state',pa.state||(Array.isArray(prac.states)?prac.states[0]:(prac.states||'')));set('zip',pa.zip||prac.zip);
+    const extra=locs.filter(a=>a&&a!==primaryStr).map(mdrxParseAddr);
+    const lc=document.getElementById('mdrx-locations'); if(lc){lc.innerHTML='';extra.forEach(o=>mdrxAddLoc(o));}
     const pracName=prac.name||'';
-    say('#1e9e6a','✓ Filled from the page'+(pracName?(' · practice: '+pracName+' (create & link it in the Practices tab)'):'')+'. Review below, then Create provider.');
+    say('#1e9e6a','✓ Filled from the page'+(pracName?(' · practice: '+pracName):'')+(extra.length?(' · '+extra.length+' extra location(s) added'):'')+'. Review below, then Create provider.');
   }catch(e){ say('#e0556b',"Couldn't read that page automatically. Just enter the details manually below."); }
 }
 function mdrxF(id,label,val,type){return `<label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">${label}</label><input id="mdrx-f-${id}" type="${type||'text'}" value="${ehtml(val==null?'':val)}" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;margin-bottom:10px;">`;}
@@ -1566,8 +1612,8 @@ function mdrxDetailHtml(id){
   const col=h=>`<div style="flex:1;min-width:240px;">${h}</div>`;
   const form=`<div style="display:flex;flex-wrap:wrap;gap:0 20px;">
     ${col(g('Identity')+mdrxF('first_name','First name',p.first_name)+mdrxF('last_name','Last name',p.last_name)+mdrxF('credentials','Credentials (MD, DO)',p.credentials)+mdrxF('specialty','Specialty',p.specialty)+mdrxF('npi','NPI',p.npi))}
-    ${col(g('Contact')+mdrxF('email','Email',p.email)+mdrxF('cell','Cell',p.cell)+mdrxF('office_phone','Office phone',p.office_phone)+mdrxF('address','Address',p.address)+mdrxF('city','City',p.city)+mdrxF('state','State',p.state)+mdrxF('zip','Zip',p.zip))}
-    ${col(g('Practice')+mdrxSel('practice_id','Practice',p.practice_id,pracOpts)+mdrxSel('independent','Independent?',p.independent?'true':'false',[['false','No'],['true','Yes']])+mdrxF('llc_name','LLC name',p.llc_name)+mdrxF('workers_comp_patients_per_month','WC patients / month',p.workers_comp_patients_per_month,'number'))}
+    ${col(g('Contact')+mdrxF('email','Email',p.email)+mdrxF('cell','Cell',p.cell)+mdrxF('office_phone','Office phone',p.office_phone)+mdrxF('building','Building / Suite',p.building)+mdrxF('address','Street address',p.address)+mdrxF('city','City',p.city)+mdrxF('state','State',p.state)+mdrxF('zip','Zip',p.zip))}
+    ${col(g('Practice')+mdrxSel('practice_id','Practice',p.practice_id,pracOpts)+mdrxSel('independent','Independent?',p.independent?'true':'false',[['false','No'],['true','Yes']])+mdrxF('llc_name','LLC name',p.llc_name)+mdrxF('llc_address','LLC address',p.llc_address)+mdrxF('workers_comp_patients_per_month','WC patients / month',p.workers_comp_patients_per_month,'number'))}
     ${col(g('Sales')+mdrxSel('pharmacy','Pharmacy',p.pharmacy,MDRX_PHARM)+mdrxSel('competition','Competition',p.competition,MDRX_COMPET)+mdrxSel('claims_purchase','Claims purchase',p.claims_purchase||'unknown',MDRX_CLAIMS)+mdrxSel('relationship_bucket','Relationship bucket',p.relationship_bucket,MDRX_BUCKETS))}
     ${col(g('Pipeline')+mdrxSel('stage','Stage',p.stage||'target',MDRX_STAGES.map(s=>[s[0],s[1]]))+mdrxSel('status','Status',p.status||'active',MDRX_STATUS)+mdrxF('next_action','Next action',p.next_action)+mdrxF('next_action_date','Next action date',p.next_action_date,'date')+mdrxF('first_rx_received','First Rx received',p.first_rx_received,'date')+mdrxF('hook','Hook (re-engagement)',p.hook)+mdrxF('lost_reason','Lost reason',p.lost_reason))}
   </div>`;
@@ -1576,9 +1622,9 @@ function mdrxDetailHtml(id){
     <button class="ib" onclick="mdrxCompose('meeting')">🤝 Log meeting</button>
     <button class="ib" onclick="mdrxCompose('note')">📝 Add note</button>
     <button class="ib" onclick="showToast('Outreach drafting arrives in the next step (Prompt 4).')">✉️ Draft outreach</button>
-    <button class="ib" onclick="showToast('Agreement sending arrives in a later step (Prompt 4/6).')">📎 Send agreements</button>
+    <button class="ib" onclick="mdrxDocusign()">📄 Request DocuSign contract</button>
     <button class="ib" onclick="showToast('The quote engine arrives in a later step (Prompt 5).')">🧮 Generate quote</button>
-  </div>`;
+  </div><div id="mdrx-action-panel" style="margin:0 0 6px;"></div>`;
   const timeline=isNew?'':`<div class="panel" style="margin-top:14px;"><div class="ph"><div class="pt">Activity timeline</div></div><div id="mdrx-compose"></div><div id="mdrx-timeline" style="padding:6px 14px 14px;">Loading…</div></div>`;
   const importBar=`<div style="background:rgba(107,149,212,.08);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
       <div style="font-size:12px;font-weight:700;color:var(--steel,#6B9FD4);margin-bottom:6px;">⚡ Add by URL</div>
@@ -1589,13 +1635,20 @@ function mdrxDetailHtml(id){
       </div>
       <div id="mdrx-imp-status" style="font-size:11.5px;margin-top:6px;color:var(--muted);"></div>
     </div>`;
+  const locsArr=Array.isArray(p.locations)?p.locations:[];
+  const locsBlock=`<div style="margin-top:8px;">
+      <div style="font-size:12px;font-weight:700;color:var(--steel,#6B9FD4);margin:6px 0 8px;text-transform:uppercase;letter-spacing:.5px;">Additional practice locations</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">The primary address is above. Add other offices here, one per line. When importing by URL, these fill in only if the page lists multiple locations.</div>
+      <div id="mdrx-locations">${locsArr.map(l=>mdrxLocRow(typeof l==='object'?l:mdrxParseAddr(l))).join('')}</div>
+      <button class="ib" type="button" onclick="mdrxAddLoc()">+ add location</button>
+    </div>`;
   return `<div class="panel" style="padding:16px 18px;">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
       <button class="ib" onclick="mdrxOpenId=null;renderMdrx()">← Back</button>
       <div style="font-weight:700;font-size:16px;flex:1;min-width:120px;">${isNew?'New provider':ehtml(mdrxProvName(p))}</div>
       ${id?`<button class="ib" style="color:#e0556b;" onclick="mdrxDelete(${id})">Delete</button>`:''}
       <button onclick="mdrxSave(${id||0})" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">${isNew?'Create provider':'Save changes'}</button>
-    </div>${importBar}${form}${buttons}
+    </div>${importBar}${form}${locsBlock}${buttons}
   </div>${timeline}`;
 }
 function mdrxVal(id){const el=document.getElementById('mdrx-f-'+id);return el?el.value:'';}
@@ -1605,19 +1658,23 @@ async function mdrxSave(id){
     first_name:s(mdrxVal('first_name')),last_name:s(mdrxVal('last_name')),credentials:s(mdrxVal('credentials')),
     specialty:s(mdrxVal('specialty')),npi:s(mdrxVal('npi')),
     practice_id:mdrxVal('practice_id')?Number(mdrxVal('practice_id')):null,
-    independent:mdrxVal('independent')==='true',llc_name:s(mdrxVal('llc_name')),
+    independent:mdrxVal('independent')==='true',llc_name:s(mdrxVal('llc_name')),llc_address:s(mdrxVal('llc_address')),
+    locations:[...document.querySelectorAll('#mdrx-locations .mdrx-loc')].map(r=>{const q=c=>{const el=r.querySelector(c);return el?el.value.trim():'';};return {building:q('.lb'),address:q('.la'),city:q('.lc'),state:q('.ls').toUpperCase(),zip:q('.lz')};}).filter(o=>o.building||o.address||o.city||o.state||o.zip),
     workers_comp_patients_per_month:num(mdrxVal('workers_comp_patients_per_month')),
     email:s(mdrxVal('email')),cell:s(mdrxVal('cell')),office_phone:s(mdrxVal('office_phone')),
-    address:s(mdrxVal('address')),city:s(mdrxVal('city')),state:s(mdrxVal('state')),zip:s(mdrxVal('zip')),
+    building:s(mdrxVal('building')),address:s(mdrxVal('address')),city:s(mdrxVal('city')),state:s(mdrxVal('state')),zip:s(mdrxVal('zip')),
     pharmacy:s(mdrxVal('pharmacy')),competition:s(mdrxVal('competition')),claims_purchase:mdrxVal('claims_purchase')||'unknown',
     relationship_bucket:s(mdrxVal('relationship_bucket')),stage:mdrxVal('stage')||'target',status:mdrxVal('status')||'active',
     lost_reason:s(mdrxVal('lost_reason')),hook:s(mdrxVal('hook')),
     next_action:s(mdrxVal('next_action')),next_action_date:s(mdrxVal('next_action_date')),first_rx_received:s(mdrxVal('first_rx_received'))
   };
   if(!rec.first_name&&!rec.last_name){showToast('Add at least a name.');return;}
-  let res;
-  if(id) res=await sbClient.from('mdrx_providers').update(rec).eq('id',id);
-  else { rec.owner='eric'; res=await sbClient.from('mdrx_providers').insert(rec); }
+  const doSave=r=> id? sbClient.from('mdrx_providers').update(r).eq('id',id) : sbClient.from('mdrx_providers').insert(Object.assign({owner:'eric'},r));
+  let res=await doSave(rec);
+  if(res.error&&/column .*(locations|llc_address|building).* does not exist/i.test(res.error.message||'')){
+    const r2=Object.assign({},rec); delete r2.locations; delete r2.llc_address; delete r2.building; res=await doSave(r2);
+    if(!res.error){showToast('Saved. (Extra locations & LLC address need the quick DB update to persist.)'); if(!id)mdrxTab='providers'; mdrxOpenId=null; await loadMdrx(); return;}
+  }
   if(res.error){showToast('Error: '+res.error.message);return;}
   showToast(id?'Saved':'Provider created'); if(!id)mdrxTab='providers'; mdrxOpenId=null; await loadMdrx();
 }
@@ -1638,21 +1695,144 @@ async function mdrxLoadTimeline(id){
 }
 function mdrxCompose(type){
   const c=document.getElementById('mdrx-compose'); if(!c)return;
-  const label={call:'call',meeting:'meeting',note:'note'}[type]||type;
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId)||{};
+  const isTouch=['call','meeting','email_out'].includes(type);
+  const label={call:'call',meeting:'meeting',note:'note',email_out:'email'}[type]||type;
+  const fld='padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
+  let sug={date:'',action:''};
+  if(isTouch){const prior=MDRX_ACT.filter(a=>['call','meeting','email_out'].includes(a.type)).length;sug=mdrxSuggest(p,prior);}
+  const outcomes=['','No answer / left message','Spoke, interested','Spoke, not now','Meeting booked','Sent materials','Wants agreements','Declined','Other'];
+  const outBlock=isTouch?`<label style="display:block;font-size:11px;color:var(--muted);margin:6px 0 3px;">Outcome</label><select id="mdrx-act-outcome" style="width:100%;${fld}margin-bottom:8px;">${outcomes.map(o=>`<option value="${ehtml(o)}">${ehtml(o||'—')}</option>`).join('')}</select>`:'';
+  const bucketName=(p.relationship_bucket&&MDRX_CADENCE[p.relationship_bucket])?p.relationship_bucket:'default';
+  const schedBlock=isTouch?`<div style="background:rgba(107,149,212,.08);border:1px solid var(--border2);border-radius:8px;padding:9px 11px;margin-top:8px;">
+      <div style="font-size:11px;color:var(--steel,#6B9FD4);margin-bottom:6px;">Suggested next touch (${ehtml(bucketName)} cadence, edit or clear):</div>
+      <input id="mdrx-act-next" value="${ehtml(sug.action)}" placeholder="Next action" style="width:100%;${fld}margin-bottom:6px;">
+      <input id="mdrx-act-nextdate" type="date" value="${sug.date}" style="${fld}">
+    </div>`:'';
   c.innerHTML=`<div style="padding:10px 14px;border-bottom:1px solid var(--border2);">
-    <input id="mdrx-act-subj" placeholder="${label} subject" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;margin-bottom:8px;">
-    <textarea id="mdrx-act-notes" placeholder="What happened…" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;"></textarea>
-    <div style="margin-top:8px;"><button onclick="mdrxAddActivity('${type}')" style="padding:8px 16px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Add ${label}</button> <button class="ib" onclick="document.getElementById('mdrx-compose').innerHTML=''">Cancel</button></div>
+    <input id="mdrx-act-subj" placeholder="Short ${label} summary" style="width:100%;${fld}margin-bottom:8px;">
+    <textarea id="mdrx-act-notes" placeholder="What was discussed…" rows="2" style="width:100%;${fld}"></textarea>
+    ${outBlock}${schedBlock}
+    <div style="margin-top:10px;"><button onclick="mdrxAddActivity('${type}')" style="padding:8px 16px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Save ${label}</button> <button class="ib" onclick="document.getElementById('mdrx-compose').innerHTML=''">Cancel</button></div>
   </div>`;
   const f=document.getElementById('mdrx-act-subj'); if(f)f.focus();
 }
 async function mdrxAddActivity(type){
   const id=mdrxOpenId; if(!id)return;
-  const subject=(document.getElementById('mdrx-act-subj')||{}).value||'';
-  const notes=(document.getElementById('mdrx-act-notes')||{}).value||'';
-  const {error}=await sbClient.from('mdrx_activity').insert({provider_id:id,type,subject:subject.trim()||null,notes:notes.trim()||null,created_by:'eric'});
+  const gv=x=>{const el=document.getElementById(x);return el?el.value:'';};
+  const subj=gv('mdrx-act-subj').trim(), notes=gv('mdrx-act-notes').trim(), outcome=gv('mdrx-act-outcome').trim();
+  const fullNotes=[outcome?('Outcome: '+outcome):'',notes].filter(Boolean).join('\n');
+  const {error}=await sbClient.from('mdrx_activity').insert({provider_id:id,type,subject:subj||outcome||type,notes:fullNotes||null,created_by:'eric'});
   if(error){showToast('Error: '+error.message);return;}
-  document.getElementById('mdrx-compose').innerHTML=''; showToast('Logged'); mdrxLoadTimeline(id);
+  const hasNext=!!document.getElementById('mdrx-act-next');
+  if(hasNext){
+    const na=gv('mdrx-act-next').trim()||null, nad=gv('mdrx-act-nextdate')||null;
+    const {error:e2}=await sbClient.from('mdrx_providers').update({next_action:na,next_action_date:nad}).eq('id',id);
+    if(!e2){const p=MDRX_PROV.find(x=>x.id===id);if(p){p.next_action=na;p.next_action_date=nad;}
+      const f1=document.getElementById('mdrx-f-next_action');if(f1)f1.value=na||'';
+      const f2=document.getElementById('mdrx-f-next_action_date');if(f2)f2.value=nad||'';}
+  }
+  document.getElementById('mdrx-compose').innerHTML=''; showToast('Logged'+(hasNext?' · next touch scheduled':''));
+  const k=document.getElementById('mdrx-kpis'); if(k)k.innerHTML=mdrxKpis();
+  const badge=document.getElementById('mdrx-due'); if(badge){const t=mdrxToday();const n=MDRX_PROV.filter(x=>x.status==='active'&&x.next_action_date&&x.next_action_date<=t).length;badge.textContent=n;badge.style.display=n?'':'none';}
+  mdrxLoadTimeline(id);
+}
+function mdrxProfileText(p){
+  const addr=[p.building,p.address,[p.city,p.state,p.zip].filter(Boolean).join(', ')].filter(Boolean).join('\n  ');
+  const locs=(Array.isArray(p.locations)?p.locations:[]).map((l,i)=>'  Location '+(i+2)+': '+[l.building,l.address,[l.city,l.state,l.zip].filter(Boolean).join(', ')].filter(Boolean).join(', ')).filter(Boolean).join('\n');
+  return [
+    'Provider: '+mdrxProvName(p),
+    p.specialty?('Specialty: '+p.specialty):'',
+    p.npi?('NPI: '+p.npi):'',
+    p.llc_name?('LLC name: '+p.llc_name):'LLC name: (to be confirmed by MDRx)',
+    p.llc_address?('LLC address: '+p.llc_address):'',
+    mdrxPracName(p.practice_id)?('Practice: '+mdrxPracName(p.practice_id)):'',
+    addr?('Primary address:\n  '+addr):'',
+    locs?('Additional locations:\n'+locs):'',
+    p.office_phone?('Office phone: '+p.office_phone):'',
+    p.cell?('Cell: '+p.cell):'',
+    'Email: '+(p.email||''),
+    p.workers_comp_patients_per_month!=null?('WC patients/month: '+p.workers_comp_patients_per_month):'',
+    'Claims purchase: '+(p.claims_purchase||'unknown')
+  ].filter(Boolean).join('\n');
+}
+function mdrxDocusign(){
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId); if(!p)return;
+  if(!p.pharmacy){ showToast('Set the pharmacy on this provider first — the request goes to that pharmacy\'s team.'); return; }
+  if(!p.email){ showToast("Add the provider's email first, that's where the DocuSign goes."); return; }
+  const ph=MDRX_PH.find(x=>x.name===p.pharmacy)||{};
+  const recips=(ph.contract_emails||ph.cc_partner_email||'').trim();
+  if(!recips){ showToast('No contract contacts set up for '+p.pharmacy+' yet — only MDRx is configured so far.'); return; }
+  const prog=ph.program_name||(p.pharmacy+" Workers' Compensation Pharmacy Program");
+  const greetNames=recips.split(/[,;]/).map(e=>e.trim().split('@')[0].split(/[._-]/)[0]).filter(Boolean).map(n=>n.charAt(0).toUpperCase()+n.slice(1));
+  const greeting='Hi '+(greetNames.length?greetNames.join(' and '):'there');
+  const name=mdrxProvName(p);
+  const subject='DocuSign request'+(name?(' — '+name):'')+(p.llc_name?(' · '+p.llc_name):'');
+  const body=greeting+',\n\nCould you please send a DocuSign contract for the '+prog+' to the provider below?\n\n'+mdrxProfileText(p)+'\n\nPlease send the DocuSign directly to: '+p.email+'\n\nThank you,\nEric';
+  const fld='padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
+  const pnl=document.getElementById('mdrx-action-panel'); if(!pnl)return;
+  pnl.innerHTML=`<div class="panel" style="padding:14px;border:1px solid var(--steel,#6B9FD4);">
+    <div style="font-weight:700;font-size:14px;margin-bottom:8px;">📄 Request DocuSign contract from ${ehtml(p.pharmacy)}</div>
+    <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">To (MDRx)</label>
+    <input id="mdrx-ds-to" value="${ehtml(recips)}" style="width:100%;${fld}margin-bottom:8px;">
+    <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">Subject</label>
+    <input id="mdrx-ds-subj" value="${ehtml(subject)}" style="width:100%;${fld}margin-bottom:8px;">
+    <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">Message (edit anything before sending)</label>
+    <textarea id="mdrx-ds-body" rows="13" style="width:100%;${fld}font-family:inherit;line-height:1.5;">${ehtml(body)}</textarea>
+    <div style="font-size:11px;color:var(--muted);margin:6px 0 10px;">Sends from eric@mdconcierge.net.${p.llc_name?'':' No LLC name on file, MDRx will confirm it on their end.'}</div>
+    <button onclick="mdrxSendDocusign()" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Send request</button>
+    <button class="ib" onclick="document.getElementById('mdrx-action-panel').innerHTML=''">Cancel</button>
+  </div>`;
+  pnl.scrollIntoView({behavior:'smooth',block:'center'});
+}
+async function mdrxSendDocusign(){
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId); if(!p)return;
+  const to=((document.getElementById('mdrx-ds-to')||{}).value||'').split(/[,;]/).map(s=>s.trim()).filter(Boolean);
+  const subject=((document.getElementById('mdrx-ds-subj')||{}).value||'').trim();
+  const body=((document.getElementById('mdrx-ds-body')||{}).value||'').trim();
+  if(!to.length){showToast('Add at least one recipient.');return;}
+  showToast('Sending…');
+  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{to,subject,text:body}});
+  if(error||!data||!data.ok){showToast('Send failed: '+((data&&data.error)||(error&&error.message)||'unknown'));return;}
+  try{ await sbClient.from('mdrx_activity').insert({provider_id:p.id,type:'email_out',subject:'DocuSign requested from MDRx',notes:'To: '+to.join(', ')+'\nSubject: '+subject,created_by:'eric'}); }catch(e){}
+  const pnl=document.getElementById('mdrx-action-panel'); if(pnl)pnl.innerHTML='';
+  showToast('DocuSign request sent to MDRx ✓'); mdrxLoadTimeline(p.id);
+}
+function mdrxBucketLbl(b){return (MDRX_BUCKETS.find(x=>x[0]===b)||['','—'])[1];}
+function mdrxDueHtml(){
+  const t=mdrxToday();
+  const active=MDRX_PROV.filter(p=>p.status==='active'&&mdrxMatch(p));
+  const dated=active.filter(p=>p.next_action_date&&p.next_action_date<=t).sort((a,b)=>a.next_action_date<b.next_action_date?-1:1);
+  const fresh=active.filter(p=>!p.next_action_date&&p.stage==='target');
+  const over=d=>Math.round((new Date(t).getTime()-new Date(d).getTime())/86400000);
+  const rowD=dated.map(p=>{const o=over(p.next_action_date);return `<tr onclick="mdrxOpen(${p.id})" style="cursor:pointer;">
+    <td style="white-space:nowrap;"><span style="color:${o>0?'#e0556b':'var(--muted2)'};font-weight:700;font-size:12px;">${o>0?(o+'d overdue'):'today'}</span></td>
+    <td><div class="ln">${ehtml(mdrxProvName(p))}</div><div style="font-size:11px;color:var(--muted);">${ehtml(mdrxPracName(p.practice_id)||p.specialty||'')}</div></td>
+    <td style="font-size:12px;">${ehtml(mdrxBucketLbl(p.relationship_bucket))}</td>
+    <td style="font-size:12.5px;">${ehtml(p.next_action||'')}</td>
+    <td style="font-size:12px;color:${o>0?'#e0556b':'var(--muted2)'};">${p.next_action_date}</td></tr>`;}).join('');
+  const rowF=fresh.map(p=>`<tr onclick="mdrxOpen(${p.id})" style="cursor:pointer;">
+    <td><span style="color:var(--steel,#6B9FD4);font-weight:700;font-size:12px;">new</span></td>
+    <td><div class="ln">${ehtml(mdrxProvName(p))}</div><div style="font-size:11px;color:var(--muted);">${ehtml(mdrxPracName(p.practice_id)||p.specialty||'')}</div></td>
+    <td style="font-size:12px;">${ehtml(mdrxBucketLbl(p.relationship_bucket))}</td>
+    <td style="font-size:12.5px;color:var(--muted);">not yet contacted, start outreach</td><td></td></tr>`).join('');
+  const rows=(rowD+rowF)||'<tr><td colspan="5" style="padding:16px;color:var(--muted);">🎉 Nothing due. You are all caught up.</td></tr>';
+  return `<div class="panel"><div style="padding:10px 14px;font-size:12px;color:var(--muted);">${dated.length} due/overdue · ${fresh.length} new to start. Work the most overdue first.</div><div style="overflow-x:auto;"><table class="lt"><thead><tr><th>When</th><th>Provider</th><th>Bucket</th><th>Next action</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function mdrxCadenceHtml(){
+  const order=[['cold','Cold'],['warm','Warm'],['previously_engaged','Previously engaged'],['existing_low_util','Existing low-util']];
+  const fld='padding:7px 9px;border:1px solid var(--border2);border-radius:7px;background:var(--card,#0d1830);color:var(--text);font-size:13px;width:80px;';
+  const rows=order.map(([k,lbl])=>{const c=MDRX_CADENCE[k]||{interval:14,max:3,nurture:49};return `<tr><td style="font-weight:700;">${lbl}</td><td><input id="mdrx-cad-${k}-interval" type="number" value="${c.interval}" style="${fld}"></td><td><input id="mdrx-cad-${k}-max" type="number" value="${c.max}" style="${fld}"></td><td><input id="mdrx-cad-${k}-nurture" type="number" value="${c.nurture}" style="${fld}"></td></tr>`;}).join('');
+  return `<div class="panel" style="padding:16px 18px;">
+    <div style="font-weight:700;font-size:15px;margin-bottom:4px;">Outreach cadence</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6;">When you log a touch, the CRM suggests the next one this many days out. <b>Days between touches</b>, <b>max touches</b> before it switches to long-term nurture, and the <b>nurture interval</b>. Suggest-and-approve, nothing sends on its own. Saved on this device.</div>
+    <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Bucket</th><th>Days between touches</th><th>Max touches</th><th>Nurture interval (days)</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div style="margin-top:12px;"><button onclick="mdrxSaveCadence()" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Save cadence</button></div>
+  </div>`;
+}
+function mdrxSaveCadence(){
+  ['cold','warm','previously_engaged','existing_low_util'].forEach(k=>{const g=s=>{const el=document.getElementById('mdrx-cad-'+k+'-'+s);return el?(parseInt(el.value,10)||0):0;};MDRX_CADENCE[k]={interval:g('interval'),max:g('max'),nurture:g('nurture')};});
+  mdrxSaveCadenceStore(); showToast('Cadence saved');
 }
 function mdrxEditPractice(id){
   const pr=id?(MDRX_PRAC.find(x=>x.id===id)||{}):{};
