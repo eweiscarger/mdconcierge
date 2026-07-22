@@ -1421,7 +1421,7 @@ function crmExport(){
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 /* ============================ MDRx Pharmacy CRM (Prompt 2: screens) ============================ */
-let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], mdrxTab='due', mdrxSearch='', mdrxOpenId=null;
+let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], MDRX_DRAFTS=[], mdrxTab='due', mdrxSearch='', mdrxOpenId=null;
 const MDRX_STAGES=[['target','Target','#6B95D4'],['contacted','Contacted','#c8922a'],['meeting','Meeting','#7a5cd0'],['document_review','Doc review','#d08a2c'],['signed','Signed','#2D6A4F']];
 const MDRX_BUCKETS=[['','—'],['cold','Cold'],['warm','Warm'],['previously_engaged','Previously engaged'],['existing_low_util','Existing low-util']];
 const MDRX_STATUS=[['active','Active'],['dormant','Dormant'],['lost','Lost']];
@@ -1452,6 +1452,7 @@ async function loadMdrx(){
   const err=a.error||b.error||c.error||d.error||e.error;
   if(err){if(body)body.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load CRM: '+ehtml(err.message)+'</div>';return;}
   MDRX_PROV=a.data||[]; MDRX_PRAC=b.data||[]; MDRX_PH=c.data||[]; MDRX_CONTACTS=d.data||[]; MDRX_UTIL=e.data||[];
+  try{ const {data:dr}=await sbClient.from('mdrx_inbox_drafts').select('*').eq('status','pending').order('received_at',{ascending:false}); MDRX_DRAFTS=dr||[]; }catch(e2){ MDRX_DRAFTS=[]; }
   const badge=document.getElementById('mdrx-due');
   if(badge){const t=mdrxToday();const n=MDRX_PROV.filter(p=>p.status==='active'&&p.next_action_date&&p.next_action_date<=t).length;badge.textContent=n;badge.style.display=n?'':'none';}
   renderMdrx();
@@ -1471,12 +1472,13 @@ function mdrxKpis(){
 }
 function renderMdrx(){
   const k=document.getElementById('mdrx-kpis'); if(k)k.innerHTML=mdrxKpis();
-  const tabs=[['due','⏰ Due today'],['board','▦ Pipeline'],['providers','👤 Providers'],['practices','🏢 Practices'],['cadence','⚙ Cadence']];
+  const tabs=[['due','⏰ Due today'],['inbox','📥 Inbox'+(MDRX_DRAFTS.length?' ('+MDRX_DRAFTS.length+')':'')],['board','▦ Pipeline'],['providers','👤 Providers'],['practices','🏢 Practices'],['cadence','⚙ Cadence']];
   const tb=document.getElementById('mdrx-tabs');
   if(tb)tb.innerHTML=tabs.map(([key,lbl])=>{const on=(mdrxTab===key&&mdrxOpenId===null);return `<button onclick="mdrxOpenId=null;mdrxTab='${key}';renderMdrx()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:${on?'#2b3550':'transparent'};color:${on?'#fff':'var(--muted2)'};font-weight:700;font-size:13px;cursor:pointer;">${lbl}</button>`;}).join('');
   const body=document.getElementById('mdrx-body'); if(!body)return;
   if(mdrxOpenId!==null){ body.innerHTML=mdrxDetailHtml(mdrxOpenId); mdrxLoadTimeline(mdrxOpenId); return; }
   if(mdrxTab==='due') body.innerHTML=mdrxDueHtml();
+  else if(mdrxTab==='inbox') body.innerHTML=mdrxInboxHtml();
   else if(mdrxTab==='board') body.innerHTML=mdrxBoardHtml();
   else if(mdrxTab==='providers') body.innerHTML=mdrxListHtml();
   else if(mdrxTab==='cadence') body.innerHTML=mdrxCadenceHtml();
@@ -1912,6 +1914,52 @@ async function mdrxEmailSend(kind){
     if(kind==='referral'){ try{ await sbClient.from('mdrx_providers').update({referral_asked_at:mdrxToday()}).eq('id',p.id); }catch(e){} } }
   const pnl=document.getElementById('mdrx-action-panel'); if(pnl)pnl.innerHTML='';
   showToast('Sent ✓'); await loadMdrx();
+}
+/* ----- Inbox assistant: scan eric@ for MDRx replies, draft, approve-and-send ----- */
+function mdrxInboxHtml(){
+  const list=MDRX_DRAFTS.filter(d=>d.status==='pending');
+  const items=list.map(d=>{
+    const when=String(d.received_at||'').slice(0,16).replace('T',' ');
+    const prov=d.provider_id?MDRX_PROV.find(p=>p.id===d.provider_id):null;
+    return `<div class="panel" style="margin-bottom:12px;padding:14px;">
+      <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;">
+        <b style="font-size:13.5px;">${ehtml(d.from_name||d.from_addr)}</b>
+        <span style="font-size:11.5px;color:var(--muted);">${ehtml(d.from_addr)}</span>
+        ${prov?`<span style="font-size:11px;color:#2D6A4F;font-weight:700;cursor:pointer;" onclick="mdrxTab='providers';mdrxOpen(${prov.id})">→ ${ehtml(mdrxProvName(prov))}</span>`:''}
+        <span style="margin-left:auto;font-size:11px;color:var(--muted);">${when}</span>
+      </div>
+      <div style="font-weight:700;font-size:13px;margin:6px 0 4px;">${ehtml(d.subject||'(no subject)')}</div>
+      <div style="font-size:12px;color:var(--muted2);background:rgba(255,255,255,.03);border-left:2px solid var(--border2);padding:6px 10px;margin-bottom:10px;white-space:pre-wrap;max-height:110px;overflow:auto;">${ehtml(d.snippet||'(no preview)')}</div>
+      <label style="display:block;font-size:11px;color:var(--steel,#6B9FD4);margin:0 0 4px;font-weight:700;">Your draft reply (edit before sending)</label>
+      <textarea id="mdrx-draft-${d.id}" rows="7" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;font-family:inherit;line-height:1.5;">${ehtml(d.draft_reply||'')}</textarea>
+      <div style="margin-top:8px;"><button onclick="mdrxSendDraft(${d.id})" style="padding:8px 16px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">✅ Approve &amp; send</button> <button class="ib" onclick="mdrxDismissDraft(${d.id})">Dismiss</button></div>
+    </div>`;
+  }).join('')||'<div class="panel" style="padding:20px;color:var(--muted);">No reply drafts waiting. Hit "Scan inbox now" to check eric@ for new MDRx replies.</div>';
+  return `<div class="panel" style="margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;padding:12px 14px;flex-wrap:wrap;">
+      <div style="font-size:12px;color:var(--muted);flex:1;min-width:200px;">${list.length} reply draft${list.length===1?'':'s'} waiting. Auto-scans your eric@ inbox for MDRx replies every ~15 minutes and drafts each in your voice. Nothing sends until you approve.</div>
+      <button class="ib" onclick="mdrxScanInbox()">↻ Refresh</button>
+    </div></div>${items}`;
+}
+async function mdrxScanInbox(){
+  showToast('Refreshing drafts…');
+  await loadMdrx();
+  showToast(MDRX_DRAFTS.length+' draft'+(MDRX_DRAFTS.length===1?'':'s')+' waiting');
+}
+async function mdrxSendDraft(id){
+  const d=MDRX_DRAFTS.find(x=>x.id===id); if(!d)return;
+  const text=((document.getElementById('mdrx-draft-'+id)||{}).value||'').trim();
+  if(!text){showToast('Draft is empty, write a reply first.');return;}
+  const subject=/^re:/i.test(d.subject||'')?d.subject:('Re: '+(d.subject||''));
+  showToast('Sending…');
+  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{to:[d.from_addr],subject,text}});
+  if(error||!data||!data.ok){showToast('Send failed: '+((data&&data.error)||(error&&error.message)||'unknown'));return;}
+  try{ await sbClient.from('mdrx_inbox_drafts').update({status:'sent',draft_reply:text}).eq('id',id); }catch(e){}
+  if(d.provider_id){ try{ await sbClient.from('mdrx_activity').insert({provider_id:d.provider_id,type:'email_out',subject:'Reply: '+(d.subject||''),notes:'To: '+d.from_addr,created_by:'eric'}); }catch(e){} }
+  showToast('Reply sent ✓'); await loadMdrx();
+}
+async function mdrxDismissDraft(id){
+  try{ await sbClient.from('mdrx_inbox_drafts').update({status:'dismissed'}).eq('id',id); }catch(e){}
+  showToast('Dismissed'); await loadMdrx();
 }
 function mdrxBucketLbl(b){return (MDRX_BUCKETS.find(x=>x[0]===b)||['','—'])[1];}
 function mdrxDueHtml(){
