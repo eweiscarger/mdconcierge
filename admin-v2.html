@@ -1421,7 +1421,7 @@ function crmExport(){
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 /* ============================ MDRx Pharmacy CRM (Prompt 2: screens) ============================ */
-let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], mdrxTab='due', mdrxSearch='', mdrxOpenId=null;
+let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], mdrxTab='due', mdrxSearch='', mdrxOpenId=null;
 const MDRX_STAGES=[['target','Target','#6B95D4'],['contacted','Contacted','#c8922a'],['meeting','Meeting','#7a5cd0'],['document_review','Doc review','#d08a2c'],['signed','Signed','#2D6A4F']];
 const MDRX_BUCKETS=[['','—'],['cold','Cold'],['warm','Warm'],['previously_engaged','Previously engaged'],['existing_low_util','Existing low-util']];
 const MDRX_STATUS=[['active','Active'],['dormant','Dormant'],['lost','Lost']];
@@ -1442,14 +1442,16 @@ function mdrxStageLbl(s){const x=MDRX_STAGES.find(y=>y[0]===s);return x?x[1]:(s|
 async function loadMdrx(){
   const body=document.getElementById('mdrx-body');
   if(body)body.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
-  const [a,b,c]=await Promise.all([
+  const [a,b,c,d,e]=await Promise.all([
     sbClient.from('mdrx_providers').select('*').order('updated_at',{ascending:false}),
     sbClient.from('mdrx_practices').select('*').order('name'),
-    sbClient.from('mdrx_pharmacy').select('*').order('name')
+    sbClient.from('mdrx_pharmacy').select('*').order('name'),
+    sbClient.from('mdrx_contacts').select('*'),
+    sbClient.from('mdrx_utilization').select('*').order('period')
   ]);
-  const err=a.error||b.error||c.error;
+  const err=a.error||b.error||c.error||d.error||e.error;
   if(err){if(body)body.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load CRM: '+ehtml(err.message)+'</div>';return;}
-  MDRX_PROV=a.data||[]; MDRX_PRAC=b.data||[]; MDRX_PH=c.data||[];
+  MDRX_PROV=a.data||[]; MDRX_PRAC=b.data||[]; MDRX_PH=c.data||[]; MDRX_CONTACTS=d.data||[]; MDRX_UTIL=e.data||[];
   const badge=document.getElementById('mdrx-due');
   if(badge){const t=mdrxToday();const n=MDRX_PROV.filter(p=>p.status==='active'&&p.next_action_date&&p.next_action_date<=t).length;badge.textContent=n;badge.style.display=n?'':'none';}
   renderMdrx();
@@ -1496,7 +1498,7 @@ function mdrxBoardHtml(){
       return `<div draggable="true" ondragstart="mdrxDragStart(event,${p.id})" onclick="mdrxOpen(${p.id})" style="background:var(--card,#0d1830);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;">
         <div style="font-weight:700;font-size:13.5px;">${ehtml(mdrxProvName(p))}</div>
         <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">${ehtml(mdrxPracName(p.practice_id)||p.specialty||'')}</div>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;">${ph}${wc}</div>${na}
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;">${ph}${wc}${mdrxHealthBadge(p)}</div>${na}
       </div>`;
     }).join('')||'<div style="font-size:12px;color:var(--muted);padding:6px;">—</div>';
     return `<div ondragover="event.preventDefault()" ondrop="mdrxDrop(event,'${s}')" style="flex:1;min-width:215px;background:rgba(255,255,255,.02);border:1px solid var(--border2);border-radius:12px;padding:10px;">
@@ -1522,7 +1524,7 @@ function mdrxListHtml(){
       <td style="font-size:12.5px;">${ehtml(mdrxPracName(p.practice_id))}</td>
       <td style="font-size:12.5px;">${ehtml(p.state||'')}</td>
       <td style="font-size:12.5px;">${p.pharmacy?ehtml(p.pharmacy):'<span style="color:var(--muted);">—</span>'}</td>
-      <td style="font-size:12px;">${ehtml(mdrxStageLbl(p.stage))}</td>
+      <td style="font-size:12px;">${ehtml(mdrxStageLbl(p.stage))} ${mdrxHealthBadge(p)}</td>
       <td style="text-align:right;font-size:12.5px;">${p.workers_comp_patients_per_month==null?'<span style="color:var(--muted);">—</span>':p.workers_comp_patients_per_month}</td>
       <td style="font-size:12px;color:${overdue?'#e0556b':'var(--muted2)'};">${p.next_action_date||'<span style="color:#e0556b;">none</span>'}</td>
     </tr>`;
@@ -1649,7 +1651,7 @@ function mdrxDetailHtml(id){
       ${id?`<button class="ib" style="color:#e0556b;" onclick="mdrxDelete(${id})">Delete</button>`:''}
       <button onclick="mdrxSave(${id||0})" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">${isNew?'Create provider':'Save changes'}</button>
     </div>${importBar}${form}${locsBlock}${buttons}
-  </div>${timeline}`;
+  </div>${isNew?'':mdrxStaffHtml(p)+mdrxUtilHtml(p)}${timeline}`;
 }
 function mdrxVal(id){const el=document.getElementById('mdrx-f-'+id);return el?el.value:'';}
 async function mdrxSave(id){
@@ -1798,6 +1800,119 @@ async function mdrxSendDocusign(){
   const pnl=document.getElementById('mdrx-action-panel'); if(pnl)pnl.innerHTML='';
   showToast('DocuSign request sent to MDRx ✓'); mdrxLoadTimeline(p.id);
 }
+/* ----- Utilization health + champions + referral (panel Tier-1) ----- */
+function mdrxUtilFor(id){return MDRX_UTIL.filter(u=>u.provider_id===id).slice().sort((a,b)=>a.period<b.period?-1:1);}
+function mdrxHealth(p){
+  if(!p||!p.is_won) return null;
+  const rows=mdrxUtilFor(p.id), withRx=rows.filter(r=>(r.rx_count||0)>0), today=mdrxToday();
+  if(!withRx.length) return {tag:'Dark',color:'#e0556b',note:'signed, no scripts yet'};
+  const last=withRx[withRx.length-1];
+  const days=Math.round((new Date(today).getTime()-new Date(last.period).getTime())/86400000);
+  if(days>75) return {tag:'Dark',color:'#e0556b',note:'no scripts in ~'+Math.round(days/30)+' mo'};
+  const recent=rows.slice(-2).reduce((s,r)=>s+(r.rx_count||0),0), prior=rows.slice(-4,-2).reduce((s,r)=>s+(r.rx_count||0),0);
+  if(prior>0 && recent<prior*0.7) return {tag:'Slipping',color:'#c8922a',note:'down vs prior months'};
+  if(recent>prior*1.15) return {tag:'Growing',color:'#2D6A4F',note:'trending up'};
+  return {tag:'Steady',color:'#6B9FD4',note:'steady'};
+}
+function mdrxHealthBadge(p){const h=mdrxHealth(p);return h?`<span style="font-size:10.5px;font-weight:700;color:${h.color};">● ${h.tag}</span>`:'';}
+function mdrxStaffHtml(p){
+  const list=MDRX_CONTACTS.filter(c=>c.provider_id===p.id);
+  const rows=list.map(c=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border2);padding:8px 0;">
+    <div style="flex:1;min-width:160px;"><b>${ehtml(c.name||'(no name)')}</b> ${c.is_champion?'<span style="font-size:10px;color:#2D6A4F;font-weight:700;">★ CHAMPION</span>':''}<div style="font-size:11.5px;color:var(--muted);">${ehtml([c.role,c.email,c.cell].filter(Boolean).join(' · '))}</div></div>
+    ${c.email?`<button class="ib" onclick="mdrxEmailContact(${c.id})">✉️ Email</button>`:''}<button class="ib" onclick="mdrxEditContact(${c.id})">Edit</button></div>`).join('')
+    ||'<div style="color:var(--muted);font-size:13px;padding:6px 0;">No staff yet. Add the office manager or MA who drives the scripts, they are the real champion.</div>';
+  return `<div class="panel" style="margin-top:14px;"><div class="ph"><div class="pt">👥 Champions &amp; office staff</div></div><div style="padding:6px 14px 14px;">${rows}<div id="mdrx-contact-edit"></div><button class="ib" style="margin-top:8px;" onclick="mdrxEditContact(0)">+ Add staff / champion</button></div></div>`;
+}
+function mdrxEditContact(id){
+  const c=id?(MDRX_CONTACTS.find(x=>x.id===id)||{}):{};
+  const box=document.getElementById('mdrx-contact-edit'); if(!box)return;
+  const f='padding:7px 9px;border:1px solid var(--border2);border-radius:7px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
+  box.innerHTML=`<div style="border:1px solid var(--border2);border-radius:8px;padding:10px;margin-top:8px;">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;"><input id="mdrx-c-name" placeholder="Name" value="${ehtml(c.name||'')}" style="${f}flex:1;min-width:120px;"><input id="mdrx-c-role" placeholder="Role (office mgr, MA…)" value="${ehtml(c.role||'')}" style="${f}flex:1;min-width:120px;"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;"><input id="mdrx-c-email" placeholder="Email" value="${ehtml(c.email||'')}" style="${f}flex:1;min-width:120px;"><input id="mdrx-c-cell" placeholder="Cell" value="${ehtml(c.cell||'')}" style="${f}flex:1;min-width:100px;"></div>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted2);margin-top:8px;"><input type="checkbox" id="mdrx-c-champ" ${c.is_champion?'checked':''}> ★ This is the champion (drives the scripts)</label>
+    <div style="margin-top:8px;"><button class="ib" onclick="mdrxSaveContact(${id||0})">Save</button> ${id?`<button class="ib" style="color:#e0556b;" onclick="mdrxDeleteContact(${id})">Delete</button>`:''} <button class="ib" onclick="document.getElementById('mdrx-contact-edit').innerHTML=''">Cancel</button></div>
+  </div>`;
+}
+async function mdrxSaveContact(id){
+  const g=x=>{const el=document.getElementById(x);return el?el.value.trim():'';};
+  const rec={provider_id:mdrxOpenId,name:g('mdrx-c-name')||null,role:g('mdrx-c-role')||null,email:g('mdrx-c-email')||null,cell:g('mdrx-c-cell')||null,is_champion:!!((document.getElementById('mdrx-c-champ')||{}).checked)};
+  if(!rec.name&&!rec.email){showToast('Add a name or email.');return;}
+  const res= id? await sbClient.from('mdrx_contacts').update(rec).eq('id',id): await sbClient.from('mdrx_contacts').insert(rec);
+  if(res.error){showToast('Error: '+res.error.message);return;}
+  showToast('Saved'); await loadMdrx();
+}
+async function mdrxDeleteContact(id){
+  if(!confirm('Delete this contact?'))return;
+  const {error}=await sbClient.from('mdrx_contacts').delete().eq('id',id);
+  if(error){showToast('Error: '+error.message);return;}
+  showToast('Deleted'); await loadMdrx();
+}
+function mdrxEmailContact(id){
+  const c=MDRX_CONTACTS.find(x=>x.id===id), p=MDRX_PROV.find(x=>x.id===mdrxOpenId);
+  if(!c||!c.email){showToast('No email for this contact.');return;}
+  const prog=((MDRX_PH.find(x=>x.name===(p&&p.pharmacy))||{}).program_name)||'the program';
+  const first=((c.name||'').trim().split(/\s+/)[0])||'there';
+  const dr=(p&&p.last_name)?('Dr. '+p.last_name):'the practice';
+  const body='Hi '+first+',\n\nThanks for everything you do keeping things running at '+dr+"'s office. Quick note to make the "+prog+" as easy as possible on your end: whenever a workers' comp patient needs medication, we handle delivery straight to their home, usually overnight with no out-of-pocket cost. If a quick refresher for the team would ever help, I am glad to do one.\n\nAnything I can do to make this smoother for you, just say the word.\n\nThank you,\nEric";
+  mdrxEmailPanel({title:'Email '+(c.name||'staff'),to:c.email,subject:'Quick note',body:body,kind:'staff'});
+}
+function mdrxUtilHtml(p){
+  const rows=mdrxUtilFor(p.id), h=mdrxHealth(p);
+  const hb=h?`<span style="font-size:12px;font-weight:700;color:${h.color};">● ${h.tag}</span> <span style="font-size:11px;color:var(--muted);">${ehtml(h.note)}</span>`:'<span style="font-size:11px;color:var(--muted);">Health shows once this provider is Won (signed or first Rx).</span>';
+  const list=rows.slice().reverse().map(r=>`<tr><td>${r.period}</td><td style="text-align:right;">${r.rx_count}</td><td style="font-size:11px;color:var(--muted);">${ehtml(r.note||'')}</td></tr>`).join('')||'<tr><td colspan="3" style="color:var(--muted);padding:6px;">No months logged yet.</td></tr>';
+  const fl='padding:7px 9px;border:1px solid var(--border2);border-radius:7px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
+  const ref=p.referral_asked_at?('<span style="font-size:12px;color:var(--muted);">🙌 Referral asked '+p.referral_asked_at+'</span>'):(p.is_won?'<button class="ib" onclick="mdrxReferralAsk()">🙌 Ask for a referral</button>':'<span style="font-size:11px;color:var(--muted);">Referral ask unlocks once they are Won.</span>');
+  return `<div class="panel" style="margin-top:14px;"><div class="ph"><div class="pt">💊 Utilization (prescriptions)</div></div><div style="padding:8px 14px 14px;">
+    <div style="margin-bottom:10px;">${hb}</div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap;"><input id="mdrx-util-period" type="month" style="${fl}"><input id="mdrx-util-count" type="number" placeholder="# scripts" style="${fl}width:110px;"><button class="ib" onclick="mdrxAddUtil()">Log month</button></div>
+    <table class="lt"><thead><tr><th>Month</th><th style="text-align:right;">Scripts</th><th>Note</th></tr></thead><tbody>${list}</tbody></table>
+    <div style="margin-top:12px;">${ref}</div>
+  </div></div>`;
+}
+async function mdrxAddUtil(){
+  const per=((document.getElementById('mdrx-util-period')||{}).value||'');
+  const cnt=parseInt((document.getElementById('mdrx-util-count')||{}).value,10);
+  if(!per){showToast('Pick a month.');return;}
+  if(isNaN(cnt)){showToast('Enter a script count.');return;}
+  const {error}=await sbClient.from('mdrx_utilization').upsert({provider_id:mdrxOpenId,period:per+'-01',rx_count:cnt},{onConflict:'provider_id,period'});
+  if(error){showToast('Error: '+error.message);return;}
+  showToast('Logged'); await loadMdrx();
+}
+function mdrxReferralAsk(){
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId); if(!p)return;
+  if(!p.email){showToast("Add the doctor's email first.");return;}
+  const body='Hi Dr. '+(p.last_name||'')+",\n\nGreat to see how the program is working for your workers' comp patients. Most of the doctors I work with came through a colleague who had seen it firsthand. Is there anyone in your circle who handles similar workers' comp or post-surgical patients and might want me to walk them through it? I will do all the lifting, you would just point me in their direction.\n\nEither way, thank you for trusting us with your patients.\n\nBest,\nEric";
+  mdrxEmailPanel({title:'Ask for a referral',to:p.email,subject:'A quick ask',body:body,kind:'referral'});
+}
+function mdrxEmailPanel(o){
+  const pnl=document.getElementById('mdrx-action-panel'); if(!pnl)return;
+  const f='padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
+  pnl.innerHTML=`<div class="panel" style="padding:14px;border:1px solid var(--steel,#6B9FD4);">
+    <div style="font-weight:700;font-size:14px;margin-bottom:8px;">${ehtml(o.title||'Compose email')}</div>
+    <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">To</label><input id="mdrx-em-to" value="${ehtml(o.to||'')}" style="width:100%;${f}margin-bottom:8px;">
+    <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">Subject</label><input id="mdrx-em-subj" value="${ehtml(o.subject||'')}" style="width:100%;${f}margin-bottom:8px;">
+    <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">Message (edit before sending)</label><textarea id="mdrx-em-body" rows="11" style="width:100%;${f}font-family:inherit;line-height:1.5;">${ehtml(o.body||'')}</textarea>
+    <div style="font-size:11px;color:var(--muted);margin:6px 0 10px;">Sends from eric@mdconcierge.net.</div>
+    <button onclick="mdrxEmailSend('${o.kind||''}')" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Send</button>
+    <button class="ib" onclick="document.getElementById('mdrx-action-panel').innerHTML=''">Cancel</button>
+  </div>`;
+  pnl.scrollIntoView({behavior:'smooth',block:'center'});
+}
+async function mdrxEmailSend(kind){
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId);
+  const to=(((document.getElementById('mdrx-em-to')||{}).value)||'').split(/[,;]/).map(s=>s.trim()).filter(Boolean);
+  const subject=(((document.getElementById('mdrx-em-subj')||{}).value)||'').trim();
+  const bodyt=(((document.getElementById('mdrx-em-body')||{}).value)||'').trim();
+  if(!to.length){showToast('Add a recipient.');return;}
+  showToast('Sending…');
+  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{to,subject,text:bodyt}});
+  if(error||!data||!data.ok){showToast('Send failed: '+((data&&data.error)||(error&&error.message)||'unknown'));return;}
+  if(p){ try{ await sbClient.from('mdrx_activity').insert({provider_id:p.id,type:'email_out',subject:subject||'Email',notes:'To: '+to.join(', '),created_by:'eric'}); }catch(e){}
+    if(kind==='referral'){ try{ await sbClient.from('mdrx_providers').update({referral_asked_at:mdrxToday()}).eq('id',p.id); }catch(e){} } }
+  const pnl=document.getElementById('mdrx-action-panel'); if(pnl)pnl.innerHTML='';
+  showToast('Sent ✓'); await loadMdrx();
+}
 function mdrxBucketLbl(b){return (MDRX_BUCKETS.find(x=>x[0]===b)||['','—'])[1];}
 function mdrxDueHtml(){
   const t=mdrxToday();
@@ -1817,7 +1932,9 @@ function mdrxDueHtml(){
     <td style="font-size:12px;">${ehtml(mdrxBucketLbl(p.relationship_bucket))}</td>
     <td style="font-size:12.5px;color:var(--muted);">not yet contacted, start outreach</td><td></td></tr>`).join('');
   const rows=(rowD+rowF)||'<tr><td colspan="5" style="padding:16px;color:var(--muted);">🎉 Nothing due. You are all caught up.</td></tr>';
-  return `<div class="panel"><div style="padding:10px 14px;font-size:12px;color:var(--muted);">${dated.length} due/overdue · ${fresh.length} new to start. Work the most overdue first.</div><div style="overflow-x:auto;"><table class="lt"><thead><tr><th>When</th><th>Provider</th><th>Bucket</th><th>Next action</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  const refOpps=MDRX_PROV.filter(p=>p.status==='active'&&p.is_won&&!p.referral_asked_at&&mdrxUtilFor(p.id).filter(r=>r.rx_count>0).length>=2&&mdrxMatch(p));
+  const refPanel=refOpps.length?`<div class="panel" style="margin-top:12px;"><div style="padding:10px 14px;font-size:12px;color:var(--muted);">🙌 <b>Referral opportunities</b> — doctors prescribing steadily who haven't been asked yet. Physicians refer physicians.</div><div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Provider</th><th>Health</th><th></th></tr></thead><tbody>${refOpps.map(p=>`<tr onclick="mdrxOpen(${p.id})" style="cursor:pointer;"><td><div class="ln">${ehtml(mdrxProvName(p))}</div><div style="font-size:11px;color:var(--muted);">${ehtml(mdrxPracName(p.practice_id)||'')}</div></td><td>${mdrxHealthBadge(p)}</td><td style="text-align:right;color:var(--steel,#6B9FD4);font-size:12px;">Ask for a referral →</td></tr>`).join('')}</tbody></table></div></div>`:'';
+  return `<div class="panel"><div style="padding:10px 14px;font-size:12px;color:var(--muted);">${dated.length} due/overdue · ${fresh.length} new to start. Work the most overdue first.</div><div style="overflow-x:auto;"><table class="lt"><thead><tr><th>When</th><th>Provider</th><th>Bucket</th><th>Next action</th><th>Date</th></tr></thead><tbody>${rows}</tbody></table></div></div>`+refPanel;
 }
 function mdrxCadenceHtml(){
   const order=[['cold','Cold'],['warm','Warm'],['previously_engaged','Previously engaged'],['existing_low_util','Existing low-util']];
