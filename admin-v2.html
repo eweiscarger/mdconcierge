@@ -270,6 +270,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" onclick="showView('portal',this)"><span class="ni-ic">🔐</span> Portal Accounts <span class="nb" id="hold-count" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('signups',this)"><span class="ni-ic">📝</span> Sign-ups <span class="nb" id="signup-count" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('crm',this)"><span class="ni-ic">⚖️</span> Attorney CRM <span class="nb" id="crm-count" style="display:none;">0</span></button>
+    <button class="ni" onclick="showView('mdrx',this)"><span class="ni-ic">💊</span> MDRx Pharmacy CRM <span class="nb" id="mdrx-due" style="display:none;">0</span></button>
     <div class="ns">Analytics</div>
     <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
     <button class="ni" onclick="showView('analytics',this)"><span class="ni-ic">📊</span> Analytics</button>
@@ -482,6 +483,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
       </div>
     </div>
     <div id="crm-body"></div>
+  </div>
+
+  <!-- MDRx PHARMACY CRM VIEW -->
+  <div class="view" id="view-mdrx">
+    <div class="kpi-row" id="mdrx-kpis"></div>
+    <div class="panel" style="margin-bottom:14px;">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 14px;">
+        <div id="mdrx-tabs" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        <div style="flex:1;min-width:40px;"></div>
+        <input id="mdrx-search" oninput="mdrxSearch=this.value;renderMdrx()" placeholder="Search doctor, practice, specialty…" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;min-width:200px;">
+        <button class="ib" onclick="mdrxNew()" title="Add a new provider">+ New provider</button>
+        <button class="ib" onclick="mdrxNewUrl()" title="Add a physician by pasting a website or profile URL">🌐 Add by URL</button>
+        <button class="ib" onclick="loadMdrx()" title="Reload from database">↻ Refresh</button>
+      </div>
+    </div>
+    <div id="mdrx-body"></div>
   </div>
 
   <!-- SETTINGS VIEW -->
@@ -1132,11 +1149,12 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',access:'Access Log',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',access:'Access Log',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
   if(v==='crm')loadCrm();
+  if(v==='mdrx')loadMdrx();
   if(v==='tools')renderTools();
   if(v==='analytics')loadAnalytics();
   if(v==='access')loadAccessLog();
@@ -1402,6 +1420,265 @@ function crmExport(){
   showToast('Exported '+vis.length+' attorneys');
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
+/* ============================ MDRx Pharmacy CRM (Prompt 2: screens) ============================ */
+let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], mdrxTab='board', mdrxSearch='', mdrxOpenId=null;
+const MDRX_STAGES=[['target','Target','#6B95D4'],['contacted','Contacted','#c8922a'],['meeting','Meeting','#7a5cd0'],['document_review','Doc review','#d08a2c'],['signed','Signed','#2D6A4F']];
+const MDRX_BUCKETS=[['','—'],['cold','Cold'],['warm','Warm'],['previously_engaged','Previously engaged'],['existing_low_util','Existing low-util']];
+const MDRX_STATUS=[['active','Active'],['dormant','Dormant'],['lost','Lost']];
+const MDRX_PHARM=['','PDRx','MDRx','EZmeds'];
+const MDRX_COMPET=['','PDRx','EZMeds','RescueMeds','Rx Development','Advanced Rx','Other'];
+const MDRX_CLAIMS=['unknown','yes','no'];
+function mdrxToday(){return new Date().toISOString().slice(0,10);}
+function mdrxProvName(p){return ((((p.first_name||'')+' '+(p.last_name||'')).trim())||'(no name)')+(p.credentials?(', '+p.credentials):'');}
+function mdrxPracName(id){const pr=MDRX_PRAC.find(x=>x.id===id);return pr?(pr.name||''):'';}
+function mdrxStageLbl(s){const x=MDRX_STAGES.find(y=>y[0]===s);return x?x[1]:(s||'');}
+async function loadMdrx(){
+  const body=document.getElementById('mdrx-body');
+  if(body)body.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
+  const [a,b,c]=await Promise.all([
+    sbClient.from('mdrx_providers').select('*').order('updated_at',{ascending:false}),
+    sbClient.from('mdrx_practices').select('*').order('name'),
+    sbClient.from('mdrx_pharmacy').select('*').order('name')
+  ]);
+  const err=a.error||b.error||c.error;
+  if(err){if(body)body.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load CRM: '+ehtml(err.message)+'</div>';return;}
+  MDRX_PROV=a.data||[]; MDRX_PRAC=b.data||[]; MDRX_PH=c.data||[];
+  const badge=document.getElementById('mdrx-due');
+  if(badge){const t=mdrxToday();const n=MDRX_PROV.filter(p=>p.status==='active'&&p.next_action_date&&p.next_action_date<=t).length;badge.textContent=n;badge.style.display=n?'':'none';}
+  renderMdrx();
+}
+function mdrxKpis(){
+  const t=mdrxToday(), P=MDRX_PROV, active=P.filter(p=>p.status==='active');
+  const due=active.filter(p=>p.next_action_date===t).length;
+  const over=active.filter(p=>p.next_action_date&&p.next_action_date<t).length;
+  const leak=active.filter(p=>!p.next_action_date&&!p.is_won).length;
+  const won=P.filter(p=>p.is_won).length;
+  const card=(lbl,val,sub,cls,alert)=>`<div class="kpi ${cls||''}"><div class="kpi-lbl">${lbl}</div><div class="kpi-v"${alert&&val>0?' style="color:#e0556b;"':''}>${val}</div><div class="kpi-d">${sub}</div></div>`;
+  return card('Opportunities',P.length,active.length+' active','blue')
+    +card('Due today',due,'ready to work','gold')
+    +card('Overdue',over,'past their date','purple',true)
+    +card('No next action',leak,'leak detector, keep 0','green',true)
+    +card('Won',won,'signed or first Rx','green');
+}
+function renderMdrx(){
+  const k=document.getElementById('mdrx-kpis'); if(k)k.innerHTML=mdrxKpis();
+  const tabs=[['board','▦ Pipeline'],['providers','👤 Providers'],['practices','🏢 Practices']];
+  const tb=document.getElementById('mdrx-tabs');
+  if(tb)tb.innerHTML=tabs.map(([key,lbl])=>{const on=(mdrxTab===key&&mdrxOpenId===null);return `<button onclick="mdrxOpenId=null;mdrxTab='${key}';renderMdrx()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:${on?'#2b3550':'transparent'};color:${on?'#fff':'var(--muted2)'};font-weight:700;font-size:13px;cursor:pointer;">${lbl}</button>`;}).join('');
+  const body=document.getElementById('mdrx-body'); if(!body)return;
+  if(mdrxOpenId!==null){ body.innerHTML=mdrxDetailHtml(mdrxOpenId); mdrxLoadTimeline(mdrxOpenId); return; }
+  if(mdrxTab==='board') body.innerHTML=mdrxBoardHtml();
+  else if(mdrxTab==='providers') body.innerHTML=mdrxListHtml();
+  else body.innerHTML=mdrxPracticesHtml();
+}
+function mdrxMatch(p){
+  const q=mdrxSearch.trim().toLowerCase(); if(!q)return true;
+  return (mdrxProvName(p)+' '+(p.specialty||'')+' '+mdrxPracName(p.practice_id)+' '+(p.city||'')+' '+(p.state||'')+' '+(p.email||'')).toLowerCase().indexOf(q)>=0;
+}
+function mdrxBoardHtml(){
+  const t=mdrxToday();
+  const cols=MDRX_STAGES.map(([s,lbl,c])=>{
+    const list=MDRX_PROV.filter(p=>p.stage===s&&p.status!=='lost'&&mdrxMatch(p));
+    const cards=list.map(p=>{
+      const overdue=p.next_action_date&&p.next_action_date<t;
+      const na=p.next_action?`<div style="font-size:11.5px;color:${overdue?'#e0556b':'var(--muted2)'};margin-top:6px;">${overdue?'⚠ ':''}${ehtml(p.next_action)}${p.next_action_date?(' · '+p.next_action_date):''}</div>`:'<div style="font-size:11.5px;color:#e0556b;margin-top:6px;">no next action</div>';
+      const ph=p.pharmacy?`<span style="font-size:10.5px;padding:2px 7px;border-radius:10px;border:1px solid var(--border2);color:var(--steel,#6B9FD4);">${ehtml(p.pharmacy)}</span>`:'';
+      const wc=p.workers_comp_patients_per_month!=null?`<span style="font-size:11px;color:var(--muted);">${p.workers_comp_patients_per_month} WC/mo</span>`:'';
+      return `<div draggable="true" ondragstart="mdrxDragStart(event,${p.id})" onclick="mdrxOpen(${p.id})" style="background:var(--card,#0d1830);border:1px solid var(--border2);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;">
+        <div style="font-weight:700;font-size:13.5px;">${ehtml(mdrxProvName(p))}</div>
+        <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">${ehtml(mdrxPracName(p.practice_id)||p.specialty||'')}</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;">${ph}${wc}</div>${na}
+      </div>`;
+    }).join('')||'<div style="font-size:12px;color:var(--muted);padding:6px;">—</div>';
+    return `<div ondragover="event.preventDefault()" ondrop="mdrxDrop(event,'${s}')" style="flex:1;min-width:215px;background:rgba(255,255,255,.02);border:1px solid var(--border2);border-radius:12px;padding:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><span style="font-weight:700;font-size:13px;color:${c};">${lbl}</span><span style="font-size:12px;color:var(--muted);">${list.length}</span></div>${cards}
+    </div>`;
+  }).join('');
+  return `<div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;">${cols}</div>`;
+}
+function mdrxDragStart(e,id){e.dataTransfer.setData('text/plain',String(id));}
+async function mdrxDrop(e,stage){e.preventDefault();const id=parseInt(e.dataTransfer.getData('text/plain'),10);if(id)await mdrxSetStage(id,stage);}
+async function mdrxSetStage(id,stage){
+  const p=MDRX_PROV.find(x=>x.id===id); if(!p||p.stage===stage)return;
+  const {error}=await sbClient.from('mdrx_providers').update({stage}).eq('id',id);
+  if(error){showToast('Error: '+error.message);return;}
+  p.stage=stage; if(stage==='signed')p.is_won=true; showToast('Moved to '+mdrxStageLbl(stage)); renderMdrx();
+}
+function mdrxListHtml(){
+  const t=mdrxToday();
+  const rows=MDRX_PROV.filter(mdrxMatch).map(p=>{
+    const overdue=p.next_action_date&&p.next_action_date<t;
+    return `<tr onclick="mdrxOpen(${p.id})" style="cursor:pointer;">
+      <td><div class="ln">${ehtml(mdrxProvName(p))}</div><div style="font-size:11px;color:var(--muted);">${ehtml(p.specialty||'')}</div></td>
+      <td style="font-size:12.5px;">${ehtml(mdrxPracName(p.practice_id))}</td>
+      <td style="font-size:12.5px;">${ehtml(p.state||'')}</td>
+      <td style="font-size:12.5px;">${p.pharmacy?ehtml(p.pharmacy):'<span style="color:var(--muted);">—</span>'}</td>
+      <td style="font-size:12px;">${ehtml(mdrxStageLbl(p.stage))}</td>
+      <td style="text-align:right;font-size:12.5px;">${p.workers_comp_patients_per_month==null?'<span style="color:var(--muted);">—</span>':p.workers_comp_patients_per_month}</td>
+      <td style="font-size:12px;color:${overdue?'#e0556b':'var(--muted2)'};">${p.next_action_date||'<span style="color:#e0556b;">none</span>'}</td>
+    </tr>`;
+  }).join('')||'<tr><td colspan="7" style="padding:16px;color:var(--muted);">No providers yet. Click “+ New provider”.</td></tr>';
+  return `<div class="panel"><div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Provider</th><th>Practice</th><th>State</th><th>Pharmacy</th><th>Stage</th><th style="text-align:right;">WC/mo</th><th>Next action</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function mdrxPracticesHtml(){
+  const q=mdrxSearch.trim().toLowerCase();
+  const rows=MDRX_PRAC.filter(pr=>!q||((pr.name||'')+' '+(pr.city||'')+' '+(pr.state||'')).toLowerCase().indexOf(q)>=0).map(pr=>{
+    const n=MDRX_PROV.filter(p=>p.practice_id===pr.id).length;
+    return `<tr onclick="mdrxEditPractice(${pr.id})" style="cursor:pointer;"><td><div class="ln">${ehtml(pr.name)}</div><div style="font-size:11px;color:var(--muted);">${ehtml(pr.llc_name||'')}</div></td><td style="font-size:12.5px;">${ehtml([pr.city,pr.state].filter(Boolean).join(', '))}</td><td style="text-align:right;">${n}</td><td style="font-size:12px;color:var(--muted);">${ehtml((pr.notes||'').slice(0,60))}</td></tr>`;
+  }).join('')||'<tr><td colspan="4" style="padding:16px;color:var(--muted);">No practices yet.</td></tr>';
+  return `<div class="panel"><div style="padding:10px 14px;"><button class="ib" onclick="mdrxEditPractice(0)">+ New practice</button></div><div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Practice</th><th>Location</th><th style="text-align:right;">Providers</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function mdrxOpen(id){mdrxOpenId=id;renderMdrx();}
+function mdrxNew(){mdrxOpenId=0;renderMdrx();}
+function mdrxNewUrl(){mdrxNew();setTimeout(()=>{const e=document.getElementById('mdrx-imp-url');if(e)e.focus();},60);}
+async function mdrxReadUrl(){
+  let url=(document.getElementById('mdrx-imp-url').value||'').trim();
+  const st=document.getElementById('mdrx-imp-status');
+  const say=(c,t)=>{if(st){st.style.color=c;st.textContent=t;}};
+  if(!url){say('#e0556b','Paste a URL first.');return;}
+  if(!/^https?:\/\//i.test(url))url='https://'+url;
+  say('var(--muted)','Reading the page… (a few seconds)');
+  try{
+    const {data,error}=await sbClient.functions.invoke('extract-practice',{body:{url}});
+    if(error||!data||!data.ok)throw new Error((data&&data.error)||'could not read that page');
+    const prov=(data.providers||[]).find(d=>d&&d.doctor_name)||{}, prac=data.practice||{};
+    let nm=(prov.doctor_name||'').replace(/^\s*dr\.?\s+/i,'').trim(), creds=prov.credentials||'';
+    if(nm.indexOf(',')>=0){const parts=nm.split(',');nm=parts[0].trim();if(!creds)creds=parts.slice(1).join(',').trim();}
+    const toks=nm.split(/\s+/).filter(Boolean), first=toks.shift()||'', last=toks.join(' ');
+    const set=(id,v)=>{const el=document.getElementById('mdrx-f-'+id);if(el&&v!=null&&v!=='')el.value=v;};
+    set('first_name',first);set('last_name',last);set('credentials',creds);
+    set('specialty',prov.specialty||prac.specialty);set('email',prov.email);set('office_phone',prov.phone||prac.phone);
+    set('address',prac.address);
+    set('state',Array.isArray(prac.states)?prac.states[0]:(prac.states||''));
+    const pracName=prac.name||'';
+    say('#1e9e6a','✓ Filled from the page'+(pracName?(' · practice: '+pracName+' (create & link it in the Practices tab)'):'')+'. Review below, then Create provider.');
+  }catch(e){ say('#e0556b',"Couldn't read that page automatically. Just enter the details manually below."); }
+}
+function mdrxF(id,label,val,type){return `<label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">${label}</label><input id="mdrx-f-${id}" type="${type||'text'}" value="${ehtml(val==null?'':val)}" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;margin-bottom:10px;">`;}
+function mdrxSel(id,label,val,opts){
+  const o=opts.map(x=>{const v=Array.isArray(x)?x[0]:x,l=Array.isArray(x)?x[1]:(x||'—');return `<option value="${ehtml(v)}"${String(v)===String(val==null?'':val)?' selected':''}>${ehtml(l)}</option>`;}).join('');
+  return `<label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">${label}</label><select id="mdrx-f-${id}" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;margin-bottom:10px;">${o}</select>`;
+}
+function mdrxDetailHtml(id){
+  const p=id?(MDRX_PROV.find(x=>x.id===id)||{}):{}; const isNew=!id;
+  const pracOpts=[['','— none —']].concat(MDRX_PRAC.map(pr=>[pr.id,pr.name]));
+  const g=t=>`<div style="font-size:12px;font-weight:700;color:var(--steel,#6B9FD4);margin:6px 0 8px;text-transform:uppercase;letter-spacing:.5px;">${t}</div>`;
+  const col=h=>`<div style="flex:1;min-width:240px;">${h}</div>`;
+  const form=`<div style="display:flex;flex-wrap:wrap;gap:0 20px;">
+    ${col(g('Identity')+mdrxF('first_name','First name',p.first_name)+mdrxF('last_name','Last name',p.last_name)+mdrxF('credentials','Credentials (MD, DO)',p.credentials)+mdrxF('specialty','Specialty',p.specialty)+mdrxF('npi','NPI',p.npi))}
+    ${col(g('Contact')+mdrxF('email','Email',p.email)+mdrxF('cell','Cell',p.cell)+mdrxF('office_phone','Office phone',p.office_phone)+mdrxF('address','Address',p.address)+mdrxF('city','City',p.city)+mdrxF('state','State',p.state)+mdrxF('zip','Zip',p.zip))}
+    ${col(g('Practice')+mdrxSel('practice_id','Practice',p.practice_id,pracOpts)+mdrxSel('independent','Independent?',p.independent?'true':'false',[['false','No'],['true','Yes']])+mdrxF('llc_name','LLC name',p.llc_name)+mdrxF('workers_comp_patients_per_month','WC patients / month',p.workers_comp_patients_per_month,'number'))}
+    ${col(g('Sales')+mdrxSel('pharmacy','Pharmacy',p.pharmacy,MDRX_PHARM)+mdrxSel('competition','Competition',p.competition,MDRX_COMPET)+mdrxSel('claims_purchase','Claims purchase',p.claims_purchase||'unknown',MDRX_CLAIMS)+mdrxSel('relationship_bucket','Relationship bucket',p.relationship_bucket,MDRX_BUCKETS))}
+    ${col(g('Pipeline')+mdrxSel('stage','Stage',p.stage||'target',MDRX_STAGES.map(s=>[s[0],s[1]]))+mdrxSel('status','Status',p.status||'active',MDRX_STATUS)+mdrxF('next_action','Next action',p.next_action)+mdrxF('next_action_date','Next action date',p.next_action_date,'date')+mdrxF('first_rx_received','First Rx received',p.first_rx_received,'date')+mdrxF('hook','Hook (re-engagement)',p.hook)+mdrxF('lost_reason','Lost reason',p.lost_reason))}
+  </div>`;
+  const buttons=isNew?'':`<div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;">
+    <button class="ib" onclick="mdrxCompose('call')">📞 Log call</button>
+    <button class="ib" onclick="mdrxCompose('meeting')">🤝 Log meeting</button>
+    <button class="ib" onclick="mdrxCompose('note')">📝 Add note</button>
+    <button class="ib" onclick="showToast('Outreach drafting arrives in the next step (Prompt 4).')">✉️ Draft outreach</button>
+    <button class="ib" onclick="showToast('Agreement sending arrives in a later step (Prompt 4/6).')">📎 Send agreements</button>
+    <button class="ib" onclick="showToast('The quote engine arrives in a later step (Prompt 5).')">🧮 Generate quote</button>
+  </div>`;
+  const timeline=isNew?'':`<div class="panel" style="margin-top:14px;"><div class="ph"><div class="pt">Activity timeline</div></div><div id="mdrx-compose"></div><div id="mdrx-timeline" style="padding:6px 14px 14px;">Loading…</div></div>`;
+  const importBar=`<div style="background:rgba(107,149,212,.08);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--steel,#6B9FD4);margin-bottom:6px;">⚡ Add by URL</div>
+      <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px;">Paste a practice website or a physician's profile page and I'll try to fill the fields for you. Review everything before saving.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <input id="mdrx-imp-url" placeholder="https://practice.com/dr-smith" style="flex:1;min-width:220px;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;">
+        <button class="ib" onclick="mdrxReadUrl()">🌐 Read page</button>
+      </div>
+      <div id="mdrx-imp-status" style="font-size:11.5px;margin-top:6px;color:var(--muted);"></div>
+    </div>`;
+  return `<div class="panel" style="padding:16px 18px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+      <button class="ib" onclick="mdrxOpenId=null;renderMdrx()">← Back</button>
+      <div style="font-weight:700;font-size:16px;flex:1;min-width:120px;">${isNew?'New provider':ehtml(mdrxProvName(p))}</div>
+      ${id?`<button class="ib" style="color:#e0556b;" onclick="mdrxDelete(${id})">Delete</button>`:''}
+      <button onclick="mdrxSave(${id||0})" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">${isNew?'Create provider':'Save changes'}</button>
+    </div>${importBar}${form}${buttons}
+  </div>${timeline}`;
+}
+function mdrxVal(id){const el=document.getElementById('mdrx-f-'+id);return el?el.value:'';}
+async function mdrxSave(id){
+  const s=v=>v===''?null:v, num=v=>v===''?null:Number(v);
+  const rec={
+    first_name:s(mdrxVal('first_name')),last_name:s(mdrxVal('last_name')),credentials:s(mdrxVal('credentials')),
+    specialty:s(mdrxVal('specialty')),npi:s(mdrxVal('npi')),
+    practice_id:mdrxVal('practice_id')?Number(mdrxVal('practice_id')):null,
+    independent:mdrxVal('independent')==='true',llc_name:s(mdrxVal('llc_name')),
+    workers_comp_patients_per_month:num(mdrxVal('workers_comp_patients_per_month')),
+    email:s(mdrxVal('email')),cell:s(mdrxVal('cell')),office_phone:s(mdrxVal('office_phone')),
+    address:s(mdrxVal('address')),city:s(mdrxVal('city')),state:s(mdrxVal('state')),zip:s(mdrxVal('zip')),
+    pharmacy:s(mdrxVal('pharmacy')),competition:s(mdrxVal('competition')),claims_purchase:mdrxVal('claims_purchase')||'unknown',
+    relationship_bucket:s(mdrxVal('relationship_bucket')),stage:mdrxVal('stage')||'target',status:mdrxVal('status')||'active',
+    lost_reason:s(mdrxVal('lost_reason')),hook:s(mdrxVal('hook')),
+    next_action:s(mdrxVal('next_action')),next_action_date:s(mdrxVal('next_action_date')),first_rx_received:s(mdrxVal('first_rx_received'))
+  };
+  if(!rec.first_name&&!rec.last_name){showToast('Add at least a name.');return;}
+  let res;
+  if(id) res=await sbClient.from('mdrx_providers').update(rec).eq('id',id);
+  else { rec.owner='eric'; res=await sbClient.from('mdrx_providers').insert(rec); }
+  if(res.error){showToast('Error: '+res.error.message);return;}
+  showToast(id?'Saved':'Provider created'); if(!id)mdrxTab='providers'; mdrxOpenId=null; await loadMdrx();
+}
+async function mdrxDelete(id){
+  if(!confirm('Delete this provider and all its activity? This cannot be undone.'))return;
+  const {error}=await sbClient.from('mdrx_providers').delete().eq('id',id);
+  if(error){showToast('Error: '+error.message);return;}
+  showToast('Deleted'); mdrxOpenId=null; await loadMdrx();
+}
+async function mdrxLoadTimeline(id){
+  if(!id)return; const el=document.getElementById('mdrx-timeline'); if(!el)return;
+  const {data,error}=await sbClient.from('mdrx_activity').select('*').eq('provider_id',id).order('occurred_at',{ascending:false});
+  if(error){el.innerHTML='<span style="color:#c0392b;">'+ehtml(error.message)+'</span>';return;}
+  MDRX_ACT=data||[];
+  if(!MDRX_ACT.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">No activity yet. Use the buttons above to log a call, meeting, or note.</div>';return;}
+  const icon={call:'📞',meeting:'🤝',email_out:'📤',email_in:'📥',note:'📝',task:'✅'};
+  el.innerHTML=MDRX_ACT.map(a=>`<div style="border-left:2px solid var(--border2);padding:6px 0 6px 12px;margin-bottom:4px;"><div style="font-size:12.5px;"><b>${icon[a.type]||''} ${ehtml(a.subject||a.type)}</b> <span style="color:var(--muted);font-size:11px;">${String(a.occurred_at||'').slice(0,16).replace('T',' ')}</span></div>${a.notes?`<div style="font-size:12px;color:var(--muted2);margin-top:2px;white-space:pre-wrap;">${ehtml(a.notes)}</div>`:''}</div>`).join('');
+}
+function mdrxCompose(type){
+  const c=document.getElementById('mdrx-compose'); if(!c)return;
+  const label={call:'call',meeting:'meeting',note:'note'}[type]||type;
+  c.innerHTML=`<div style="padding:10px 14px;border-bottom:1px solid var(--border2);">
+    <input id="mdrx-act-subj" placeholder="${label} subject" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;margin-bottom:8px;">
+    <textarea id="mdrx-act-notes" placeholder="What happened…" rows="2" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;"></textarea>
+    <div style="margin-top:8px;"><button onclick="mdrxAddActivity('${type}')" style="padding:8px 16px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Add ${label}</button> <button class="ib" onclick="document.getElementById('mdrx-compose').innerHTML=''">Cancel</button></div>
+  </div>`;
+  const f=document.getElementById('mdrx-act-subj'); if(f)f.focus();
+}
+async function mdrxAddActivity(type){
+  const id=mdrxOpenId; if(!id)return;
+  const subject=(document.getElementById('mdrx-act-subj')||{}).value||'';
+  const notes=(document.getElementById('mdrx-act-notes')||{}).value||'';
+  const {error}=await sbClient.from('mdrx_activity').insert({provider_id:id,type,subject:subject.trim()||null,notes:notes.trim()||null,created_by:'eric'});
+  if(error){showToast('Error: '+error.message);return;}
+  document.getElementById('mdrx-compose').innerHTML=''; showToast('Logged'); mdrxLoadTimeline(id);
+}
+function mdrxEditPractice(id){
+  const pr=id?(MDRX_PRAC.find(x=>x.id===id)||{}):{};
+  const body=document.getElementById('mdrx-body'); if(!body)return;
+  body.innerHTML=`<div class="panel" style="padding:16px 18px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+      <button class="ib" onclick="renderMdrx()">← Back</button>
+      <div style="font-weight:700;font-size:16px;flex:1;">${id?'Edit practice':'New practice'}</div>
+      <button onclick="mdrxSavePractice(${id||0})" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Save</button>
+    </div>
+    <div style="max-width:520px;">
+      ${mdrxF('pr_name','Practice name',pr.name)}${mdrxF('pr_llc','LLC name',pr.llc_name)}${mdrxF('pr_address','Address',pr.address)}${mdrxF('pr_city','City',pr.city)}${mdrxF('pr_state','State',pr.state)}${mdrxF('pr_zip','Zip',pr.zip)}
+      <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">Notes</label>
+      <textarea id="mdrx-f-pr_notes" rows="3" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;">${ehtml(pr.notes||'')}</textarea>
+    </div>
+  </div>`;
+}
+async function mdrxSavePractice(id){
+  const s=v=>v===''?null:v;
+  const rec={name:mdrxVal('pr_name').trim(),llc_name:s(mdrxVal('pr_llc')),address:s(mdrxVal('pr_address')),city:s(mdrxVal('pr_city')),state:s(mdrxVal('pr_state')),zip:s(mdrxVal('pr_zip')),notes:s(mdrxVal('pr_notes'))};
+  if(!rec.name){showToast('Practice needs a name.');return;}
+  let res= id? await sbClient.from('mdrx_practices').update(rec).eq('id',id) : await sbClient.from('mdrx_practices').insert(rec);
+  if(res.error){showToast('Error: '+res.error.message);return;}
+  showToast('Saved'); mdrxTab='practices'; await loadMdrx();
+}
+/* ========================== end MDRx Pharmacy CRM ========================== */
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',2800);}
 function exportCSV(){
   const rows=[['Name','Phone','Email','State','Case Type','Score','Status','Injury']];
