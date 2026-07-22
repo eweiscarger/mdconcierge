@@ -1,0 +1,15 @@
+# ⚠️ This repo is PUBLIC (GitHub Pages). Keep private/business-sensitive files OUT.
+
+# CRM reference material: legal agreements, the Gosfield compliance opinion, the
+# factoring note, pricing, the dispensing model, commission math. NEVER publish.
+crm_reference/
+
+# Internal build notes + schema (reference commission %, economics, strategy).
+# Kept local; the schema is already applied to the live database.
+CRM_PROGRESS.md
+mdrx-crm-migration.sql
+
+# Local audio audition artifacts — not used by the live site.
+assets/audio/sample_*.mp3
+assets/audio/music_verslavant_backup.mp3
+voicepick.html
