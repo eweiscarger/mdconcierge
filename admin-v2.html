@@ -495,6 +495,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <input id="mdrx-search" oninput="mdrxSearch=this.value;renderMdrx()" placeholder="Search doctor, practice, specialty…" style="padding:8px 12px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;min-width:200px;">
         <button class="ib" onclick="mdrxNew()" title="Add a new provider">+ New provider</button>
         <button class="ib" onclick="mdrxNewUrl()" title="Add a physician by pasting a website or profile URL">🌐 Add by URL</button>
+        <button class="ib" onclick="mdrxQuickAdd()" title="Add a target in seconds">⚡ Quick add</button>
+        <button class="ib" onclick="mdrxBulkImport()" title="Paste a list to import many at once">📋 Import list</button>
         <button class="ib" onclick="loadMdrx()" title="Reload from database">↻ Refresh</button>
       </div>
     </div>
@@ -1627,6 +1629,7 @@ function mdrxDetailHtml(id){
     <button class="ib" onclick="mdrxCompose('meeting')">🤝 Log meeting</button>
     <button class="ib" onclick="mdrxCompose('note')">📝 Add note</button>
     <button class="ib" onclick="mdrxDraftOutreach()">✉️ Draft outreach</button>
+    <button class="ib" onclick="mdrxSendAgreements()">📎 Send agreements</button>
     <button class="ib" onclick="mdrxDocusign()">📄 Request DocuSign contract</button>
     <button class="ib" onclick="mdrxQuote()">🧮 Generate quote</button>
   </div><div id="mdrx-action-panel" style="margin:0 0 6px;"></div>`;
@@ -1899,7 +1902,26 @@ async function mdrxDraftOutreach(){
   if(error||!data||!data.ok){ if(pnl)pnl.innerHTML=''; showToast('Draft failed: '+((data&&data.error)||(error&&error.message)||'unknown')); return; }
   mdrxEmailPanel({title:'Outreach to '+mdrxProvName(p)+' · '+mdrxBucketLbl(bucket),to:p.email,subject:data.subject||'',body:data.body||'',kind:'outreach'});
 }
+async function mdrxSendAgreements(){
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId); if(!p)return;
+  if(!p.email){ showToast("Add the doctor's email first."); return; }
+  if(!p.pharmacy){ showToast('Set the pharmacy first, the documents come from it.'); return; }
+  const ph=MDRX_PH.find(x=>x.name===p.pharmacy)||{};
+  const {data:coll,error}=await sbClient.from('mdrx_collateral').select('*').eq('pharmacy_id',ph.id);
+  if(error){ showToast('Error: '+error.message); return; }
+  const set=(coll||[]).filter(c=>(c.tags||[]).some(t=>t==='agreement'||t==='compliance'));
+  if(!set.length){ showToast('No agreement documents on file for '+p.pharmacy+' yet.'); return; }
+  showToast('Preparing '+set.length+' attachment(s)…');
+  const atts=[];
+  for(const c of set){
+    try{ const {data:su}=await sbClient.storage.from('collateral').createSignedUrl(c.file_ref,600); if(su&&su.signedUrl) atts.push({filename:c.file_ref.split('/').pop(), url:su.signedUrl}); }catch(e){}
+  }
+  const prog=ph.program_name||'the program';
+  const body='Hi Dr. '+(p.last_name||'')+',\n\nThank you for your interest in the '+prog+'. As promised, attached are the agreements and our compliance opinion from Alice G. Gosfield and Associates for your review. I have also copied my partner, '+(ph.cc_partner_name||'my partner')+', so we are all connected.\n\nOnce you have had a chance to look, I am glad to walk through anything and answer any questions, whatever works best for your schedule.\n\nBest,\nEric';
+  mdrxEmailPanel({title:'Send agreements to '+mdrxProvName(p),to:p.email,subject:'Agreements for the '+prog,body:body,kind:'agreements',attachments:atts});
+}
 function mdrxEmailPanel(o){
+  window._mdrxAtt=o.attachments||[];
   const pnl=document.getElementById('mdrx-action-panel'); if(!pnl)return;
   const f='padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
   pnl.innerHTML=`<div class="panel" style="padding:14px;border:1px solid var(--steel,#6B9FD4);">
@@ -1907,7 +1929,7 @@ function mdrxEmailPanel(o){
     <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">To</label><input id="mdrx-em-to" value="${ehtml(o.to||'')}" style="width:100%;${f}margin-bottom:8px;">
     <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">Subject</label><input id="mdrx-em-subj" value="${ehtml(o.subject||'')}" style="width:100%;${f}margin-bottom:8px;">
     <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">Message (edit before sending)</label><textarea id="mdrx-em-body" rows="11" style="width:100%;${f}font-family:inherit;line-height:1.5;">${ehtml(o.body||'')}</textarea>
-    <div style="font-size:11px;color:var(--muted);margin:6px 0 10px;">Sends from eric@mdconcierge.net.</div>
+    <div style="font-size:11px;color:var(--muted);margin:6px 0 10px;">Sends from eric@mdconcierge.net.${(o.attachments&&o.attachments.length)?(' 📎 Attaching '+o.attachments.length+': '+o.attachments.map(a=>ehtml(a.filename)).join(', ')):''}</div>
     <button onclick="mdrxEmailSend('${o.kind||''}')" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Send</button>
     <button class="ib" onclick="document.getElementById('mdrx-action-panel').innerHTML=''">Cancel</button>
   </div>`;
@@ -1920,11 +1942,13 @@ async function mdrxEmailSend(kind){
   const bodyt=(((document.getElementById('mdrx-em-body')||{}).value)||'').trim();
   if(!to.length){showToast('Add a recipient.');return;}
   showToast('Sending…');
-  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{to,subject,text:bodyt}});
+  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{to,subject,text:bodyt,attachments:window._mdrxAtt||[]}});
   if(error||!data||!data.ok){showToast('Send failed: '+((data&&data.error)||(error&&error.message)||'unknown'));return;}
   if(p){ try{ await sbClient.from('mdrx_activity').insert({provider_id:p.id,type:'email_out',subject:subject||'Email',notes:'To: '+to.join(', '),created_by:'eric'}); }catch(e){}
     if(kind==='referral'){ try{ await sbClient.from('mdrx_providers').update({referral_asked_at:mdrxToday()}).eq('id',p.id); }catch(e){} }
-    if(kind==='outreach'){ try{ const upd={}; if(p.stage==='target')upd.stage='contacted'; const prior=MDRX_ACT.filter(a=>['call','meeting','email_out'].includes(a.type)).length; const sug=mdrxSuggest(p,prior); upd.next_action=sug.action; upd.next_action_date=sug.date; await sbClient.from('mdrx_providers').update(upd).eq('id',p.id); }catch(e){} } }
+    if(kind==='outreach'){ try{ const upd={}; if(p.stage==='target')upd.stage='contacted'; const prior=MDRX_ACT.filter(a=>['call','meeting','email_out'].includes(a.type)).length; const sug=mdrxSuggest(p,prior); upd.next_action=sug.action; upd.next_action_date=sug.date; await sbClient.from('mdrx_providers').update(upd).eq('id',p.id); }catch(e){} }
+    if(kind==='agreements'){ try{ if(['contacted','meeting'].includes(p.stage)) await sbClient.from('mdrx_providers').update({stage:'document_review'}).eq('id',p.id); }catch(e){} } }
+  window._mdrxAtt=[];
   const pnl=document.getElementById('mdrx-action-panel'); if(pnl)pnl.innerHTML='';
   showToast('Sent ✓'); await loadMdrx();
 }
@@ -2078,6 +2102,60 @@ function mdrxQuoteCSV(){
   const csv=rows.map(r=>r.map(c=>`"${String(c==null?'':c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent('﻿'+csv);a.download='MDconcierge_quote.csv';a.click();
   showToast('Exported (no commission included)');
+}
+/* ----- Fast entry: quick add + bulk import (Prompt 6) ----- */
+function mdrxQuickAdd(){
+  mdrxOpenId=null; const body=document.getElementById('mdrx-body'); if(!body)return;
+  const f='padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
+  body.innerHTML=`<div class="panel" style="padding:16px 18px;max-width:560px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;"><button class="ib" onclick="renderMdrx()">← Back</button><div style="font-weight:700;font-size:16px;flex:1;">⚡ Quick add a target</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;"><input id="qa-first" placeholder="First name" style="${f}flex:1;min-width:120px;"><input id="qa-last" placeholder="Last name" style="${f}flex:1;min-width:120px;"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><input id="qa-email" placeholder="Email" style="${f}flex:1;min-width:150px;"><input id="qa-specialty" placeholder="Specialty" style="${f}flex:1;min-width:120px;"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><input id="qa-practice" placeholder="Practice name" style="${f}flex:1;min-width:150px;"><input id="qa-state" placeholder="State" maxlength="2" style="${f}width:70px;text-transform:uppercase;"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;"><select id="qa-bucket" style="${f}flex:1;">${MDRX_BUCKETS.map(b=>`<option value="${b[0]}">${b[1]==='—'?'Bucket…':b[1]}</option>`).join('')}</select><select id="qa-pharmacy" style="${f}flex:1;"><option value="">Pharmacy…</option>${MDRX_PHARM.filter(Boolean).map(x=>`<option value="${x}">${x}</option>`).join('')}</select></div>
+    <div style="margin-top:12px;"><button onclick="mdrxSaveQuick()" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Add target</button> <span style="font-size:11px;color:var(--muted);margin-left:8px;">Adds at Target stage; full details editable later.</span></div>
+  </div>`;
+  setTimeout(()=>{const e=document.getElementById('qa-first');if(e)e.focus();},50);
+}
+async function mdrxSaveQuick(){
+  const g=x=>{const el=document.getElementById(x);return el?el.value.trim():'';};
+  const first=g('qa-first'), last=g('qa-last');
+  if(!first&&!last){showToast('Add a name.');return;}
+  let practice_id=null; const pracName=g('qa-practice');
+  if(pracName){ const ex=MDRX_PRAC.find(pr=>(pr.name||'').toLowerCase()===pracName.toLowerCase()); if(ex)practice_id=ex.id; else { try{ const {data}=await sbClient.from('mdrx_practices').insert({name:pracName,state:g('qa-state')||null}).select('id').single(); if(data)practice_id=data.id; }catch(e){} } }
+  const rec={first_name:first||null,last_name:last||null,email:g('qa-email')||null,specialty:g('qa-specialty')||null,state:g('qa-state').toUpperCase()||null,relationship_bucket:g('qa-bucket')||null,pharmacy:g('qa-pharmacy')||null,practice_id,stage:'target',status:'active',owner:'eric'};
+  const {error}=await sbClient.from('mdrx_providers').insert(rec);
+  if(error){showToast('Error: '+error.message);return;}
+  showToast('Target added ✓'); mdrxTab='providers'; await loadMdrx();
+}
+function mdrxBulkImport(){
+  mdrxOpenId=null; const body=document.getElementById('mdrx-body'); if(!body)return;
+  body.innerHTML=`<div class="panel" style="padding:16px 18px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;"><button class="ib" onclick="renderMdrx()">← Back</button><div style="font-weight:700;font-size:16px;flex:1;">📋 Import a list</div></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:8px;line-height:1.6;">Paste rows, one doctor per line, comma or tab separated, in this order (a header row is fine, it gets skipped):<br><b>First, Last, Email, Specialty, Practice, State, Bucket, Pharmacy</b><br>Bucket = cold / warm / previously_engaged / existing_low_util. Pharmacy = MDRx / PDRx / EZmeds. Blank cells are OK.</div>
+    <textarea id="bulk-text" rows="10" placeholder="John, Smith, jsmith@ortho.com, Orthopedics, Smith Ortho, PA, warm, MDRx" style="width:100%;padding:10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;font-family:monospace;"></textarea>
+    <div style="margin-top:10px;"><button onclick="mdrxBulkSave()" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Import</button> <span id="bulk-status" style="font-size:12px;color:var(--muted);margin-left:8px;"></span></div>
+  </div>`;
+}
+async function mdrxBulkSave(){
+  const txt=((document.getElementById('bulk-text')||{}).value||'').trim();
+  if(!txt){showToast('Paste some rows first.');return;}
+  const st=document.getElementById('bulk-status'); if(st)st.textContent='Importing…';
+  const buckets=['cold','warm','previously_engaged','existing_low_util'], pharms=['MDRx','PDRx','EZmeds'];
+  const lines=txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean); const rows=[];
+  for(const line of lines){
+    const c=line.split(/\t|,/).map(x=>x.trim());
+    if(/^first/i.test(c[0]||'')&&/last/i.test(c[1]||'')) continue;
+    const [first,last,email,specialty,practice,state,bucket,pharmacy]=c;
+    if(!first&&!last) continue;
+    let practice_id=null;
+    if(practice){ const ex=MDRX_PRAC.find(pr=>(pr.name||'').toLowerCase()===practice.toLowerCase()); if(ex)practice_id=ex.id; else { try{ const {data}=await sbClient.from('mdrx_practices').insert({name:practice,state:(state||'').toUpperCase()||null}).select('id').single(); if(data){practice_id=data.id; MDRX_PRAC.push({id:data.id,name:practice});} }catch(e){} } }
+    rows.push({first_name:first||null,last_name:last||null,email:email||null,specialty:specialty||null,state:(state||'').toUpperCase()||null,relationship_bucket:buckets.includes((bucket||'').toLowerCase())?(bucket||'').toLowerCase():null,pharmacy:pharms.find(x=>x.toLowerCase()===(pharmacy||'').toLowerCase())||null,practice_id,stage:'target',status:'active',owner:'eric'});
+  }
+  if(!rows.length){showToast('No valid rows found.'); if(st)st.textContent=''; return;}
+  const {error}=await sbClient.from('mdrx_providers').insert(rows);
+  if(error){showToast('Error: '+error.message); if(st)st.textContent=''; return;}
+  showToast('Imported '+rows.length+' providers ✓'); mdrxTab='providers'; await loadMdrx();
 }
 function mdrxBucketLbl(b){return (MDRX_BUCKETS.find(x=>x[0]===b)||['','—'])[1];}
 function mdrxDueHtml(){
