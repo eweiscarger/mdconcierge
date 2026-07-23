@@ -1421,7 +1421,7 @@ function crmExport(){
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 /* ============================ MDRx Pharmacy CRM (Prompt 2: screens) ============================ */
-let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], MDRX_DRAFTS=[], mdrxTab='due', mdrxSearch='', mdrxOpenId=null;
+let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], MDRX_DRAFTS=[], MDRX_FORM=[], MDRX_QUOTE=null, mdrxTab='due', mdrxSearch='', mdrxOpenId=null;
 const MDRX_STAGES=[['target','Target','#6B95D4'],['contacted','Contacted','#c8922a'],['meeting','Meeting','#7a5cd0'],['document_review','Doc review','#d08a2c'],['signed','Signed','#2D6A4F']];
 const MDRX_BUCKETS=[['','—'],['cold','Cold'],['warm','Warm'],['previously_engaged','Previously engaged'],['existing_low_util','Existing low-util']];
 const MDRX_STATUS=[['active','Active'],['dormant','Dormant'],['lost','Lost']];
@@ -1453,6 +1453,7 @@ async function loadMdrx(){
   if(err){if(body)body.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load CRM: '+ehtml(err.message)+'</div>';return;}
   MDRX_PROV=a.data||[]; MDRX_PRAC=b.data||[]; MDRX_PH=c.data||[]; MDRX_CONTACTS=d.data||[]; MDRX_UTIL=e.data||[];
   try{ const {data:dr}=await sbClient.from('mdrx_inbox_drafts').select('*').eq('status','pending').order('received_at',{ascending:false}); MDRX_DRAFTS=dr||[]; }catch(e2){ MDRX_DRAFTS=[]; }
+  if(!MDRX_FORM.length){ try{ const {data:fm}=await sbClient.from('mdconcierge_formulary').select('*').order('route').order('product'); MDRX_FORM=fm||[]; }catch(e3){ MDRX_FORM=[]; } }
   const badge=document.getElementById('mdrx-due');
   if(badge){const t=mdrxToday();const n=MDRX_PROV.filter(p=>p.status==='active'&&p.next_action_date&&p.next_action_date<=t).length;badge.textContent=n;badge.style.display=n?'':'none';}
   renderMdrx();
@@ -1627,7 +1628,7 @@ function mdrxDetailHtml(id){
     <button class="ib" onclick="mdrxCompose('note')">📝 Add note</button>
     <button class="ib" onclick="mdrxDraftOutreach()">✉️ Draft outreach</button>
     <button class="ib" onclick="mdrxDocusign()">📄 Request DocuSign contract</button>
-    <button class="ib" onclick="showToast('The quote engine arrives in a later step (Prompt 5).')">🧮 Generate quote</button>
+    <button class="ib" onclick="mdrxQuote()">🧮 Generate quote</button>
   </div><div id="mdrx-action-panel" style="margin:0 0 6px;"></div>`;
   const timeline=isNew?'':`<div class="panel" style="margin-top:14px;"><div class="ph"><div class="pt">Activity timeline</div></div><div id="mdrx-compose"></div><div id="mdrx-timeline" style="padding:6px 14px 14px;">Loading…</div></div>`;
   const importBar=`<div style="background:rgba(107,149,212,.08);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
@@ -1972,6 +1973,111 @@ async function mdrxSendDraft(id){
 async function mdrxDismissDraft(id){
   try{ await sbClient.from('mdrx_inbox_drafts').update({status:'dismissed'}).eq('id',id); }catch(e){}
   showToast('Dismissed'); await loadMdrx();
+}
+/* ----- Quote engine (Prompt 5). Doctor-facing quote is clean; commission is server-side + never exported. ----- */
+function mdrxFormById(id){return MDRX_FORM.find(f=>String(f.id)===String(id));}
+function mdrxMoney(n){return '$'+(Math.round(n||0)).toLocaleString('en-US');}
+function mdrxQuote(){
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId); if(!p)return;
+  if(!MDRX_FORM.length){showToast('Formulary not loaded yet, try Refresh.');return;}
+  const ph=MDRX_PH.find(x=>x.name===p.pharmacy)||{};
+  const pnl=document.getElementById('mdrx-action-panel'); if(!pnl)return;
+  const oralOpts=MDRX_FORM.filter(f=>f.route==='Oral').map(f=>`<option value="${f.id}">${ehtml(f.product)}</option>`).join('');
+  const topOpts=MDRX_FORM.filter(f=>f.route==='Topical').map(f=>`<option value="${f.id}">${ehtml(f.product)}</option>`).join('');
+  window._mdrxQopts=`<optgroup label="Oral">${oralOpts}</optgroup><optgroup label="Topical">${topOpts}</optgroup>`;
+  const fl='padding:6px 8px;border:1px solid var(--border2);border-radius:7px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
+  pnl.innerHTML=`<div class="panel" style="padding:14px;border:1px solid var(--steel,#6B9FD4);">
+    <div style="font-weight:700;font-size:14px;margin-bottom:8px;">🧮 Quote · ${ehtml(mdrxProvName(p))}</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Assumptions (editable; default to the MDconcierge pharmacy model, PA basis):</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+      <label style="font-size:11px;color:var(--muted);">Patients/mo<br><input id="mq-pat" type="number" value="100" oninput="mdrxQuoteCompute()" style="${fl}width:80px;"></label>
+      <label style="font-size:11px;color:var(--muted);">AWP ×<br><input id="mq-mult" type="number" step="0.01" value="1.1" oninput="mdrxQuoteCompute()" style="${fl}width:70px;"></label>
+      <label style="font-size:11px;color:var(--muted);">Oral collect %<br><input id="mq-oc" type="number" value="80" oninput="mdrxQuoteCompute()" style="${fl}width:80px;"></label>
+      <label style="font-size:11px;color:var(--muted);">Topical collect %<br><input id="mq-tc" type="number" value="60" oninput="mdrxQuoteCompute()" style="${fl}width:90px;"></label>
+      <label style="font-size:11px;color:var(--muted);">Practice share %<br><input id="mq-sh" type="number" value="65" oninput="mdrxQuoteCompute()" style="${fl}width:90px;"></label>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Formulary mix (units are per patient):</div>
+    <div id="mdrx-qlines"></div>
+    <button class="ib" onclick="mdrxQAddLine()">+ Add product</button>
+    <div id="mdrx-qout" style="margin-top:12px;"></div>
+    <input type="hidden" id="mq-pharm-pct" value="${ph.commission_pct||30}">
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="ib" onclick="mdrxQuotePDF()">⬇ Export PDF</button>
+      <button class="ib" onclick="mdrxQuoteCSV()">⬇ Export Excel</button>
+      <button class="ib" onclick="mdrxQCommission()">💰 My commission (admin)</button>
+      <button class="ib" onclick="document.getElementById('mdrx-action-panel').innerHTML=''">Close</button>
+    </div>
+  </div>`;
+  mdrxQAddLine(); mdrxQAddLine(); mdrxQuoteCompute();
+  pnl.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function mdrxQAddLine(){
+  const c=document.getElementById('mdrx-qlines'); if(!c)return;
+  const fl='padding:6px 8px;border:1px solid var(--border2);border-radius:7px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
+  const div=document.createElement('div'); div.className='mq-line'; div.style.cssText='display:flex;gap:6px;margin-bottom:6px;align-items:center;';
+  div.innerHTML=`<select class="mq-prod" onchange="mdrxQuoteCompute()" style="${fl}flex:1;min-width:180px;"><option value="">— pick a product —</option>${window._mdrxQopts||''}</select><input class="mq-units" type="number" value="1" min="0" step="0.5" oninput="mdrxQuoteCompute()" style="${fl}width:70px;" title="units per patient"><button class="ib" onclick="this.closest('.mq-line').remove();mdrxQuoteCompute()">✕</button>`;
+  c.appendChild(div);
+}
+function mdrxQuoteCompute(){
+  const num=id=>{const el=document.getElementById(id);return el?(parseFloat(el.value)||0):0;};
+  const patients=num('mq-pat'), mult=num('mq-mult'), oc=num('mq-oc')/100, tc=num('mq-tc')/100, share=num('mq-sh')/100;
+  let oAwp=0,oCost=0,tAwp=0,tCost=0; const lines=[];
+  document.querySelectorAll('#mdrx-qlines .mq-line').forEach(row=>{
+    const id=(row.querySelector('.mq-prod')||{}).value; const units=parseFloat((row.querySelector('.mq-units')||{}).value)||0;
+    const f=mdrxFormById(id); if(!f||!units)return;
+    const paAwp=(Number(f.awp)||0)*mult, extAwp=units*paAwp, extCost=units*(Number(f.cost)||0);
+    if(f.route==='Oral'){oAwp+=extAwp;oCost+=extCost;}else{tAwp+=extAwp;tCost+=extCost;}
+    lines.push({product:f.product,route:f.route,units});
+  });
+  const oGross=oAwp*patients*oc, oCostM=oCost*patients, oNet=oGross-oCostM;
+  const tGross=tAwp*patients*tc, tCostM=tCost*patients, tNet=tGross-tCostM;
+  const gross=oGross+tGross, cost=oCostM+tCostM, net=oNet+tNet, practice=net*share;
+  MDRX_QUOTE={patients,share,lines,gross,cost,net,practice,practiceYr:practice*12};
+  const out=document.getElementById('mdrx-qout'); if(!out)return;
+  out.innerHTML=`<div style="background:rgba(45,106,79,.1);border:1px solid #2D6A4F;border-radius:10px;padding:12px;">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Estimated practice ancillary revenue</div>
+    <div style="font-size:24px;font-weight:800;color:#2ecc8a;">${mdrxMoney(practice)}<span style="font-size:13px;color:var(--muted);font-weight:400;"> / month</span></div>
+    <div style="font-size:15px;font-weight:700;color:#2ecc8a;">${mdrxMoney(practice*12)}<span style="font-size:12px;color:var(--muted);font-weight:400;"> / year</span></div>
+    <div style="font-size:11.5px;color:var(--muted2);margin-top:8px;">Gross (AWP) ${mdrxMoney(gross)}/mo · Product cost ${mdrxMoney(cost)}/mo · Net ${mdrxMoney(net)}/mo · Practice keeps ${Math.round(share*100)}% of net</div>
+    <div style="font-size:10.5px;color:var(--muted);margin-top:6px;font-style:italic;">Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. PA basis.</div>
+  </div><div id="mdrx-qcomm" style="margin-top:8px;"></div>`;
+}
+async function mdrxQCommission(){
+  if(!MDRX_QUOTE){showToast('Build the quote first.');return;}
+  const box=document.getElementById('mdrx-qcomm'); if(box)box.innerHTML='<span style="font-size:12px;color:var(--muted);">Calculating…</span>';
+  const pct=parseFloat((document.getElementById('mq-pharm-pct')||{}).value)||30;
+  const {data,error}=await sbClient.functions.invoke('mdrx-commission',{body:{net:MDRX_QUOTE.net,share:MDRX_QUOTE.share,commission_pct:pct}});
+  if(error||!data||!data.ok){if(box)box.innerHTML='<span style="color:#c0392b;font-size:12px;">Could not calculate.</span>';return;}
+  if(box)box.innerHTML=`<div style="background:rgba(200,146,42,.12);border:1px dashed #c8922a;border-radius:10px;padding:10px;"><div style="font-size:10.5px;color:#c8922a;font-weight:700;text-transform:uppercase;">🔒 Admin only · never shown to a doctor, never exported</div><div style="font-size:16px;font-weight:800;color:#e0a94a;margin-top:2px;">${mdrxMoney(data.monthly)}<span style="font-size:12px;color:var(--muted);font-weight:400;"> / mo</span> · ${mdrxMoney(data.annual)}<span style="font-size:12px;color:var(--muted);font-weight:400;"> / yr</span></div><div style="font-size:11px;color:var(--muted);">Your ${pct}% of the company-kept portion of net.</div></div>`;
+}
+function mdrxQuoteDoc(p){
+  const q=MDRX_QUOTE; if(!q)return '';
+  const rows=q.lines.map(l=>`<tr><td style="padding:3px 10px 3px 0;">${l.product}</td><td style="padding:3px 10px;">${l.route}</td><td style="padding:3px 0;text-align:right;">${l.units}</td></tr>`).join('');
+  return `<h2 style="font-family:Georgia,serif;color:#08214C;margin:0 0 4px;">Workers' Compensation Medication Dispensing Analysis</h2>
+    <p style="color:#333;">Prepared for: <b>${(mdrxPracName(p.practice_id)||mdrxProvName(p))}</b> · Based on ${q.patients} patients / month</p>
+    <table style="border-collapse:collapse;margin:10px 0;font-size:13px;"><tr><th style="text-align:left;border-bottom:1px solid #ccc;padding-right:10px;">Product</th><th style="text-align:left;border-bottom:1px solid #ccc;padding:0 10px;">Route</th><th style="border-bottom:1px solid #ccc;">Units/pt</th></tr>${rows}</table>
+    <div style="background:#eef7f1;border:1px solid #2D6A4F;border-radius:8px;padding:14px;max-width:420px;">
+      <div style="font-size:12px;color:#555;text-transform:uppercase;">Estimated practice ancillary revenue</div>
+      <div style="font-size:26px;font-weight:800;color:#1e7a4d;">${mdrxMoney(q.practice)} <span style="font-size:14px;font-weight:400;color:#555;">/ month</span></div>
+      <div style="font-size:17px;font-weight:700;color:#1e7a4d;">${mdrxMoney(q.practiceYr)} <span style="font-size:12px;font-weight:400;color:#555;">/ year</span></div>
+    </div>
+    <p style="font-size:11px;color:#777;font-style:italic;margin-top:12px;">Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. Pennsylvania basis.</p>
+    <p style="font-size:12px;color:#333;">Eric Weiscarger · MDconcierge · referrals@mdconcierge.net · mdconcierge.net</p>`;
+}
+function mdrxQuotePDF(){
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId); if(!p||!MDRX_QUOTE){showToast('Build the quote first.');return;}
+  const w=window.open('','_blank'); if(!w){showToast('Allow pop-ups to export the PDF.');return;}
+  w.document.write('<!doctype html><html><head><title>MDconcierge Quote</title></head><body style="font-family:Arial,sans-serif;padding:24px;color:#111;">'+mdrxQuoteDoc(p)+'</body></html>');
+  w.document.close(); setTimeout(()=>{ try{w.print();}catch(e){} },300);
+}
+function mdrxQuoteCSV(){
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId); const q=MDRX_QUOTE; if(!q){showToast('Build the quote first.');return;}
+  const rows=[['MDconcierge Pharmacy - WC Dispensing Analysis'],['Prepared for',mdrxPracName(p.practice_id)||mdrxProvName(p)],['Patients/month',q.patients],[],['Product','Route','Units/patient']];
+  q.lines.forEach(l=>rows.push([l.product,l.route,l.units]));
+  rows.push([],['Estimated practice ancillary revenue / month',Math.round(q.practice)],['/ year',Math.round(q.practiceYr)],['Disclaimer','Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. PA basis.']);
+  const csv=rows.map(r=>r.map(c=>`"${String(c==null?'':c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent('﻿'+csv);a.download='MDconcierge_quote.csv';a.click();
+  showToast('Exported (no commission included)');
 }
 function mdrxBucketLbl(b){return (MDRX_BUCKETS.find(x=>x[0]===b)||['','—'])[1];}
 function mdrxDueHtml(){
