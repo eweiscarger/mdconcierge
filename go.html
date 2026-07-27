@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>MDconcierge</title>
+<style>
+  body{margin:0;background:#F6F9FD;font-family:'Inter',system-ui,sans-serif;color:#5C6B85;
+       display:flex;align-items:center;justify-content:center;height:100vh;font-size:14px;}
+</style>
+</head>
+<body>
+<div>Opening&hellip;</div>
+<script>
+/* Brand-safe redirector. The tracked per-physician link points here
+   (mdconcierge.net/go.html?p=TOKEN&to=brief). It records the click,
+   then forwards to the real page carrying the token so on-page
+   engagement keeps tracking. Works on static hosting. */
+(function () {
+  var ENDPOINT = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/funnel-track";
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get("p") || "";
+  var to = (params.get("to") || "brief").toLowerCase();
+
+  var MAP = {
+    brief: "/brief.html",
+    overview: "/brief.html",
+    how: "/how-it-works.html",
+    vsl: "/how-it-works.html",
+    book: "/book.html",
+    confirmed: "/confirmed.html"
+  };
+  var dest = MAP[to] || MAP.brief;
+
+  // Record the click (fire-and-forget), then forward.
+  if (token) {
+    try {
+      var body = JSON.stringify({ token: token, event: "click", link: to, page: "email" });
+      if (navigator.sendBeacon) {
+        navigator.sendBeacon(ENDPOINT, new Blob([body], { type: "application/json" }));
+      } else {
+        fetch(ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: body, keepalive: true, mode: "cors" }).catch(function () {});
+      }
+    } catch (e) {}
+  }
+
+  var target = dest + (token ? ("?p=" + encodeURIComponent(token)) : "");
+  window.location.replace(target);
+})();
+</script>
+<noscript><meta http-equiv="refresh" content="0;url=/brief.html"/></noscript>
+</body>
+</html>

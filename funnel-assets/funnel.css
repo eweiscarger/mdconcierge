@@ -1,0 +1,86 @@
+/* MDconcierge funnel — shared brand styles (physician-facing, light).
+   Matches the platform brand: Inter, navy #08214C, blue #2F5EA8, steel #6B95D4. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root{
+  --navy:#08214C; --blue:#2F5EA8; --steel:#6B95D4; --cream:#F6F9FD;
+  --border:#DCE6F2; --ink:#14213D; --muted:#5C6B85; --line:#E4E8EF;
+  --green:#1e9e6a; --amber:#8a6d1e; --amberbg:#FFF8EC; --amberln:#F0E0BD;
+  --highlight:#FFE08A;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--cream);color:var(--ink);
+  font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.62;}
+.wrap{max-width:760px;margin:0 auto;padding:0 18px 72px;}
+
+/* header / footer */
+.topbar{display:flex;align-items:center;justify-content:center;padding:22px 0 18px;}
+.topbar img{height:40px;display:block;}
+.card{background:#fff;border:1px solid var(--border);border-radius:16px;
+  box-shadow:0 6px 26px rgba(8,33,76,.06);overflow:hidden;}
+.card .body{padding:30px 30px 34px;}
+@media(max-width:560px){.card .body{padding:22px 18px 26px;}}
+
+.eyebrow{color:var(--blue);font-weight:800;font-size:12px;letter-spacing:.09em;
+  text-transform:uppercase;}
+h1{font-size:30px;line-height:1.18;letter-spacing:-.02em;margin:10px 0 12px;color:#0c1830;}
+@media(max-width:560px){h1{font-size:24px;}}
+h1 .hl{background:linear-gradient(transparent 62%, var(--highlight) 62%);padding:0 2px;}
+.lead{font-size:16.5px;color:#2b323d;margin:10px 0;}
+p{margin:10px 0;color:#33404f;}
+.sub{color:var(--muted);font-size:15.5px;}
+
+/* checkmark list */
+.checks{list-style:none;padding:0;margin:16px 0;}
+.checks li{position:relative;padding:9px 0 9px 32px;font-size:15.5px;color:#2b323d;
+  border-bottom:1px solid var(--line);}
+.checks li:last-child{border-bottom:none;}
+.checks li:before{content:"\2713";position:absolute;left:0;top:9px;width:21px;height:21px;
+  background:var(--blue);color:#fff;border-radius:50%;font-size:12px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;}
+
+/* CTAs */
+.cta{display:inline-block;background:var(--blue);color:#fff;font-weight:800;font-size:15.5px;
+  padding:14px 24px;border-radius:11px;text-decoration:none;text-align:center;cursor:pointer;
+  border:none;transition:background .15s;}
+.cta:hover{background:#264d8a;}
+.cta.full{display:block;width:100%;}
+.cta.ghost{background:#EEF3FB;color:var(--blue);border:1px solid #CFE0F0;}
+.cta.ghost:hover{background:#e3ecf8;}
+.ctarow{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;}
+.ctarow .cta{flex:1;min-width:170px;}
+
+/* document chips */
+.docs-label{font-size:11.5px;color:var(--muted);font-weight:800;letter-spacing:.05em;
+  text-transform:uppercase;margin:20px 0 8px;}
+.docchip{display:inline-flex;align-items:center;gap:8px;background:#F1F5FB;
+  border:1px solid #DBE4EF;border-radius:9px;padding:9px 13px;font-size:13.5px;
+  color:#2b4a70;font-weight:600;text-decoration:none;margin:0 8px 8px 0;}
+.docchip:hover{background:#e7eef8;}
+.docchip:before{content:"\1F4C4";}
+
+/* video slot */
+.vid{position:relative;background:#0c1830;border-radius:14px;aspect-ratio:16/9;
+  margin:16px 0;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+.vid iframe,.vid video{position:absolute;inset:0;width:100%;height:100%;border:0;}
+.vid .ph{text-align:center;color:#c9d6ea;padding:20px;}
+.vid .ph .play{width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.94);
+  margin:0 auto 12px;display:flex;align-items:center;justify-content:center;}
+.vid .ph .play:after{content:"";border-left:19px solid var(--blue);
+  border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:5px;}
+.vid .ph .cap{font-size:12.5px;letter-spacing:.03em;}
+
+/* disclaimer / fit block */
+.fit{background:var(--amberbg);border:1px solid var(--amberln);border-radius:12px;
+  padding:16px 18px;margin:16px 0;font-size:14.5px;color:#5c4d2a;line-height:1.6;}
+.fit b{color:var(--amber);}
+
+/* slot list (booking times placeholder) */
+.slot{background:#F6F8FB;border:1px solid var(--line);border-radius:10px;
+  padding:13px 15px;margin:9px 0;font-size:14.5px;color:#2b323d;}
+
+.fine{font-size:12.5px;color:#8a93a1;margin-top:14px;}
+.note{background:#F6F9FD;border:1px solid var(--border);border-left:3px solid var(--steel);
+  border-radius:0 10px 10px 0;padding:12px 15px;margin:16px 0;font-size:13.5px;color:var(--muted);}
+.foot{margin-top:26px;text-align:center;color:var(--muted);font-size:12.5px;line-height:1.6;}
+.foot a{color:var(--blue);text-decoration:none;}
+hr.soft{border:none;border-top:1px solid var(--line);margin:24px 0;}

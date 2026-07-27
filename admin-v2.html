@@ -271,6 +271,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" onclick="showView('signups',this)"><span class="ni-ic">📝</span> Sign-ups <span class="nb" id="signup-count" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('crm',this)"><span class="ni-ic">⚖️</span> Attorney CRM <span class="nb" id="crm-count" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('mdrx',this)"><span class="ni-ic">💊</span> MDRx Pharmacy CRM <span class="nb" id="mdrx-due" style="display:none;">0</span></button>
+    <button class="ni" onclick="showView('funnel',this)"><span class="ni-ic">🎯</span> Funnel Engagement <span class="nb" id="funnel-hot" style="display:none;">0</span></button>
     <div class="ns">Analytics</div>
     <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
     <button class="ni" onclick="showView('analytics',this)"><span class="ni-ic">📊</span> Analytics</button>
@@ -437,6 +438,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <!-- ANALYTICS VIEW -->
   <div class="view" id="view-analytics">
     <div id="analytics-body" style="color:var(--muted);padding:8px 2px;">Loading analytics…</div>
+  </div>
+
+  <!-- FUNNEL ENGAGEMENT VIEW -->
+  <div class="view" id="view-funnel">
+    <div id="funnel-body" style="color:var(--muted);padding:8px 2px;">Loading funnel…</div>
   </div>
 
   <!-- ACCESS LOG VIEW -->
@@ -1151,15 +1157,70 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',access:'Access Log',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',access:'Access Log',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
   if(v==='crm')loadCrm();
   if(v==='mdrx')loadMdrx();
+  if(v==='funnel')loadFunnel();
   if(v==='tools')renderTools();
   if(v==='analytics')loadAnalytics();
   if(v==='access')loadAccessLog();
+}
+// ---- Funnel engagement view ----------------------------------------------
+const FUNNEL_BASE='https://mdconcierge.net/go.html';
+function funName(p){return (((p.first_name||'')+' '+(p.last_name||'')).trim())||'(no name)';}
+function funScore(p){return (Number(p.intent_score)||0)+(Number(p.funnel_score)||0);}
+function funTime(s){s=Number(s)||0;if(!s)return '0s';const m=Math.floor(s/60),r=s%60;return m?(m+'m '+r+'s'):(r+'s');}
+function funAgo(iso){if(!iso)return '';const d=Date.now()-new Date(iso).getTime();const mi=Math.floor(d/60000);if(mi<1)return 'just now';if(mi<60)return mi+'m ago';const h=Math.floor(mi/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
+function funLink(tok,to){return FUNNEL_BASE+'?p='+encodeURIComponent(tok||'')+'&to='+(to||'brief');}
+function funToast(msg){let t=document.getElementById('fun-toast');if(!t){t=document.createElement('div');t.id='fun-toast';t.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#08214C;color:#fff;padding:9px 16px;border-radius:9px;font-size:13px;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.25);transition:opacity .3s;';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';clearTimeout(t._h);t._h=setTimeout(()=>{t.style.opacity='0';},1600);}
+function funCopy(tok){const u=funLink(tok,'brief');navigator.clipboard.writeText(u).then(()=>funToast('Tracked link copied'),()=>funToast(u));}
+async function loadFunnel(){
+  const box=document.getElementById('funnel-body');
+  box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
+  const cols='id,first_name,last_name,credential,target_specialty,region,intent_tier,intent_score,funnel_score,funnel_token,funnel_open_count,funnel_max_scroll,funnel_total_seconds,funnel_clicked,funnel_booked,funnel_last_cta,funnel_first_open_at,funnel_last_seen_at';
+  const {data,error}=await sbClient.from('mdrx_providers').select(cols);
+  if(error){box.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load funnel: '+ehtml(error.message)+'<div style="color:var(--muted);font-size:12px;margin-top:8px;">If this mentions a missing column, the funnel migration has not run yet.</div></div>';return;}
+  let rows=(data||[]).filter(p=>p.funnel_token);
+  const engaged=rows.filter(p=>p.funnel_open_count||p.funnel_clicked||p.funnel_last_seen_at);
+  const clicked=rows.filter(p=>p.funnel_clicked).length;
+  const opened=rows.filter(p=>p.funnel_open_count>0).length;
+  const booked=rows.filter(p=>p.funnel_booked).length;
+  const hot=rows.filter(p=>funScore(p)>=40).length;
+  const badge=document.getElementById('funnel-hot');if(badge){badge.textContent=hot;badge.style.display=hot?'':'none';}
+  const kpi=(l,v,d,c)=>`<div class="kpi ${c||''}"><div class="kpi-lbl">${l}</div><div class="kpi-v">${v}</div><div class="kpi-d">${d}</div></div>`;
+  const kpis=kpi('Leads tracked',rows.length,'have a link','blue')+kpi('Opened',opened,'viewed a page','gold')+kpi('Clicked',clicked,'hit a tracked link','purple')+kpi('Booked',booked,'meeting set','green')+kpi('Hot',hot,'score 40+','green');
+  // sort: most engaged first
+  rows.sort((a,b)=>funScore(b)-funScore(a)||(new Date(b.funnel_last_seen_at||0)-new Date(a.funnel_last_seen_at||0)));
+  const tr=rows.map(p=>{
+    const sc=funScore(p),seen=p.funnel_last_seen_at;
+    const dim=seen?'':'opacity:.5;';
+    const cta=p.funnel_booked?'📅 booked':(p.funnel_last_cta?ehtml(p.funnel_last_cta):'');
+    const focus=[p.target_specialty,p.region].filter(Boolean).map(ehtml).join(' · ')||'<span style="color:var(--muted)">no focus set</span>';
+    return `<tr style="${dim}">
+      <td><b>${ehtml(funName(p))}</b>${p.credential?(' <span style="color:var(--muted);font-size:11px;">'+ehtml(p.credential)+'</span>'):''}</td>
+      <td style="font-size:12px;">${focus}</td>
+      <td>${p.intent_tier?('<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);">'+ehtml(p.intent_tier)+'</span>'):''}</td>
+      <td><b style="color:${sc>=40?'var(--green)':sc>=15?'var(--gold)':'var(--muted2)'};">${sc}</b> <span style="color:var(--muted);font-size:11px;">${p.intent_score||0}+${p.funnel_score||0}</span></td>
+      <td style="text-align:center;">${p.funnel_open_count||0}</td>
+      <td style="text-align:center;">${p.funnel_max_scroll||0}%</td>
+      <td style="text-align:center;">${funTime(p.funnel_total_seconds)}</td>
+      <td style="font-size:12px;">${cta}</td>
+      <td style="font-size:12px;color:var(--muted);">${seen?funAgo(seen):'no activity'}</td>
+      <td style="white-space:nowrap;"><a href="${funLink(p.funnel_token,'brief')}" target="_blank" style="font-size:11px;">open</a> · <a href="javascript:void(0)" onclick="funCopy('${p.funnel_token}')" style="font-size:11px;">copy link</a></td>
+    </tr>`;
+  }).join('');
+  box.innerHTML=`
+    <div class="kpi-row" style="margin-bottom:14px;">${kpis}</div>
+    <div class="panel" style="margin-bottom:0;">
+      <div class="ph"><div class="pt">🎯 Physician engagement</div><div class="ps">Every tracked link ties a click, scroll, and time-on-page back to the physician. Score = list intent + on-page behavior. ${engaged.length} of ${rows.length} have activity.</div></div>
+      <div style="overflow-x:auto;"><table class="lt">
+        <thead><tr><th>Physician</th><th>Focus</th><th>Tier</th><th>Score</th><th>Opens</th><th>Scroll</th><th>Time</th><th>Last CTA</th><th>Last seen</th><th>Link</th></tr></thead>
+        <tbody>${tr||'<tr><td colspan="10" style="color:var(--muted);padding:16px;">No leads with tracked links yet. Load the list in Task 4, or seed a test row.</td></tr>'}</tbody>
+      </table></div>
+    </div>`;
 }
 async function loadAnalytics(){
   const box=document.getElementById('analytics-body');
