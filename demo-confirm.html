@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>MDconcierge — Confirm Demonstration</title>
+<link rel="icon" href="assets/brand/favicon-32.png"/>
+<link rel="stylesheet" href="funnel-assets/funnel.css"/>
+</head>
+<body data-funnel-page="demo-confirm">
+<div class="wrap">
+  <div class="topbar"><img src="assets/brand/logo.png" alt="MDconcierge"/></div>
+  <div class="card"><div class="body">
+    <div id="status"><p class="lead">One moment&hellip;</p></div>
+  </div></div>
+  <div class="foot">MDconcierge &middot; <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a></div>
+</div>
+<script>
+const FN = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1";
+const p = new URLSearchParams(location.search);
+const t = p.get("t") || "";
+const d = (p.get("d") || "").toLowerCase() === "yes" ? "yes" : "no";
+const box = document.getElementById("status");
+
+function render(html){ box.innerHTML = html; }
+
+(async function(){
+  if (!t){ render('<h1>Link expired</h1><p class="lead">This confirmation link is missing its code. Please use the buttons in the email.</p>'); return; }
+  render('<p class="lead">' + (d==="yes" ? "Confirming the demonstration&hellip;" : "Noting that you can\'t make it&hellip;") + '</p>');
+  try {
+    const r = await fetch(`${FN}/booking-approve`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ t, d }) });
+    const j = await r.json();
+    if (j.already){
+      const s = j.status;
+      render('<h1>Already handled</h1><p class="lead">This demonstration was already marked <b>'+ (s==="confirmed"?"confirmed":"declined") +'</b>. Nothing more to do.</p>');
+      return;
+    }
+    if (!j.ok){ render('<h1>Hmm</h1><p class="lead">'+ (j.error || "Something went wrong. Reply to the email and we\'ll sort it out.") +'</p>'); return; }
+    if (j.status === "confirmed"){
+      render('<div class="eyebrow">Confirmed</div><h1>Great, it\'s booked.</h1><p class="lead">The demonstration is confirmed for <b>'+ (j.when||"the requested time") +'</b>. The physician has been sent their confirmation and the two legal write-ups, and the event is on the calendar with you as an attendee.</p>');
+    } else {
+      render('<div class="eyebrow">Noted</div><h1>Thanks, all set.</h1><p class="lead">The physician has been told that time is no longer available and sent a link to pick another. No further action needed.</p>');
+    }
+  } catch(e){ render('<h1>Network hiccup</h1><p class="lead">Could not reach the server. Please try the link again in a moment.</p>'); }
+})();
+</script>
+</body>
+</html>

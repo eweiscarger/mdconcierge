@@ -9,6 +9,7 @@ crm_reference/
 CRM_PROGRESS.md
 mdrx-crm-migration.sql
 funnel-migration.sql
+booking-migration.sql
 
 # Local audio audition artifacts — not used by the live site.
 assets/audio/sample_*.mp3

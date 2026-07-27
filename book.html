@@ -4,17 +4,38 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <meta name="robots" content="noindex,nofollow"/>
-<title>MDconcierge — Book 15 Minutes</title>
+<title>MDconcierge — Book a Time</title>
 <link rel="icon" href="assets/brand/favicon-32.png"/>
 <link rel="stylesheet" href="funnel-assets/funnel.css"/>
+<style>
+  .seg{display:flex;gap:8px;margin:6px 0 4px;}
+  .seg button{flex:1;background:#EEF3FB;color:#2b4a70;border:1px solid #CFE0F0;border-radius:10px;padding:12px;font-weight:700;font-size:14.5px;cursor:pointer;font-family:inherit;}
+  .seg button.on{background:#2F5EA8;color:#fff;border-color:#2F5EA8;}
+  .day{margin-top:16px;}
+  .day h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:#2F5EA8;margin:0 0 8px;}
+  .times{display:flex;flex-wrap:wrap;gap:8px;}
+  .times button{background:#fff;border:1px solid #CFE0F0;border-radius:9px;padding:9px 14px;font-size:14px;color:#14213D;cursor:pointer;font-family:inherit;}
+  .times button:hover{border-color:#2F5EA8;}
+  .times button.sel{background:#2F5EA8;color:#fff;border-color:#2F5EA8;}
+  .fld{width:100%;padding:12px 13px;border:1px solid #D7DDE6;border-radius:9px;font-size:15px;font-family:inherit;margin:7px 0;color:#14213D;}
+  .result{margin-top:14px;padding:14px 16px;border-radius:10px;font-size:14.5px;display:none;}
+  .result.ok{background:#EAF7F0;border:1px solid #BEE7D2;color:#1e6e4a;display:block;}
+  .result.err{background:#FDEEEE;border:1px solid #F3C9C9;color:#a03434;display:block;}
+  .muted{color:#5C6B85;font-size:13.5px;}
+</style>
 </head>
 <body data-funnel-page="book">
 <div class="wrap">
   <div class="topbar"><img src="assets/brand/logo.png" alt="MDconcierge"/></div>
   <div class="card"><div class="body">
 
-    <div class="eyebrow">15 minutes with Eric &middot; MDconcierge</div>
-    <h1>Pick a time and I'll come prepared to your specialty and your work-comp volume.</h1>
+    <div class="eyebrow" id="eyebrow">15 minutes with Eric &middot; MDconcierge</div>
+    <h1 id="headline">Pick a time and I'll come prepared to your specialty and your work-comp volume.</h1>
+
+    <div class="seg" role="tablist">
+      <button id="tab-intro" class="on" onclick="setType('intro')">15 minute call</button>
+      <button id="tab-demo" onclick="setType('demo')">1 hour demonstration</button>
+    </div>
 
     <div class="fit">
       <b>This call is for you if:</b> you're a PA private practice that treats workers-comp patients and writes the scripts today, and you want your patients to actually get their medication while sharing in the economics you already generate.
@@ -22,25 +43,101 @@
       <b>It's probably not a fit if:</b> you don't see work-comp patients, you're looking for anything involving Medicare, Medicaid, or federal claims, or you want to dispense in-house. We only do workers-comp, and only the compliant claims-purchasing model.
     </div>
 
-    <!-- Booking slots render here once the Zoho tool is connected (Task 2).
-         Until then, a working fallback keeps the page from being a dead end. -->
-    <div id="slots">
-      <div class="slot" style="text-align:center;color:#5C6B85">Available times load here.</div>
+    <p class="muted" id="demoNote" style="display:none;">The one hour demonstration is confirmed once our pharmacy partner locks the time. Pick a slot and you'll get confirmation shortly.</p>
+
+    <div id="slots" style="margin-top:6px;"><p class="muted">Loading available times&hellip;</p></div>
+
+    <div id="form" style="display:none;margin-top:18px;">
+      <input class="fld" id="f-name" placeholder="Your name" autocomplete="name"/>
+      <input class="fld" id="f-email" placeholder="Email" type="email" autocomplete="email"/>
+      <input class="fld" id="f-phone" placeholder="Phone (optional)" autocomplete="tel"/>
+      <input class="fld" id="f-note" placeholder="Anything I should know before we talk? (optional)"/>
+      <button class="cta full" id="confirmBtn" data-cta="confirm-time" onclick="submitBooking()" disabled>Confirm my time</button>
+      <p class="fine">You'll get a confirmation from eric@mdconcierge.net with a one-tap reschedule link.</p>
     </div>
 
-    <a class="cta full" id="confirmBtn"
-       href="mailto:eric@mdconcierge.net?subject=Time%20for%20a%2015-minute%20call&amp;body=Hi%20Eric%2C%20I'd%20like%20to%20grab%2015%20minutes.%20Here%20are%20a%20few%20times%20that%20work%20for%20me%3A"
-       data-cta="confirm-time">Request my time</a>
-
-    <p class="fine">You'll get a confirmation from eric@mdconcierge.net with a one-tap reschedule link.</p>
+    <div class="result" id="result"></div>
 
   </div></div>
-
   <div class="foot">
     MDconcierge &middot; Pennsylvania &middot; <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a><br>
     Independent licensed pharmacy. Workers-comp claims only. Not legal advice.
   </div>
 </div>
+
+<script>
+const FN = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1";
+const params = new URLSearchParams(location.search);
+const TOKEN = params.get("p") || "";
+let TYPE = (params.get("type") || "intro").toLowerCase() === "demo" ? "demo" : "intro";
+let SELECTED = null;
+
+function setType(t){
+  TYPE = t; SELECTED = null;
+  document.getElementById("tab-intro").classList.toggle("on", t==="intro");
+  document.getElementById("tab-demo").classList.toggle("on", t==="demo");
+  document.getElementById("eyebrow").innerHTML = t==="demo" ? "1 hour demonstration &middot; MDconcierge" : "15 minutes with Eric &middot; MDconcierge";
+  document.getElementById("headline").textContent = t==="demo"
+    ? "Pick a time for a full one hour walkthrough of the program."
+    : "Pick a time and I'll come prepared to your specialty and your work-comp volume.";
+  document.getElementById("demoNote").style.display = t==="demo" ? "block" : "none";
+  document.getElementById("form").style.display = "none";
+  document.getElementById("confirmBtn").textContent = t==="demo" ? "Request this time" : "Confirm my time";
+  loadSlots();
+}
+
+async function loadSlots(){
+  const box = document.getElementById("slots");
+  box.innerHTML = '<p class="muted">Loading available times&hellip;</p>';
+  try {
+    const r = await fetch(`${FN}/booking-slots?type=${TYPE}`);
+    const j = await r.json();
+    const days = j.days || {};
+    const keys = Object.keys(days).sort();
+    if (!keys.length){ box.innerHTML = '<p class="muted">No open times in the next couple of weeks. Email <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a> and we\'ll find one.</p>'; return; }
+    box.innerHTML = keys.map(k => {
+      const dlabel = new Date(k+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+      const btns = days[k].map(s => `<button onclick='pick(${JSON.stringify(s.start)}, this)'>${s.label.replace(/^[A-Za-z]{3,} /, "").replace(/^[A-Za-z]{3,}, /, "")}</button>`).join("");
+      return `<div class="day"><h3>${dlabel}</h3><div class="times">${btns}</div></div>`;
+    }).join("");
+  } catch(e){ box.innerHTML = '<p class="muted">Could not load times. Email <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a>.</p>'; }
+}
+
+function pick(startISO, el){
+  SELECTED = startISO;
+  document.querySelectorAll(".times button").forEach(b=>b.classList.remove("sel"));
+  el.classList.add("sel");
+  document.getElementById("form").style.display = "block";
+  syncBtn();
+  document.getElementById("f-name").focus();
+}
+function syncBtn(){
+  const ok = SELECTED && document.getElementById("f-name").value.trim() && document.getElementById("f-email").value.trim();
+  document.getElementById("confirmBtn").disabled = !ok;
+}
+["f-name","f-email"].forEach(id=>document.getElementById(id).addEventListener("input",syncBtn));
+
+async function submitBooking(){
+  const btn = document.getElementById("confirmBtn"); btn.disabled = true; btn.textContent = "Booking…";
+  const res = document.getElementById("result"); res.className = "result"; res.style.display="none";
+  const payload = { token: TOKEN, type: TYPE, start: SELECTED,
+    name: document.getElementById("f-name").value.trim(),
+    email: document.getElementById("f-email").value.trim(),
+    phone: document.getElementById("f-phone").value.trim(),
+    note: document.getElementById("f-note").value.trim() };
+  try {
+    const r = await fetch(`${FN}/booking-create`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+    const j = await r.json();
+    if (r.status === 409 || j.reselect){ res.className="result err"; res.textContent = "That time was just taken. Please pick another."; btn.textContent = TYPE==="demo"?"Request this time":"Confirm my time"; SELECTED=null; loadSlots(); return; }
+    if (!j.ok){ res.className="result err"; res.textContent = j.error || "Something went wrong. Please try again."; btn.disabled=false; btn.textContent = TYPE==="demo"?"Request this time":"Confirm my time"; return; }
+    if (j.status === "pending_partner"){ res.className="result ok"; res.textContent = j.message || "Your request was sent for confirmation. You'll get an email shortly."; document.getElementById("form").style.display="none"; document.getElementById("slots").style.display="none"; return; }
+    // intro booked -> go to the nurture page
+    location.href = j.redirect || ("confirmed.html" + (TOKEN?("?p="+encodeURIComponent(TOKEN)):""));
+  } catch(e){ res.className="result err"; res.textContent = "Network hiccup. Please try again."; btn.disabled=false; btn.textContent = TYPE==="demo"?"Request this time":"Confirm my time"; }
+}
+
+setType(TYPE);
+</script>
 <script src="funnel-assets/track.js"></script>
 </body>
 </html>
