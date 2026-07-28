@@ -1332,12 +1332,13 @@ async function loadCockpit(){
   const box=document.getElementById('cockpit-body');
   box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
   const today=new Date().toISOString().slice(0,10);
-  const [pr,bk,rep,ql,mdrxd]=await Promise.all([
+  const [pr,bk,rep,ql,mdrxd,enr]=await Promise.all([
     sbClient.from('mdrx_providers').select('id,first_name,last_name,practice_name,funnel_stage,contact_home,next_step,funnel_next_date,intent_score,funnel_score,intent_tier,email,target_specialty,region,needs_attention,funnel_last_seen_at'),
     sbClient.from('bookings').select('*').gte('slot_start',today+'T00:00:00').lte('slot_start',today+'T23:59:59'),
     sbClient.from('funnel_replies').select('id,status').eq('status','pending'),
     sbClient.from('quote_links').select('recipient_name,recipient_email,practice,view_count,first_viewed_at,last_viewed_at,expires_at,revoked,note').eq('note','live').order('created_at',{ascending:false}),
-    sbClient.from('mdrx_inbox_drafts').select('id,from_name,from_addr,subject,sentiment,hot,status,provider_id').eq('status','pending')
+    sbClient.from('mdrx_inbox_drafts').select('id,from_name,from_addr,subject,sentiment,hot,status,provider_id').eq('status','pending'),
+    sbClient.from('enrichment_suggestions').select('*').eq('status','pending').order('confidence')
   ]);
   if(pr.error){box.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load cockpit: '+ehtml(pr.error.message)+'</div>';return;}
   const P=pr.data||[];
@@ -1346,6 +1347,7 @@ async function loadCockpit(){
   const mdrxDrafts=(mdrxd&&!mdrxd.error&&mdrxd.data)?mdrxd.data:[];
   const mdrxNeedReply=mdrxDrafts.filter(d=>d.sentiment!=='decline'&&d.sentiment!=='optout');
   const mdrxHot=mdrxNeedReply.filter(d=>d.hot);
+  const enrichList=(enr&&!enr.error&&enr.data)?enr.data:[];
   const approvals=(rep.data||[]).length+mdrxNeedReply.length;
   const apBadge=document.getElementById('cockpit-approvals'); if(apBadge){apBadge.textContent=approvals;apBadge.style.display=approvals?'':'none';}
   const hottest=P.filter(p=>(p.contact_home==='Pipeline'||ckScore(p)>=15)&&!['Won','Lost'].includes(p.funnel_stage)).sort((a,b)=>ckScore(b)-ckScore(a)).slice(0,8);
@@ -1363,6 +1365,9 @@ async function loadCockpit(){
   const qlOpened=qlLinks.filter(l=>(l.view_count||0)>0);
   const ckDT=s=>{if(!s)return'';const d=new Date(s);return d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});};
   const matHtml=qlLinks.length?qlLinks.map(l=>{const op=(l.view_count||0)>0;return `<div class="row"><div class="meta"><div class="nm">${ehtml(l.recipient_name||l.recipient_email||'')}${l.revoked?' <span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);">revoked</span>':''}</div><div class="ds">${ehtml(l.practice||l.recipient_email||'')}</div></div><div style="text-align:right;">${op?('<div style="font-weight:700;color:var(--green);">Opened</div><div style="font-size:11px;color:var(--muted);">'+l.view_count+' view'+(l.view_count>1?'s':'')+' · last '+ckDT(l.last_viewed_at)+'</div>'):'<div style="color:var(--muted);font-size:13px;">Sent · not opened yet</div>'}</div></div>`;}).join(''):'<div style="color:var(--muted);font-size:13px;padding:6px 0;">No dispensing tools sent yet.</div>';
+  const ckEnrPill=c=>{const m=c==='high'?['#eaf7f0','#1e9e6a']:c==='medium'?['#fff8e8','#9a6700']:['#f3e6e6','#a03434'];return `<span class="nb" style="display:inline-block;background:${m[0]};color:${m[1]};">${ehtml(c||'')}</span>`;};
+  const ckPName=id=>{const p=P.find(x=>x.id===id);return p?ckName(p):('#'+id);};
+  const enrHtml=enrichList.length?enrichList.map(s=>`<div class="row"><div class="meta"><div class="nm">${ehtml(ckPName(s.provider_id))} ${ckEnrPill(s.confidence)}</div><div class="ds">${ehtml(s.summary||'')}</div></div><div style="display:flex;gap:6px;flex-shrink:0;"><button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;" onclick="mdrxConfirmEnrich(${s.id},${s.provider_id})">Confirm</button><button class="ib" onclick="mdrxRejectEnrich(${s.id})">Reject</button></div></div>`).join(''):'';
   box.innerHTML=`
     <style>#view-cockpit .row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border2);}#view-cockpit .row:last-child{border-bottom:none;}#view-cockpit .meta{flex:1;min-width:0;}#view-cockpit .nm{font-size:14px;font-weight:600;}#view-cockpit .ds{font-size:12px;color:var(--muted);}#view-cockpit .grp{padding:2px 14px;}</style>
     <div class="kpi-row" style="margin-bottom:16px;">
@@ -1371,6 +1376,7 @@ async function loadCockpit(){
       ${kpi('Hot leads',hottest.length,'score 15+','green')}
       ${kpi('Due today',due.length,'follow-ups','blue')}
       ${kpi('Materials opened',qlOpened.length,qlLinks.length+' tool link'+(qlLinks.length===1?'':'s')+' sent','green')}
+      ${enrichList.length?kpi('To confirm',enrichList.length,'data matches found','purple'):''}
       ${kpi('Pipeline',homeCount['Pipeline']||0,(homeCount['Leads']||0)+' leads','blue')}
     </div>
     <div style="display:flex;gap:16px;flex-wrap:wrap;">
@@ -1381,9 +1387,25 @@ async function loadCockpit(){
       <div style="flex:1;min-width:280px;">
         <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">🔥 Hottest leads</div><div class="ps">By priority score (list intent + engagement)</div></div><div class="grp" style="margin:0;border:none;">${hotHtml}</div></div>
         <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">📄 Materials opened</div><div class="ps">${qlOpened.length} of ${qlLinks.length} opened their dispensing tool. Opens tracked per person.</div></div><div class="grp" style="margin:0;border:none;">${matHtml}</div></div>
+        ${enrichList.length?`<div class="panel" style="margin-bottom:16px;border-left:3px solid var(--steel,#6B9FD4);"><div class="ph"><div class="pt">🔎 Enrichment to confirm</div><div class="ps">The data agent found likely matches for thin records. Confirm to fill them in, or reject.</div></div><div class="grp" style="margin:0;border:none;">${enrHtml}</div></div>`:''}
       </div>
     </div>
     <div class="panel" style="margin-bottom:0;"><div class="ph"><div class="pt">⏰ Due today (${due.length})</div><div class="ps">Every contact with an action due. Nothing sits idle.</div></div><div class="grp" style="margin:0;border:none;">${dueHtml}</div></div>`;
+}
+async function mdrxConfirmEnrich(id,provId){
+  const {data:s}=await sbClient.from('enrichment_suggestions').select('found').eq('id',id).maybeSingle();
+  if(!s){showToast('Suggestion not found');return;}
+  const f=s.found||{}; const patch={};
+  ['npi','credentials','specialty','address','city','state','zip','office_phone'].forEach(k=>{ if(f[k]) patch[k]=f[k]; });
+  if(!Object.keys(patch).length){showToast('Nothing to write');return;}
+  const {error}=await sbClient.from('mdrx_providers').update(patch).eq('id',provId);
+  if(error){showToast('Error: '+error.message);return;}
+  await sbClient.from('enrichment_suggestions').update({status:'confirmed',resolved_at:new Date().toISOString()}).eq('id',id);
+  showToast('Record enriched ✓'); loadCockpit();
+}
+async function mdrxRejectEnrich(id){
+  await sbClient.from('enrichment_suggestions').update({status:'rejected',resolved_at:new Date().toISOString()}).eq('id',id);
+  showToast('Suggestion dismissed'); loadCockpit();
 }
 // ---- Pipeline board (Task 7) ----------------------------------------------
 const PIPE_STAGES=['New','Queued','Contacted','Engaged','Replied','Materials Sent','Meeting Booked','Met','Follow-up','Closing','Won','Not Now','Lost','Unsubscribed'];
