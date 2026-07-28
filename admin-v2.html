@@ -274,6 +274,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" onclick="showView('funnel',this)"><span class="ni-ic">🎯</span> Funnel Engagement <span class="nb" id="funnel-hot" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('booking',this)"><span class="ni-ic">📅</span> Booking &amp; Availability <span class="nb" id="booking-pending" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('pipeline',this)"><span class="ni-ic">📊</span> Pipeline <span class="nb" id="pipe-due" style="display:none;">0</span></button>
+    <button class="ni" onclick="showView('replies',this)"><span class="ni-ic">📨</span> Replies <span class="nb" id="replies-pending" style="display:none;">0</span></button>
     <div class="ns">Analytics</div>
     <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
     <button class="ni" onclick="showView('analytics',this)"><span class="ni-ic">📊</span> Analytics</button>
@@ -455,6 +456,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <!-- PIPELINE VIEW -->
   <div class="view" id="view-pipeline">
     <div id="pipeline-body" style="color:var(--muted);padding:8px 2px;">Loading pipeline…</div>
+  </div>
+
+  <!-- REPLIES VIEW -->
+  <div class="view" id="view-replies">
+    <div id="replies-body" style="color:var(--muted);padding:8px 2px;">Loading replies…</div>
   </div>
 
   <!-- ACCESS LOG VIEW -->
@@ -1169,7 +1175,7 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',booking:'Booking & Availability',pipeline:'Pipeline',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',access:'Access Log',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',booking:'Booking & Availability',pipeline:'Pipeline',replies:'Replies',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',access:'Access Log',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
@@ -1178,6 +1184,7 @@ function showView(v,btn){
   if(v==='funnel')loadFunnel();
   if(v==='booking')loadBooking();
   if(v==='pipeline')loadPipeline();
+  if(v==='replies')loadReplies();
   if(v==='tools')renderTools();
   if(v==='analytics')loadAnalytics();
   if(v==='access')loadAccessLog();
@@ -1355,6 +1362,62 @@ async function loadPipeline(){
       <div class="ph"><div class="pt">🚫 Suppression list (${supp.length})</div><div class="ps">Opt-outs and unsubscribes. Checked before every send. Never re-imported, for any client.</div></div>
       <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Email</th><th>Source</th><th>When</th></tr></thead><tbody>${supRows||'<tr><td colspan="3" style="color:var(--muted);padding:14px;">No opt-outs yet.</td></tr>'}</tbody></table></div>
     </div>`;
+}
+// ---- Replies review (Task 5) ----------------------------------------------
+let FUNNEL_REPLIES=[];
+const REPLY_MATERIALS=[
+  {filename:'MDRx-Overview.pdf',path:'https://mdconcierge.net/docs/mdrx-overview.pdf'},
+  {filename:'Siegel-700-Pharmacy.pdf',path:'https://mdconcierge.net/docs/siegel-700pharmacy.pdf'},
+  {filename:'Gosfield-Factoring.pdf',path:'https://mdconcierge.net/docs/gosfield-factoring.pdf'}
+];
+function replyClsPill(c){const m={wants_call:['#eaf7f0','#1e9e6a'],wants_materials:['#eef5fc','#1a4e8a'],compliance:['#fff8e8','#9a6700'],how_it_works:['#eef5fc','#1a4e8a'],economics:['#eef5fc','#1a4e8a'],not_now:['#f3efe6','#8a6d1e'],not_interested:['#f3e6e6','#a03434'],unsubscribe:['#f3e6e6','#a03434'],other:['#eee','#555']}[c]||['#eee','#555'];return `<span class="nb" style="display:inline-block;background:${m[0]};color:${m[1]};">${ehtml((c||'').replace(/_/g,' '))}</span>`;}
+async function loadReplies(){
+  const box=document.getElementById('replies-body');
+  box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
+  const {data,error}=await sbClient.from('funnel_replies').select('*').order('created_at',{ascending:false});
+  if(error){box.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load replies: '+ehtml(error.message)+'<div style="color:var(--muted);font-size:12px;margin-top:8px;">If the table is missing, the replies migration has not run yet.</div></div>';return;}
+  FUNNEL_REPLIES=data||[];
+  const pending=FUNNEL_REPLIES.filter(r=>r.status==='pending');
+  const handled=FUNNEL_REPLIES.filter(r=>r.status!=='pending').slice(0,30);
+  const badge=document.getElementById('replies-pending'); if(badge){badge.textContent=pending.length;badge.style.display=pending.length?'':'none';}
+  const card=(r)=>{
+    const auto=r.status==='auto_handled';
+    return `<div class="panel" style="margin-bottom:14px;">
+      <div class="ph"><div class="pt">${ehtml(r.from_name||r.from_addr||'')} ${replyClsPill(r.classification)}</div><div class="ps">${ehtml(r.from_addr||'')} &middot; ${ehtml(r.subject||'')} &middot; ${ehtml((r.received_at||r.created_at||'').slice(0,16).replace('T',' '))}</div></div>
+      <div style="padding:12px 14px 16px;">
+        <div style="background:var(--border2);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--muted2);margin-bottom:10px;white-space:pre-wrap;">${ehtml(r.snippet||'(no text)')}</div>
+        ${auto?'<div class="note" style="margin:0;">Auto-handled: opt-out honored, address suppressed, stage set to Unsubscribed. No reply needed.</div>':`
+        <textarea id="rdraft-${r.id}" class="ib" style="width:100%;min-height:120px;font-size:14px;line-height:1.5;">${ehtml(r.draft_reply||'')}</textarea>
+        <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <button class="btn" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;" onclick="replyAction(${r.id},'send')">Approve &amp; Send</button>
+          <button class="btn" style="background:#1a4e8a;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;" onclick="replyAction(${r.id},'materials')">Send + attach 3 PDFs</button>
+          <button class="btn" style="background:#eee;color:#555;border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;" onclick="replyAction(${r.id},'dismiss')">Dismiss</button>
+          <span id="rmsg-${r.id}" style="font-size:12.5px;"></span>
+        </div>`}
+      </div></div>`;
+  };
+  box.innerHTML=`
+    <div class="panel" style="margin-bottom:16px;border-left:3px solid var(--gold);"><div style="padding:11px 14px;font-size:13.5px;">The reply agent classifies every reply, honors opt-outs automatically, and drafts a grounded response for you to approve. <b>Nothing sends without your click.</b></div></div>
+    <div class="ph" style="margin:4px 2px 10px;"><div class="pt">Pending (${pending.length})</div></div>
+    ${pending.map(card).join('')||'<div class="panel" style="padding:16px;color:var(--muted);">No replies waiting. New physician replies show up here within ~15 minutes.</div>'}
+    ${handled.length?('<div class="ph" style="margin:20px 2px 10px;"><div class="pt">Recently handled</div></div>'+handled.map(r=>`<div class="panel" style="margin-bottom:8px;"><div style="padding:10px 14px;font-size:13px;"><b>${ehtml(r.from_name||r.from_addr)}</b> ${replyClsPill(r.classification)} <span class="nb" style="display:inline-block;background:#eee;color:#555;">${ehtml(r.status)}</span> <span style="color:var(--muted);">${ehtml(r.subject||'')}</span></div></div>`).join('')):''}`;
+}
+async function replyAction(id,mode){
+  const r=FUNNEL_REPLIES.find(x=>x.id===id); if(!r)return;
+  const msg=document.getElementById('rmsg-'+id);
+  if(mode==='dismiss'){ await sbClient.from('funnel_replies').update({status:'dismissed'}).eq('id',id); loadReplies(); return; }
+  const ta=document.getElementById('rdraft-'+id); const text=(ta?ta.value:r.draft_reply||'').trim();
+  if(!text){ if(msg){msg.style.color='#a03434';msg.textContent='Draft is empty.';} return; }
+  if(msg){msg.style.color='var(--muted2)';msg.textContent='Sending…';}
+  const attach=(mode==='materials'||r.suggested_action==='send_materials')?REPLY_MATERIALS:[];
+  const subject=/^re:/i.test(r.subject||'')?r.subject:('Re: '+(r.subject||'MDconcierge'));
+  try{
+    const {error}=await sbClient.functions.invoke('send-mail',{body:{to:[r.from_addr],subject,text,attachments:attach}});
+    if(error)throw error;
+    await sbClient.from('funnel_replies').update({status:'sent',draft_reply:text}).eq('id',id);
+    if(msg){msg.style.color='var(--green)';msg.textContent='Sent.';}
+    setTimeout(loadReplies,700);
+  }catch(e){ if(msg){msg.style.color='#a03434';msg.textContent='Send failed: '+(e.message||e);} }
 }
 async function loadAnalytics(){
   const box=document.getElementById('analytics-body');

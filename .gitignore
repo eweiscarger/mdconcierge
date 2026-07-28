@@ -11,6 +11,7 @@ mdrx-crm-migration.sql
 funnel-migration.sql
 booking-migration.sql
 pipeline-migration.sql
+replies-migration.sql
 
 # Local audio audition artifacts — not used by the live site.
 assets/audio/sample_*.mp3
