@@ -2003,7 +2003,7 @@ function mdrxDetailHtml(id){
     <button class="ib" onclick="mdrxDocusign()">📄 Request DocuSign contract</button>
     <button class="ib" onclick="mdrxQuote()">🧮 Generate quote</button>
   </div><div id="mdrx-action-panel" style="margin:0 0 6px;"></div>`;
-  const timeline=isNew?'':`<div class="panel" style="margin-top:14px;"><div class="ph"><div class="pt">Activity timeline</div></div><div id="mdrx-compose"></div><div id="mdrx-timeline" style="padding:6px 14px 14px;">Loading…</div></div>`;
+  const timeline=isNew?'':`<div class="panel" style="margin-top:14px;"><div class="ph" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><div class="pt">Activity timeline</div><button class="ib" onclick="mdrxBrief(${id})">🧾 Pre-call brief</button></div><div id="mdrx-compose"></div><div id="mdrx-timeline" style="padding:6px 14px 14px;">Loading…</div></div>`;
   const importBar=`<div style="background:rgba(107,149,212,.08);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
       <div style="font-size:12px;font-weight:700;color:var(--steel,#6B9FD4);margin-bottom:6px;">⚡ Add by URL</div>
       <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px;">Paste a practice website or a physician's profile page and I'll try to fill the fields for you. Review everything before saving.</div>
@@ -2064,13 +2064,46 @@ async function mdrxDelete(id){
 }
 async function mdrxLoadTimeline(id){
   if(!id)return; const el=document.getElementById('mdrx-timeline'); if(!el)return;
-  const {data,error}=await sbClient.from('mdrx_activity').select('*').eq('provider_id',id).order('occurred_at',{ascending:false});
-  if(error){el.innerHTML='<span style="color:#c0392b;">'+ehtml(error.message)+'</span>';return;}
-  MDRX_ACT=data||[];
-  if(!MDRX_ACT.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">No activity yet. Use the buttons above to log a call, meeting, or note.</div>';return;}
-  const icon={call:'📞',meeting:'🤝',email_out:'📤',email_in:'📥',note:'📝',task:'✅'};
-  el.innerHTML=MDRX_ACT.map(a=>`<div style="border-left:2px solid var(--border2);padding:6px 0 6px 12px;margin-bottom:4px;"><div style="font-size:12.5px;"><b>${icon[a.type]||''} ${ehtml(a.subject||a.type)}</b> <span style="color:var(--muted);font-size:11px;">${String(a.occurred_at||'').slice(0,16).replace('T',' ')}</span></div>${a.notes?`<div style="font-size:12px;color:var(--muted2);margin-top:2px;white-space:pre-wrap;">${ehtml(a.notes)}</div>`:''}</div>`).join('');
+  const [act,ev,dr,ql]=await Promise.all([
+    sbClient.from('mdrx_activity').select('*').eq('provider_id',id),
+    sbClient.from('mdrx_funnel_events').select('event,page,link,cta,scroll,seconds,created_at').eq('provider_id',id).order('created_at',{ascending:false}).limit(120),
+    sbClient.from('mdrx_inbox_drafts').select('subject,snippet,sentiment,received_at').eq('provider_id',id),
+    sbClient.from('quote_links').select('recipient_name,view_count,first_viewed_at,last_viewed_at').eq('provider_id',id)
+  ]);
+  MDRX_ACT=act.data||[];  // manual activity only (used for prior-touch counting)
+  const items=[];
+  const aicon={call:'📞',meeting:'🤝',email_out:'📤',email_in:'📥',note:'📝',task:'✅'};
+  (act.data||[]).forEach(a=>items.push({when:a.occurred_at||a.created_at,icon:aicon[a.type]||'•',title:a.subject||a.type,detail:a.notes}));
+  (ev.data||[]).forEach(e=>{
+    let icon='•',title='';
+    if(e.event==='open'){icon='👁️';title='Opened '+(e.page||'a funnel page');}
+    else if(e.event==='click'){icon='🔗';title='Clicked '+(e.link||'a link');}
+    else if(e.event==='cta'){icon='👉';title='CTA: '+(e.cta||'');}
+    else if(e.event==='engage'){icon='📈';title='Read '+(e.scroll?e.scroll+'% ':'')+(e.seconds?'· '+e.seconds+'s on page':'');}
+    else return;
+    items.push({when:e.created_at,icon,title,detail:''});
+  });
+  (dr.data||[]).forEach(d=>items.push({when:d.received_at,icon:'📨',title:'Replied'+(d.subject?': '+d.subject:''),detail:(d.sentiment?'['+d.sentiment+'] ':'')+(d.snippet||'')}));
+  (ql.data||[]).forEach(q=>{ if(q.first_viewed_at)items.push({when:q.first_viewed_at,icon:'📄',title:'Opened the dispensing tool',detail:(q.view_count||0)+' view'+(q.view_count===1?'':'s')+(q.last_viewed_at&&q.last_viewed_at!==q.first_viewed_at?' · last '+String(q.last_viewed_at).slice(0,16).replace('T',' '):'')}); });
+  items.sort((a,b)=>String(b.when||'').localeCompare(String(a.when||'')));
+  if(!items.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">No activity yet. Use the buttons above to log a call, meeting, or note.</div>';return;}
+  el.innerHTML=items.map(a=>`<div style="border-left:2px solid var(--border2);padding:6px 0 6px 12px;margin-bottom:4px;"><div style="font-size:12.5px;"><b>${a.icon} ${ehtml(a.title)}</b> <span style="color:var(--muted);font-size:11px;">${String(a.when||'').slice(0,16).replace('T',' ')}</span></div>${a.detail?`<div style="font-size:12px;color:var(--muted2);margin-top:2px;white-space:pre-wrap;">${ehtml(a.detail)}</div>`:''}</div>`).join('');
 }
+async function mdrxBrief(id){
+  let ov=document.getElementById('mdrx-brief-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='mdrx-brief-ov'; ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px;'; document.body.appendChild(ov); }
+  ov.innerHTML=`<div style="background:var(--bg,#0a1226);border:1px solid var(--border2);border-radius:14px;max-width:580px;width:100%;max-height:86vh;overflow:auto;padding:18px 20px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;"><div style="font-weight:700;font-size:15px;flex:1;">🧾 Pre-call brief</div><button class="ib" onclick="mdrxPrintBrief()">Print</button><span onclick="document.getElementById('mdrx-brief-ov').remove()" style="cursor:pointer;color:var(--muted);font-size:20px;line-height:1;">&times;</span></div>
+    <div id="mdrx-brief-body" style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;color:var(--text);">Generating brief…</div></div>`;
+  ov.style.display='flex';
+  try{
+    const {data,error}=await sbClient.functions.invoke('precall-brief',{body:{provider_id:id}});
+    const body=document.getElementById('mdrx-brief-body'); if(!body)return;
+    if(error||!data||!data.ok){ body.innerHTML='<span style="color:#c0392b;">Could not generate: '+ehtml((error&&error.message)||(data&&data.error)||'error')+'</span>'; return; }
+    body.innerHTML=(typeof asstFmt==='function')?asstFmt(data.brief):ehtml(data.brief);
+  }catch(e){ const body=document.getElementById('mdrx-brief-body'); if(body)body.innerHTML='Error: '+ehtml(e&&e.message||e); }
+}
+function mdrxPrintBrief(){ const b=document.getElementById('mdrx-brief-body'); if(!b)return; const w=window.open('','_blank'); if(!w)return; w.document.write('<html><head><title>Pre-call brief</title></head><body style="font-family:Arial,sans-serif;padding:24px;max-width:640px;line-height:1.6;color:#111;">'+b.innerHTML+'</body></html>'); w.document.close(); setTimeout(()=>{try{w.print();}catch(e){}},250); }
 function mdrxCompose(type){
   const c=document.getElementById('mdrx-compose'); if(!c)return;
   const p=MDRX_PROV.find(x=>x.id===mdrxOpenId)||{};
