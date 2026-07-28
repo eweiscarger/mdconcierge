@@ -25,6 +25,7 @@ body{margin:0;background:var(--cream);color:var(--ink);
 h1{font-size:30px;line-height:1.18;letter-spacing:-.02em;margin:10px 0 12px;color:#0c1830;}
 @media(max-width:560px){h1{font-size:24px;}}
 h1 .hl{background:linear-gradient(transparent 62%, var(--highlight) 62%);padding:0 2px;}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);margin:24px 0 8px;}
 .lead{font-size:16.5px;color:#2b323d;margin:10px 0;}
 p{margin:10px 0;color:#33404f;}
 .sub{color:var(--muted);font-size:15.5px;}
