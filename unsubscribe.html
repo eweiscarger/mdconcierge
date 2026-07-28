@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>MDconcierge — Unsubscribe</title>
+<link rel="icon" href="assets/brand/favicon-32.png"/>
+<link rel="stylesheet" href="funnel-assets/funnel.css"/>
+</head>
+<body data-funnel-page="unsubscribe">
+<div class="wrap">
+  <div class="topbar"><img src="assets/brand/logo.png" alt="MDconcierge"/></div>
+  <div class="card"><div class="body" id="box">
+    <h1>One moment&hellip;</h1>
+    <p class="lead">Updating your preferences.</p>
+  </div></div>
+  <div class="foot">MDconcierge &middot; <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a></div>
+</div>
+<script>
+const FN = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/unsubscribe";
+const p = new URLSearchParams(location.search).get("p") || "";
+const box = document.getElementById("box");
+(async function(){
+  if(!p){ box.innerHTML = '<h1>Link not recognized</h1><p class="lead">This unsubscribe link is missing its code. Reply to any email and we\'ll remove you right away.</p>'; return; }
+  try {
+    const r = await fetch(FN, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ p }) });
+    const j = await r.json();
+    if (j.ok){ box.innerHTML = '<h1>You\'re unsubscribed.</h1><p class="lead">You will not receive any further emails from MDconcierge. If this was a mistake, reply to any prior email and we\'ll fix it.</p>'; }
+    else { box.innerHTML = '<h1>Link not recognized</h1><p class="lead">Reply to any email and we\'ll remove you right away.</p>'; }
+  } catch(e){ box.innerHTML = '<h1>Please try again</h1><p class="lead">We could not reach the server. Refresh this page, or reply to any email and we\'ll remove you.</p>'; }
+})();
+</script>
+</body>
+</html>
