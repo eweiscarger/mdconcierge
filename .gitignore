@@ -17,3 +17,4 @@ replies-migration.sql
 assets/audio/sample_*.mp3
 assets/audio/music_verslavant_backup.mp3
 voicepick.html
+crm-phase1-migration.sql
