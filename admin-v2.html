@@ -1332,17 +1332,21 @@ async function loadCockpit(){
   const box=document.getElementById('cockpit-body');
   box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
   const today=new Date().toISOString().slice(0,10);
-  const [pr,bk,rep,ql]=await Promise.all([
+  const [pr,bk,rep,ql,mdrxd]=await Promise.all([
     sbClient.from('mdrx_providers').select('id,first_name,last_name,practice_name,funnel_stage,contact_home,next_step,funnel_next_date,intent_score,funnel_score,intent_tier,email,target_specialty,region,needs_attention,funnel_last_seen_at'),
     sbClient.from('bookings').select('*').gte('slot_start',today+'T00:00:00').lte('slot_start',today+'T23:59:59'),
     sbClient.from('funnel_replies').select('id,status').eq('status','pending'),
-    sbClient.from('quote_links').select('recipient_name,recipient_email,practice,view_count,first_viewed_at,last_viewed_at,expires_at,revoked,note').eq('note','live').order('created_at',{ascending:false})
+    sbClient.from('quote_links').select('recipient_name,recipient_email,practice,view_count,first_viewed_at,last_viewed_at,expires_at,revoked,note').eq('note','live').order('created_at',{ascending:false}),
+    sbClient.from('mdrx_inbox_drafts').select('id,from_name,from_addr,subject,sentiment,hot,status,provider_id').eq('status','pending')
   ]);
   if(pr.error){box.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load cockpit: '+ehtml(pr.error.message)+'</div>';return;}
   const P=pr.data||[];
   const bookingsToday=(bk.data||[]).filter(b=>b.status!=='canceled');
   const pipeMeet=P.filter(p=>['Meeting Booked','Closing','Met'].includes(p.funnel_stage)&&p.funnel_next_date===today);
-  const approvals=(rep.data||[]).length;
+  const mdrxDrafts=(mdrxd&&!mdrxd.error&&mdrxd.data)?mdrxd.data:[];
+  const mdrxNeedReply=mdrxDrafts.filter(d=>d.sentiment!=='decline'&&d.sentiment!=='optout');
+  const mdrxHot=mdrxNeedReply.filter(d=>d.hot);
+  const approvals=(rep.data||[]).length+mdrxNeedReply.length;
   const apBadge=document.getElementById('cockpit-approvals'); if(apBadge){apBadge.textContent=approvals;apBadge.style.display=approvals?'':'none';}
   const hottest=P.filter(p=>(p.contact_home==='Pipeline'||ckScore(p)>=15)&&!['Won','Lost'].includes(p.funnel_stage)).sort((a,b)=>ckScore(b)-ckScore(a)).slice(0,8);
   const due=P.filter(p=>p.funnel_next_date&&p.funnel_next_date<=today&&['Leads','Pipeline'].includes(p.contact_home)&&!['Won','Lost'].includes(p.funnel_stage)).sort((a,b)=>(a.funnel_next_date||'').localeCompare(b.funnel_next_date||''));
@@ -1372,7 +1376,7 @@ async function loadCockpit(){
     <div style="display:flex;gap:16px;flex-wrap:wrap;">
       <div style="flex:1;min-width:280px;">
         <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">📅 Today's meetings</div></div><div class="grp" style="margin:0;border:none;">${meetHtml}</div></div>
-        <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">✅ Needs your approval</div><div class="ps">${approvals?('<b>'+approvals+'</b> reply draft(s) waiting'):'Nothing waiting'}</div></div><div style="padding:10px 14px;">${approvals?'<a href="javascript:void(0)" onclick="showView(\'replies\',document.querySelector(\'[onclick*=replies]\'))" style="font-weight:700;color:var(--gold);">Review '+approvals+' now →</a>':'<span style="color:var(--muted);font-size:13px;">You are all caught up.</span>'}</div></div>
+        <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">✅ Needs your approval</div><div class="ps">${approvals?('<b>'+approvals+'</b> reply draft(s) waiting'+(mdrxHot.length?' &middot; <span style="color:#c0392b;font-weight:700;">'+mdrxHot.length+' hot</span>':'')):'Nothing waiting'}</div></div><div style="padding:10px 14px;">${approvals?((rep.data||[]).length?'<a href="javascript:void(0)" onclick="showView(\'replies\',document.querySelector(\'[onclick*=replies]\'))" style="font-weight:700;color:var(--gold);display:block;margin-bottom:4px;">Funnel replies: '+(rep.data||[]).length+' &rarr;</a>':'')+(mdrxNeedReply.length?'<a href="javascript:void(0)" onclick="showView(\'mdrx\',document.querySelector(\'[onclick*=mdrx]\'))" style="font-weight:700;color:var(--gold);">MDRx replies: '+mdrxNeedReply.length+' &rarr;</a>':''):'<span style="color:var(--muted);font-size:13px;">You are all caught up.</span>'}</div></div>
       </div>
       <div style="flex:1;min-width:280px;">
         <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">🔥 Hottest leads</div><div class="ps">By priority score (list intent + engagement)</div></div><div class="grp" style="margin:0;border:none;">${hotHtml}</div></div>
@@ -2275,11 +2279,17 @@ async function mdrxEmailSend(kind){
   showToast('Sent ✓'); await loadMdrx();
 }
 /* ----- Inbox assistant: scan eric@ for MDRx replies, draft, approve-and-send ----- */
+function mdrxSentPill(s){
+  const m={workable:['#eaf7f0','#1e9e6a','workable'],decline:['#f3efe6','#8a6d1e','decline'],optout:['#f3e6e6','#a03434','opt-out']}[s];
+  if(!m)return '';
+  return `<span class="nb" style="display:inline-block;background:${m[0]};color:${m[1]};">${m[2]}</span>`;
+}
 function mdrxInboxHtml(){
   const list=MDRX_DRAFTS.filter(d=>d.status==='pending');
   const items=list.map(d=>{
     const when=String(d.received_at||'').slice(0,16).replace('T',' ');
     const prov=d.provider_id?MDRX_PROV.find(p=>p.id===d.provider_id):null;
+    const auto=d.sentiment==='decline'||d.sentiment==='optout';
     return `<div class="panel" style="margin-bottom:12px;padding:14px;">
       <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;">
         <b style="font-size:13.5px;">${ehtml(d.from_name||d.from_addr)}</b>
@@ -2288,10 +2298,12 @@ function mdrxInboxHtml(){
         <span style="margin-left:auto;font-size:11px;color:var(--muted);">${when}</span>
       </div>
       <div style="font-weight:700;font-size:13px;margin:6px 0 4px;">${ehtml(d.subject||'(no subject)')}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">${mdrxSentPill(d.sentiment)}${d.hot?'<span class="nb" style="display:inline-block;background:#fff1f0;color:#c0392b;">🔥 hot</span>':''}${d.routed_action&&d.routed_action!=='none'?'<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);">→ '+ehtml(d.routed_action)+'</span>':''}</div>
       <div style="font-size:12px;color:var(--muted2);background:rgba(255,255,255,.03);border-left:2px solid var(--border2);padding:6px 10px;margin-bottom:10px;white-space:pre-wrap;max-height:110px;overflow:auto;">${ehtml(d.snippet||'(no preview)')}</div>
+      ${auto?`<div style="font-size:12px;color:var(--muted);background:rgba(255,255,255,.03);border-left:2px solid var(--border2);padding:8px 10px;">Auto-routed to <b>${d.sentiment==='optout'?'Suppression (permanent opt-out)':'Not Interested'}</b>. No reply needed. <button class="ib" onclick="mdrxDismissDraft(${d.id})" style="margin-left:8px;">Clear</button></div>`:`
       <label style="display:block;font-size:11px;color:var(--steel,#6B9FD4);margin:0 0 4px;font-weight:700;">Your draft reply (edit before sending)</label>
       <textarea id="mdrx-draft-${d.id}" rows="7" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;font-family:inherit;line-height:1.5;">${ehtml(d.draft_reply||'')}</textarea>
-      <div style="margin-top:8px;"><button onclick="mdrxSendDraft(${d.id})" style="padding:8px 16px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">✅ Approve &amp; send</button> <button class="ib" onclick="mdrxDismissDraft(${d.id})">Dismiss</button></div>
+      <div style="margin-top:8px;"><button onclick="mdrxSendDraft(${d.id})" style="padding:8px 16px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">✅ Approve &amp; send</button> <button class="ib" onclick="mdrxDismissDraft(${d.id})">Dismiss</button></div>`}
     </div>`;
   }).join('')||'<div class="panel" style="padding:20px;color:var(--muted);">No reply drafts waiting. Hit "Scan inbox now" to check eric@ for new MDRx replies.</div>';
   return `<div class="panel" style="margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;padding:12px 14px;flex-wrap:wrap;">
