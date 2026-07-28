@@ -111,13 +111,13 @@ function render(expires){
   const expTxt = expires ? new Date(expires).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '';
   const oral = FORM.filter(f=>f.route==='Oral');
   const top  = FORM.filter(f=>f.route!=='Oral');
-  const opts = '<option value="">— select a medication —</option>'
+  const opts = '<option value="">Select a medication</option>'
     + '<optgroup label="Oral">'    + oral.map(f=>`<option value="${f.id}">${esc(f.product)}</option>`).join('') + '</optgroup>'
     + '<optgroup label="Topical">' + top.map(f=>`<option value="${f.id}">${esc(f.product)}</option>`).join('')  + '</optgroup>';
   window._OPTS = opts;
 
   app.innerHTML = `
-  <div id="conf">🔒 <b>CONFIDENTIAL</b> — Prepared exclusively for <b>${esc(REC.name||'')}</b>${REC.practice?' · '+esc(REC.practice):''}. Not for distribution.${expTxt?' This private link expires <b>'+expTxt+'</b>.':''}</div>
+  <div id="conf">🔒 <b>CONFIDENTIAL</b> · Prepared exclusively for <b>${esc(REC.name||'')}</b>${REC.practice?' · '+esc(REC.practice):''}. Not for distribution.${expTxt?' This private link expires <b>'+expTxt+'</b>.':''}</div>
   <div class="wrap">
     <header class="h">
       <div class="kicker">MDconcierge Pharmacy Partner</div>
@@ -127,7 +127,7 @@ function render(expires){
 
     <div class="card">
       <h2>How to use this</h2>
-      <p class="hint" style="margin-bottom:0;">Build your own medication mix below and the estimated practice revenue updates instantly. Every assumption is editable — the defaults are intentionally conservative (oral scripts modeled at 80% collections, topicals at 60%, and your practice keeping 65% of net). The full formulary, including product cost, is at the bottom.</p>
+      <p class="hint" style="margin-bottom:0;">Build your own medication mix below and the estimated practice revenue updates instantly. Every assumption is editable. The defaults are intentionally conservative (oral scripts modeled at 80% collections, topicals at 70%, and your practice keeping 65% of net). The full formulary, including product cost, is at the bottom.</p>
     </div>
 
     <div class="card">
@@ -137,7 +137,7 @@ function render(expires){
         <label>Patients / month<input id="a-pat" type="number" value="100" oninput="compute()"></label>
         <label>AWP multiplier<input id="a-mult" type="number" step="0.01" value="1.1" oninput="compute()"></label>
         <label>Oral collection %<input id="a-oc" type="number" value="80" oninput="compute()"></label>
-        <label>Topical collection %<input id="a-tc" type="number" value="60" oninput="compute()"></label>
+        <label>Topical collection %<input id="a-tc" type="number" value="70" oninput="compute()"></label>
         <label>Practice share %<input id="a-sh" type="number" value="65" oninput="compute()"></label>
       </div>
     </div>
