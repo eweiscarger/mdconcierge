@@ -2046,6 +2046,7 @@ function mdrxDetailHtml(id){
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
       <button class="ib" onclick="mdrxOpenId=null;renderMdrx()">← Back</button>
       <div style="font-weight:700;font-size:16px;flex:1;min-width:120px;">${isNew?'New provider':ehtml(mdrxProvName(p))}</div>
+      <button class="ib" onclick="mdrxOpenId=null;renderMdrx()" title="Close" style="font-size:15px;line-height:1;padding:7px 13px;font-weight:700;">✕ Close</button>
       ${id?`<button class="ib" style="color:#e0556b;" onclick="mdrxDelete(${id})">Delete</button>`:''}
       <button onclick="mdrxSave(${id||0})" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">${isNew?'Create provider':'Save changes'}</button>
     </div>${importBar}${form}${locsBlock}${buttons}
@@ -2246,28 +2247,38 @@ function mdrxHealth(p){
   return {tag:'Steady',color:'#6B9FD4',note:'steady'};
 }
 function mdrxHealthBadge(p){const h=mdrxHealth(p);return h?`<span style="font-size:10.5px;font-weight:700;color:${h.color};">● ${h.tag}</span>`:'';}
+function mdrxInflBadge(inf){
+  const m={decision_maker:['#fdf1d6','#8a6d1e','Decision maker'],influencer:['#efe6f7','#6b3fa0','Heavy influence'],staff:['#eee','#666','Staff']}[inf];
+  return m?`<span class="nb" style="display:inline-block;background:${m[0]};color:${m[1]};">${m[2]}</span>`:'';
+}
 function mdrxStaffHtml(p){
-  const list=MDRX_CONTACTS.filter(c=>c.provider_id===p.id);
+  // People at the whole practice (linked by practice OR to this doctor), decision makers first.
+  const list=MDRX_CONTACTS.filter(c=>c.provider_id===p.id||(c.practice_id&&p.practice_id&&c.practice_id===p.practice_id))
+    .sort((a,b)=>({decision_maker:0,influencer:1,staff:2}[a.influence]??3)-({decision_maker:0,influencer:1,staff:2}[b.influence]??3));
   const rows=list.map(c=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border2);padding:8px 0;">
-    <div style="flex:1;min-width:160px;"><b>${ehtml(c.name||'(no name)')}</b> ${c.is_champion?'<span style="font-size:10px;color:#2D6A4F;font-weight:700;">★ CHAMPION</span>':''}<div style="font-size:11.5px;color:var(--muted);">${ehtml([c.role,c.email,c.cell].filter(Boolean).join(' · '))}</div></div>
-    ${c.email?`<button class="ib" onclick="mdrxEmailContact(${c.id})">✉️ Email</button>`:''}<button class="ib" onclick="mdrxEditContact(${c.id})">Edit</button></div>`).join('')
-    ||'<div style="color:var(--muted);font-size:13px;padding:6px 0;">No staff yet. Add the office manager or MA who drives the scripts, they are the real champion.</div>';
-  return `<div class="panel" style="margin-top:14px;"><div class="ph"><div class="pt">👥 Champions &amp; office staff</div></div><div style="padding:6px 14px 14px;">${rows}<div id="mdrx-contact-edit"></div><button class="ib" style="margin-top:8px;" onclick="mdrxEditContact(0)">+ Add staff / champion</button></div></div>`;
+    <div style="flex:1;min-width:160px;"><b>${ehtml(c.name||'(no name)')}</b> ${mdrxInflBadge(c.influence)} ${c.is_champion?'<span style="font-size:11px;color:#2D6A4F;font-weight:700;">★</span>':''}<div style="font-size:11.5px;color:var(--muted);">${ehtml([c.title||c.role,c.email,c.cell].filter(Boolean).join(' · '))}</div>${c.notes?`<div style="font-size:11px;color:var(--muted2);margin-top:2px;">${ehtml(c.notes)}</div>`:''}</div>
+    ${c.email?`<button class="ib" onclick="mdrxEmailContact(${c.id})">✉️</button>`:''}<button class="ib" onclick="mdrxEditContact(${c.id})">Edit</button></div>`).join('')
+    ||'<div style="color:var(--muted);font-size:13px;padding:6px 0;">No people yet. Add the owner, the admins who decide (decision makers), and the office staff who really steer the scripts (heavy influence).</div>';
+  return `<div class="panel" style="margin-top:14px;"><div class="ph"><div class="pt">👥 People at this practice</div><div class="ps">Decision makers and the staff who steer the scripts.</div></div><div style="padding:6px 14px 14px;">${rows}<div id="mdrx-contact-edit"></div><button class="ib" style="margin-top:8px;" onclick="mdrxEditContact(0)">+ Add person</button></div></div>`;
 }
 function mdrxEditContact(id){
   const c=id?(MDRX_CONTACTS.find(x=>x.id===id)||{}):{};
   const box=document.getElementById('mdrx-contact-edit'); if(!box)return;
   const f='padding:7px 9px;border:1px solid var(--border2);border-radius:7px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
+  const infOpts=[['','Influence…'],['decision_maker','Decision maker'],['influencer','Heavy influence'],['staff','Staff']].map(o=>`<option value="${o[0]}"${(c.influence||'')===o[0]?' selected':''}>${o[1]}</option>`).join('');
   box.innerHTML=`<div style="border:1px solid var(--border2);border-radius:8px;padding:10px;margin-top:8px;">
-    <div style="display:flex;gap:6px;flex-wrap:wrap;"><input id="mdrx-c-name" placeholder="Name" value="${ehtml(c.name||'')}" style="${f}flex:1;min-width:120px;"><input id="mdrx-c-role" placeholder="Role (office mgr, MA…)" value="${ehtml(c.role||'')}" style="${f}flex:1;min-width:120px;"></div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;"><input id="mdrx-c-email" placeholder="Email" value="${ehtml(c.email||'')}" style="${f}flex:1;min-width:120px;"><input id="mdrx-c-cell" placeholder="Cell" value="${ehtml(c.cell||'')}" style="${f}flex:1;min-width:100px;"></div>
-    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted2);margin-top:8px;"><input type="checkbox" id="mdrx-c-champ" ${c.is_champion?'checked':''}> ★ This is the champion (drives the scripts)</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;"><input id="mdrx-c-name" placeholder="Name" value="${ehtml(c.name||'')}" style="${f}flex:1;min-width:120px;"><input id="mdrx-c-title" placeholder="Title (Practice Manager, Rx…)" value="${ehtml(c.title||c.role||'')}" style="${f}flex:1;min-width:120px;"></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;"><input id="mdrx-c-email" placeholder="Email" value="${ehtml(c.email||'')}" style="${f}flex:1;min-width:120px;"><input id="mdrx-c-cell" placeholder="Cell" value="${ehtml(c.cell||'')}" style="${f}flex:1;min-width:100px;"><select id="mdrx-c-infl" style="${f}min-width:130px;">${infOpts}</select></div>
+    <input id="mdrx-c-notes" placeholder="Notes (controls scripts, do not share financials…)" value="${ehtml(c.notes||'')}" style="${f}width:100%;margin-top:6px;box-sizing:border-box;">
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted2);margin-top:8px;"><input type="checkbox" id="mdrx-c-champ" ${c.is_champion?'checked':''}> ★ Champion (drives the scripts)</label>
     <div style="margin-top:8px;"><button class="ib" onclick="mdrxSaveContact(${id||0})">Save</button> ${id?`<button class="ib" style="color:#e0556b;" onclick="mdrxDeleteContact(${id})">Delete</button>`:''} <button class="ib" onclick="document.getElementById('mdrx-contact-edit').innerHTML=''">Cancel</button></div>
   </div>`;
 }
 async function mdrxSaveContact(id){
   const g=x=>{const el=document.getElementById(x);return el?el.value.trim():'';};
-  const rec={provider_id:mdrxOpenId,name:g('mdrx-c-name')||null,role:g('mdrx-c-role')||null,email:g('mdrx-c-email')||null,cell:g('mdrx-c-cell')||null,is_champion:!!((document.getElementById('mdrx-c-champ')||{}).checked)};
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId)||{};
+  const t=g('mdrx-c-title');
+  const rec={provider_id:mdrxOpenId,practice_id:p.practice_id||null,name:g('mdrx-c-name')||null,title:t||null,role:t||null,influence:g('mdrx-c-infl')||null,email:g('mdrx-c-email')||null,cell:g('mdrx-c-cell')||null,notes:g('mdrx-c-notes')||null,is_champion:!!((document.getElementById('mdrx-c-champ')||{}).checked)};
   if(!rec.name&&!rec.email){showToast('Add a name or email.');return;}
   const res= id? await sbClient.from('mdrx_contacts').update(rec).eq('id',id): await sbClient.from('mdrx_contacts').insert(rec);
   if(res.error){showToast('Error: '+res.error.message);return;}
