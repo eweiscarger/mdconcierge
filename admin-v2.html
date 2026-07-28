@@ -1749,7 +1749,7 @@ function crmExport(){
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 /* ============================ MDRx Pharmacy CRM (Prompt 2: screens) ============================ */
-let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], MDRX_DRAFTS=[], MDRX_FORM=[], MDRX_QUOTE=null, mdrxTab='due', mdrxSearch='', mdrxOpenId=null;
+let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], MDRX_DRAFTS=[], MDRX_FORM=[], MDRX_QUOTE=null, mdrxTab='due', mdrxSearch='', mdrxOpenId=null, mdrxHome='All', mdrxSort='name', mdrxDQ=false;
 const MDRX_STAGES=[['target','Target','#6B95D4'],['contacted','Contacted','#c8922a'],['meeting','Meeting','#7a5cd0'],['document_review','Doc review','#d08a2c'],['signed','Signed','#2D6A4F']];
 const MDRX_BUCKETS=[['','—'],['cold','Cold'],['warm','Warm'],['previously_engaged','Previously engaged'],['existing_low_util','Existing low-util']];
 const MDRX_STATUS=[['active','Active'],['dormant','Dormant'],['lost','Lost']];
@@ -1801,7 +1801,7 @@ function mdrxKpis(){
 }
 function renderMdrx(){
   const k=document.getElementById('mdrx-kpis'); if(k)k.innerHTML=mdrxKpis();
-  const tabs=[['due','⏰ Due today'],['inbox','📥 Inbox'+(MDRX_DRAFTS.length?' ('+MDRX_DRAFTS.length+')':'')],['board','▦ Pipeline'],['providers','👤 Providers'],['practices','🏢 Practices'],['cadence','⚙ Cadence']];
+  const tabs=[['due','⏰ Due today'],['inbox','📥 Inbox'+(MDRX_DRAFTS.length?' ('+MDRX_DRAFTS.length+')':'')],['board','▦ Pipeline'],['providers','👥 Contacts'],['clients','🤝 Clients'],['practices','🏢 Practices'],['cadence','⚙ Cadence']];
   const tb=document.getElementById('mdrx-tabs');
   if(tb)tb.innerHTML=tabs.map(([key,lbl])=>{const on=(mdrxTab===key&&mdrxOpenId===null);return `<button onclick="mdrxOpenId=null;mdrxTab='${key}';renderMdrx()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:${on?'#2b3550':'transparent'};color:${on?'#fff':'var(--muted2)'};font-weight:700;font-size:13px;cursor:pointer;">${lbl}</button>`;}).join('');
   const body=document.getElementById('mdrx-body'); if(!body)return;
@@ -1810,6 +1810,7 @@ function renderMdrx(){
   else if(mdrxTab==='inbox') body.innerHTML=mdrxInboxHtml();
   else if(mdrxTab==='board') body.innerHTML=mdrxBoardHtml();
   else if(mdrxTab==='providers') body.innerHTML=mdrxListHtml();
+  else if(mdrxTab==='clients'){ mdrxHome='Client'; body.innerHTML=mdrxListHtml(); }
   else if(mdrxTab==='cadence') body.innerHTML=mdrxCadenceHtml();
   else body.innerHTML=mdrxPracticesHtml();
 }
@@ -1846,21 +1847,64 @@ async function mdrxSetStage(id,stage){
   if(error){showToast('Error: '+error.message);return;}
   p.stage=stage; if(stage==='signed')p.is_won=true; showToast('Moved to '+mdrxStageLbl(stage)); renderMdrx();
 }
+function mdrxDQMissing(p){
+  const m=[];
+  if(!(p.address||'').trim())m.push('address');
+  if(!(p.office_phone||'').trim()&&!(p.cell||'').trim())m.push('phone');
+  if(!(p.npi||'').trim())m.push('NPI');
+  return m;
+}
+const MDRX_HOMES=['All','Leads','Pipeline','Client','Not Interested','Dormant','Suppression'];
+const MDRX_SORTS=[['name','Last name A-Z'],['region','Region'],['city','City'],['practice','Practice'],['specialty','Specialty'],['subspecialty','Subspecialty'],['tier','Intent tier'],['stage','Stage'],['email','Email status'],['due','Due date']];
+function mdrxSetHome(h){mdrxHome=h;mdrxDQ=false;mdrxTab='providers';renderMdrx();}
+function mdrxSetSort(s){mdrxSort=s;renderMdrx();}
+function mdrxToggleDQ(){mdrxDQ=!mdrxDQ;renderMdrx();}
+function mdrxSortProv(list,key){
+  const by={
+    name:p=>(p.last_name||'zzzz').toLowerCase(),
+    region:p=>(p.region||'zzzz').toLowerCase(),
+    city:p=>(p.city||'zzzz').toLowerCase(),
+    practice:p=>(mdrxPracName(p.practice_id)||'zzzz').toLowerCase(),
+    specialty:p=>((p.specialty||p.target_specialty)||'zzzz').toLowerCase(),
+    subspecialty:p=>(p.subspecialty||'zzzz').toLowerCase(),
+    tier:p=>(p.intent_tier||'Z'),
+    stage:p=>(p.funnel_stage||'zzzz'),
+    email:p=>(p.email?'0':'1'),
+    due:p=>(p.next_action_date||'9999-99-99')
+  }[key]||(p=>(p.last_name||'').toLowerCase());
+  return [...list].sort((a,b)=>{const x=by(a),y=by(b);return x<y?-1:x>y?1:0;});
+}
 function mdrxListHtml(){
   const t=mdrxToday();
-  const rows=MDRX_PROV.filter(mdrxMatch).map(p=>{
+  const homeCount={}; MDRX_PROV.forEach(p=>{const h=p.contact_home||'Leads';homeCount[h]=(homeCount[h]||0)+1;});
+  let list=MDRX_PROV.filter(mdrxMatch);
+  if(mdrxHome!=='All') list=list.filter(p=>(p.contact_home||'Leads')===mdrxHome);
+  if(mdrxDQ) list=list.filter(p=>mdrxDQMissing(p).length>0);
+  list=mdrxSortProv(list,mdrxSort);
+  const isClient=mdrxHome==='Client';
+  const chips=MDRX_HOMES.map(h=>{const on=mdrxHome===h;const c=h==='All'?MDRX_PROV.length:(homeCount[h]||0);const lbl=h==='Client'?'Clients':h;return `<button onclick="mdrxSetHome('${h}')" style="padding:5px 11px;border-radius:16px;border:1px solid var(--border2);background:${on?'#2b3550':'transparent'};color:${on?'#fff':'var(--muted2)'};font-weight:700;font-size:12px;cursor:pointer;">${lbl} <span style="opacity:.65;">${c}</span></button>`;}).join('');
+  const sortSel=`<select onchange="mdrxSetSort(this.value)" style="padding:6px 8px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:12.5px;">${MDRX_SORTS.map(s=>`<option value="${s[0]}"${mdrxSort===s[0]?' selected':''}>Sort: ${s[1]}</option>`).join('')}</select>`;
+  const dqBtn=`<button onclick="mdrxToggleDQ()" style="padding:6px 11px;border-radius:8px;border:1px solid ${mdrxDQ?'#e0a94a':'var(--border2)'};background:${mdrxDQ?'rgba(200,146,42,.15)':'transparent'};color:${mdrxDQ?'#e0a94a':'var(--muted2)'};font-weight:700;font-size:12.5px;cursor:pointer;">⚠ Data quality${mdrxDQ?' · on':''}</button>`;
+  const th = mdrxDQ ? '<th>Contact</th><th>Practice</th><th>Location</th><th>Data gaps</th>'
+    : isClient ? '<th>Client</th><th>Practice</th><th>Location</th><th>Pharmacy</th><th>First Rx</th><th>Email</th>'
+    : '<th>Contact</th><th>Practice</th><th>Location</th><th>Stage</th><th>Email</th><th>Next action</th>';
+  const rows=list.map(p=>{
     const overdue=p.next_action_date&&p.next_action_date<t;
-    return `<tr onclick="mdrxOpen(${p.id})" style="cursor:pointer;">
-      <td><div class="ln">${ehtml(mdrxProvName(p))}</div><div style="font-size:11px;color:var(--muted);">${ehtml(p.specialty||'')}</div></td>
-      <td style="font-size:12.5px;">${ehtml(mdrxPracName(p.practice_id))}</td>
-      <td style="font-size:12.5px;">${ehtml(p.state||'')}</td>
-      <td style="font-size:12.5px;">${p.pharmacy?ehtml(p.pharmacy):'<span style="color:var(--muted);">—</span>'}</td>
-      <td style="font-size:12px;">${ehtml(mdrxStageLbl(p.stage))} ${mdrxHealthBadge(p)}</td>
-      <td style="text-align:right;font-size:12.5px;">${p.workers_comp_patients_per_month==null?'<span style="color:var(--muted);">—</span>':p.workers_comp_patients_per_month}</td>
-      <td style="font-size:12px;color:${overdue?'#e0556b':'var(--muted2)'};">${p.next_action_date||'<span style="color:#e0556b;">none</span>'}</td>
-    </tr>`;
-  }).join('')||'<tr><td colspan="7" style="padding:16px;color:var(--muted);">No providers yet. Click “+ New provider”.</td></tr>';
-  return `<div class="panel"><div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Provider</th><th>Practice</th><th>State</th><th>Pharmacy</th><th>Stage</th><th style="text-align:right;">WC/mo</th><th>Next action</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    const loc=ehtml([p.city,p.state].filter(Boolean).join(', ')||p.region||'');
+    const name=`<td><div class="ln">${ehtml(mdrxProvName(p))}</div><div style="font-size:11px;color:var(--muted);">${ehtml(p.specialty||p.target_specialty||'')}</div></td>`;
+    const prac=`<td style="font-size:12.5px;">${ehtml(mdrxPracName(p.practice_id))}</td>`;
+    let rest;
+    if(mdrxDQ){const miss=mdrxDQMissing(p);rest=`<td style="font-size:12.5px;">${loc}</td><td style="font-size:11.5px;color:#e0a94a;">${miss.length?('missing '+miss.join(', ')):'ok'}</td>`;}
+    else if(isClient){rest=`<td style="font-size:12.5px;">${loc}</td><td style="font-size:12px;">${p.pharmacy?ehtml(p.pharmacy):'<span style="color:var(--muted);">—</span>'}</td><td style="font-size:12px;">${p.first_rx_received?ehtml(String(p.first_rx_received).slice(0,10)):'<span style="color:var(--muted);">—</span>'}</td><td style="font-size:12px;">${p.email?'<span style="color:#2ecc8a;">✓</span>':'<span style="color:#e0556b;">none</span>'}</td>`;}
+    else{rest=`<td style="font-size:12.5px;">${loc}</td><td style="font-size:12px;">${ehtml(p.funnel_stage||p.contact_home||'')}${p.intent_tier?' <span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);">'+ehtml(p.intent_tier)+'</span>':''}</td><td style="font-size:12px;">${p.email?'<span style="color:#2ecc8a;">✓ email</span>':'<span style="color:#e0556b;">no email</span>'}</td><td style="font-size:12px;color:${overdue?'#e0556b':'var(--muted2)'};">${p.next_action_date||'<span style="color:var(--muted);">—</span>'}</td>`;}
+    return `<tr onclick="mdrxOpen(${p.id})" style="cursor:pointer;">${name}${prac}${rest}</tr>`;
+  }).join('')||`<tr><td colspan="6" style="padding:16px;color:var(--muted);">No contacts in this view${mdrxDQ?' (all clean).':'.'}</td></tr>`;
+  const title = isClient ? 'Clients you service' : (mdrxHome==='All'?'all contacts':mdrxHome);
+  return `<div class="panel">
+    <div style="padding:10px 12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border2);">${chips}</div>
+    <div style="padding:8px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${sortSel}${dqBtn}<span style="font-size:12px;color:var(--muted);margin-left:auto;">${list.length} in ${ehtml(title)}</span></div>
+    <div style="overflow-x:auto;"><table class="lt"><thead><tr>${th}</tr></thead><tbody>${rows}</tbody></table></div>
+  </div>`;
 }
 function mdrxPracticesHtml(){
   const q=mdrxSearch.trim().toLowerCase();
