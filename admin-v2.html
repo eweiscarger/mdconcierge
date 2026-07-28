@@ -273,6 +273,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" onclick="showView('mdrx',this)"><span class="ni-ic">💊</span> MDRx Pharmacy CRM <span class="nb" id="mdrx-due" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('funnel',this)"><span class="ni-ic">🎯</span> Funnel Engagement <span class="nb" id="funnel-hot" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('booking',this)"><span class="ni-ic">📅</span> Booking &amp; Availability <span class="nb" id="booking-pending" style="display:none;">0</span></button>
+    <button class="ni" onclick="showView('pipeline',this)"><span class="ni-ic">📊</span> Pipeline <span class="nb" id="pipe-due" style="display:none;">0</span></button>
     <div class="ns">Analytics</div>
     <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
     <button class="ni" onclick="showView('analytics',this)"><span class="ni-ic">📊</span> Analytics</button>
@@ -449,6 +450,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <!-- BOOKING & AVAILABILITY VIEW -->
   <div class="view" id="view-booking">
     <div id="booking-body" style="color:var(--muted);padding:8px 2px;">Loading booking…</div>
+  </div>
+
+  <!-- PIPELINE VIEW -->
+  <div class="view" id="view-pipeline">
+    <div id="pipeline-body" style="color:var(--muted);padding:8px 2px;">Loading pipeline…</div>
   </div>
 
   <!-- ACCESS LOG VIEW -->
@@ -1163,7 +1169,7 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',booking:'Booking & Availability',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',access:'Access Log',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',booking:'Booking & Availability',pipeline:'Pipeline',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',access:'Access Log',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
@@ -1171,6 +1177,7 @@ function showView(v,btn){
   if(v==='mdrx')loadMdrx();
   if(v==='funnel')loadFunnel();
   if(v==='booking')loadBooking();
+  if(v==='pipeline')loadPipeline();
   if(v==='tools')renderTools();
   if(v==='analytics')loadAnalytics();
   if(v==='access')loadAccessLog();
@@ -1301,6 +1308,52 @@ async function loadBooking(){
     <div class="panel" style="margin-bottom:0;">
       <div class="ph"><div class="pt">Upcoming meetings</div><div class="ps">${pending.length?('<b style="color:#9a6700;">'+pending.length+' demo request(s) awaiting Phil.</b> '):''}Intro calls confirm instantly; demos confirm when Phil says yes.</div></div>
       <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>When</th><th>Type</th><th>Who</th><th>Status</th><th>Note</th></tr></thead><tbody>${rows||'<tr><td colspan="5" style="color:var(--muted);padding:14px;">No upcoming meetings yet.</td></tr>'}</tbody></table></div>
+    </div>`;
+}
+// ---- Pipeline board (Task 7) ----------------------------------------------
+const PIPE_STAGES=['New','Queued','Contacted','Engaged','Replied','Materials Sent','Meeting Booked','Met','Follow-up','Closing','Won','Not Now','Lost','Unsubscribed'];
+function pipeName(p){return (((p.first_name||'')+' '+(p.last_name||'')).trim())||'(no name)';}
+async function loadPipeline(){
+  const box=document.getElementById('pipeline-body');
+  box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
+  const [pr,sup,cfgR]=await Promise.all([
+    sbClient.from('mdrx_providers').select('id,first_name,last_name,funnel_stage,next_step,funnel_next_date,touch_count,priority,intent_tier,intent_score,funnel_score,email,suppressed,recycle_date'),
+    sbClient.from('suppressions').select('email,reason,source,created_at').order('created_at',{ascending:false}),
+    sbClient.from('outreach_config').select('*').eq('id',1).maybeSingle()
+  ]);
+  if(pr.error){box.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load pipeline: '+ehtml(pr.error.message)+'<div style="color:var(--muted);font-size:12px;margin-top:8px;">If a column/table is missing, the pipeline migration has not run yet.</div></div>';return;}
+  const P=pr.data||[], supp=sup.data||[], cfg=cfgR.data||{};
+  const today=new Date().toISOString().slice(0,10);
+  const cnt={}; PIPE_STAGES.forEach(s=>cnt[s]=0);
+  P.forEach(p=>{const s=p.funnel_stage||'New'; cnt[s]=(cnt[s]||0)+1;});
+  const due=P.filter(p=>!p.suppressed && p.funnel_next_date && p.funnel_next_date<=today && ['Queued','Contacted','Follow-up','Not Now'].includes(p.funnel_stage||'New'));
+  const badge=document.getElementById('pipe-due'); if(badge){badge.textContent=due.length;badge.style.display=due.length?'':'none';}
+  const addrSet=cfg.physical_address && !/SET PHYSICAL ADDRESS/i.test(cfg.physical_address);
+  const sending=cfg.sending_enabled && addrSet;
+  const banner = sending
+    ? '<div class="panel" style="margin-bottom:14px;border-left:3px solid var(--green);"><div style="padding:12px 14px;font-size:13.5px;">🟢 <b>Sending is ON.</b> The cadence sequencer is driving traffic. Daily cap '+ (cfg.daily_send_cap||40) +'.</div></div>'
+    : '<div class="panel" style="margin-bottom:14px;border-left:3px solid #9a6700;"><div style="padding:12px 14px;font-size:13.5px;">🟡 <b>Sending is OFF.</b> '+ (addrSet?'':'No CAN-SPAM mailing address set yet. ') +'Nothing goes out until this is enabled (Task 6). Stage automation, suppression, and unsubscribe are already live.</div></div>';
+  // stage strip
+  const stageCards=PIPE_STAGES.filter(s=>cnt[s]>0||['Queued','Contacted','Engaged','Meeting Booked','Won'].includes(s)).map(s=>`<div class="kpi" style="min-width:0;"><div class="kpi-lbl" style="font-size:10.5px;">${ehtml(s)}</div><div class="kpi-v" style="font-size:22px;">${cnt[s]||0}</div></div>`).join('');
+  // due today
+  const dueRows=due.sort((a,b)=>(a.funnel_next_date||'').localeCompare(b.funnel_next_date||'')).map(p=>`<tr>
+    <td><b>${ehtml(pipeName(p))}</b>${p.intent_tier?' <span style="color:var(--muted);font-size:11px;">'+ehtml(p.intent_tier)+'</span>':''}${p.priority==='high'?' <span class="nb" style="display:inline-block;background:#fff8e8;color:#9a6700;">high</span>':''}</td>
+    <td>${ehtml(p.funnel_stage||'')}</td>
+    <td>${ehtml(p.next_step||'')}</td>
+    <td style="font-size:12px;color:var(--muted);">${ehtml(p.funnel_next_date||'')}</td>
+    <td style="font-size:12px;">${p.email?'✓':'<span style="color:#c0392b;">no email</span>'}</td>
+  </tr>`).join('');
+  const supRows=supp.slice(0,20).map(s=>`<tr><td>${ehtml(s.email)}</td><td style="font-size:12px;">${ehtml(s.source||'')}</td><td style="font-size:12px;color:var(--muted);">${ehtml((s.created_at||'').slice(0,10))}</td></tr>`).join('');
+  box.innerHTML=`
+    ${banner}
+    <div class="kpi-row" style="grid-template-columns:repeat(auto-fit,minmax(96px,1fr));margin-bottom:16px;">${stageCards}</div>
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="ph"><div class="pt">⏰ Due today (${due.length})</div><div class="ps">Leads whose next touch or recycle is due. When sending is on, the sequencer works these automatically. Nothing sends to a no-email or suppressed lead.</div></div>
+      <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Lead</th><th>Stage</th><th>Next step</th><th>Due</th><th>Email</th></tr></thead><tbody>${dueRows||'<tr><td colspan="5" style="color:var(--muted);padding:14px;">Nothing due today.</td></tr>'}</tbody></table></div>
+    </div>
+    <div class="panel" style="margin-bottom:0;">
+      <div class="ph"><div class="pt">🚫 Suppression list (${supp.length})</div><div class="ps">Opt-outs and unsubscribes. Checked before every send. Never re-imported, for any client.</div></div>
+      <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Email</th><th>Source</th><th>When</th></tr></thead><tbody>${supRows||'<tr><td colspan="3" style="color:var(--muted);padding:14px;">No opt-outs yet.</td></tr>'}</tbody></table></div>
     </div>`;
 }
 async function loadAnalytics(){
