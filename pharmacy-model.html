@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Workers' Compensation Medication Dispensing Analysis · MDconcierge Pharmacy Partner</title>
+<style>
+  :root{ --navy:#08214C; --steel:#3f6ea5; --green:#1e7a4d; --ink:#1a2233; --muted:#5b6675; --line:#e2e7ef; --bg:#f4f6fa; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg); line-height:1.5; }
+  .wrap{ max-width:940px; margin:0 auto; padding:0 18px 60px; }
+  /* watermark */
+  #wm{ position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  #wm div{ position:absolute; white-space:nowrap; transform:rotate(-30deg); color:rgba(8,33,76,.055); font-weight:700; font-size:20px; letter-spacing:1px; }
+  .above{ position:relative; z-index:1; }
+  /* banner */
+  #conf{ background:#08214C; color:#eaf1fb; font-size:12.5px; text-align:center; padding:8px 14px; letter-spacing:.2px; }
+  #conf b{ color:#fff; }
+  header.h{ text-align:center; padding:26px 0 10px; }
+  .kicker{ text-transform:uppercase; letter-spacing:2px; font-size:11px; color:var(--steel); font-weight:700; }
+  h1{ font-family:Georgia,'Times New Roman',serif; color:var(--navy); font-size:26px; margin:6px 0 2px; }
+  .sub{ color:var(--muted); font-size:14px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin:16px 0; box-shadow:0 1px 3px rgba(16,33,66,.05); }
+  .card h2{ font-size:14px; text-transform:uppercase; letter-spacing:1px; color:var(--navy); margin:0 0 4px; }
+  .hint{ font-size:12px; color:var(--muted); margin:0 0 12px; }
+  .assume{ display:flex; flex-wrap:wrap; gap:14px; }
+  .assume label{ font-size:11px; color:var(--muted); font-weight:600; }
+  .assume input{ display:block; margin-top:4px; width:92px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); }
+  .mixrow{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .mixrow select{ flex:1; min-width:180px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; background:#fff; }
+  .mixrow input{ width:76px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; }
+  .btn{ border:1px solid var(--steel); background:#fff; color:var(--navy); border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer; }
+  .btn:hover{ background:#eef3fb; }
+  .btn.solid{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .result{ background:linear-gradient(180deg,#f0f8f3,#eaf6ef); border:1px solid #bfe0cd; border-radius:14px; padding:20px; text-align:center; }
+  .result .lbl{ text-transform:uppercase; letter-spacing:1px; font-size:11px; color:#3d7d5c; font-weight:700; }
+  .result .big{ font-size:40px; font-weight:800; color:var(--green); line-height:1.1; margin:2px 0; }
+  .result .yr{ font-size:20px; font-weight:700; color:var(--green); }
+  .result .brk{ font-size:12.5px; color:#547; margin-top:10px; }
+  .result .disc{ font-size:11px; color:#7a8596; font-style:italic; margin-top:8px; }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  th,td{ text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); }
+  th{ color:var(--navy); font-size:11px; text-transform:uppercase; letter-spacing:.5px; position:sticky; top:0; background:#fff; }
+  td.num,th.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  .tablewrap{ max-height:420px; overflow:auto; border:1px solid var(--line); border-radius:10px; }
+  #fsearch{ width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px; margin-bottom:10px; }
+  .foot{ text-align:center; color:var(--muted); font-size:12px; margin-top:22px; }
+  .state{ text-align:center; padding:70px 20px; }
+  .state h1{ font-size:22px; }
+  .pill{ display:inline-block; background:#eef3fb; color:var(--steel); font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; }
+  @media print{
+    body{ background:#fff; } #conf{ background:#08214C !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .noprint{ display:none !important; } .tablewrap{ max-height:none; } #wm div{ color:rgba(8,33,76,.07); }
+  }
+</style>
+</head>
+<body>
+<div id="wm"></div>
+<div id="app" class="above">
+  <div class="state"><h1>Loading your analysis…</h1><p class="sub">One moment.</p></div>
+</div>
+
+<script>
+const FN = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/formulary-access";
+const app = document.getElementById('app');
+const money = n => '$' + Math.round(n||0).toLocaleString('en-US');
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let FORM = [], REC = {};
+
+function tokenFromUrl(){
+  const u = new URL(location.href);
+  return u.searchParams.get('t') || u.searchParams.get('token') || '';
+}
+
+function watermark(name, email){
+  const wm = document.getElementById('wm'); wm.innerHTML='';
+  const txt = (name||'Confidential') + '  ·  ' + (email||'') ;
+  for(let r=0;r<14;r++){ for(let c=0;c<4;c++){ const d=document.createElement('div'); d.textContent=txt; d.style.top=(r*130-60)+'px'; d.style.left=(c*360-120)+'px'; wm.appendChild(d); } }
+}
+
+function errScreen(reason, expires){
+  const map = {
+    expired: ["This link has expired","For an updated analysis, just reply to the email this link came from and I'll send a fresh one."],
+    revoked: ["This link is no longer active","Please reach out to Eric for an updated link."],
+    invalid: ["This link isn't valid","Double-check the link from your email, or reply and I'll resend it."],
+    missing: ["No access token","Open the link exactly as it appears in your email."],
+    error:   ["Something went wrong loading this","Please try again in a moment, or reply to the email for help."]
+  };
+  const m = map[reason] || map.error;
+  const exp = expires ? '<p class="sub">Expired '+new Date(expires).toLocaleDateString()+'.</p>' : '';
+  app.innerHTML = '<div class="state"><span class="pill">MDconcierge Pharmacy Partner</span><h1>'+m[0]+'</h1>'+exp+'<p class="sub">'+m[1]+'</p><p class="foot">Eric Weiscarger · MDconcierge · eric@mdconcierge.net</p></div>';
+}
+
+async function boot(){
+  const token = tokenFromUrl();
+  if(!token){ return errScreen('missing'); }
+  let data;
+  try{
+    const r = await fetch(FN, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token }) });
+    data = await r.json();
+  }catch(e){ return errScreen('error'); }
+  if(!data || !data.ok){ return errScreen((data&&data.reason)||'error', data&&data.expires_at); }
+  FORM = data.formulary || []; REC = data.recipient || {};
+  watermark(REC.name, REC.email);
+  render(data.expires_at);
+}
+
+function render(expires){
+  const forName = REC.practice ? (REC.practice) : (REC.name||'your practice');
+  const expTxt = expires ? new Date(expires).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '';
+  const oral = FORM.filter(f=>f.route==='Oral');
+  const top  = FORM.filter(f=>f.route!=='Oral');
+  const opts = '<option value="">— select a medication —</option>'
+    + '<optgroup label="Oral">'    + oral.map(f=>`<option value="${f.id}">${esc(f.product)}</option>`).join('') + '</optgroup>'
+    + '<optgroup label="Topical">' + top.map(f=>`<option value="${f.id}">${esc(f.product)}</option>`).join('')  + '</optgroup>';
+  window._OPTS = opts;
+
+  app.innerHTML = `
+  <div id="conf">🔒 <b>CONFIDENTIAL</b> — Prepared exclusively for <b>${esc(REC.name||'')}</b>${REC.practice?' · '+esc(REC.practice):''}. Not for distribution.${expTxt?' This private link expires <b>'+expTxt+'</b>.':''}</div>
+  <div class="wrap">
+    <header class="h">
+      <div class="kicker">MDconcierge Pharmacy Partner</div>
+      <h1>Workers' Compensation Medication Dispensing Analysis</h1>
+      <div class="sub">Prepared for <b>${esc(forName)}</b> · Pennsylvania basis</div>
+    </header>
+
+    <div class="card">
+      <h2>How to use this</h2>
+      <p class="hint" style="margin-bottom:0;">Build your own medication mix below and the estimated practice revenue updates instantly. Every assumption is editable — the defaults are intentionally conservative (oral scripts modeled at 80% collections, topicals at 60%, and your practice keeping 65% of net). The full formulary, including product cost, is at the bottom.</p>
+    </div>
+
+    <div class="card">
+      <h2>Assumptions</h2>
+      <p class="hint">Editable. Defaults follow the MDconcierge Pharmacy Partner model on a Pennsylvania basis.</p>
+      <div class="assume">
+        <label>Patients / month<input id="a-pat" type="number" value="100" oninput="compute()"></label>
+        <label>AWP multiplier<input id="a-mult" type="number" step="0.01" value="1.1" oninput="compute()"></label>
+        <label>Oral collection %<input id="a-oc" type="number" value="80" oninput="compute()"></label>
+        <label>Topical collection %<input id="a-tc" type="number" value="60" oninput="compute()"></label>
+        <label>Practice share %<input id="a-sh" type="number" value="65" oninput="compute()"></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Your formulary mix</h2>
+      <p class="hint">Add the medications you'd realistically dispense. "Units per patient" is how many of that item an average patient receives each month.</p>
+      <div id="mix"></div>
+      <button class="btn noprint" onclick="addLine()">+ Add medication</button>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <div style="text-align:center;margin:16px 0;" class="noprint">
+      <button class="btn solid" onclick="window.print()">⬇ Save / print this analysis</button>
+    </div>
+
+    <div class="card">
+      <h2>Full formulary <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;">· ${FORM.length} products · PA reimbursement = 1.1 × MFG AWP</span></h2>
+      <input id="fsearch" class="noprint" placeholder="Search by product, category, or route…" oninput="filterForm()">
+      <div class="tablewrap">
+        <table id="ftable">
+          <thead><tr><th>Product</th><th>Category</th><th>Route</th><th class="num">MFG AWP</th><th class="num">Product cost</th><th class="num">PA reimb / unit</th></tr></thead>
+          <tbody id="fbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="foot">Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. Pennsylvania basis.<br>
+    Eric Weiscarger · MDconcierge · <a href="mailto:eric@mdconcierge.net" style="color:var(--steel);">eric@mdconcierge.net</a> · mdconcierge.net</p>
+  </div>`;
+
+  fillFormTable(FORM);
+  addLine(); addLine(); compute();
+}
+
+function addLine(){
+  const box = document.getElementById('mix'); if(!box) return;
+  const d = document.createElement('div'); d.className='mixrow';
+  d.innerHTML = `<select onchange="compute()">${window._OPTS}</select>
+    <input type="number" value="1" min="0" step="0.5" title="units per patient / month" oninput="compute()">
+    <button class="btn noprint" onclick="this.closest('.mixrow').remove();compute()" title="remove">✕</button>`;
+  box.appendChild(d);
+}
+
+function fById(id){ return FORM.find(f=>String(f.id)===String(id)); }
+
+function compute(){
+  const num = id => { const e=document.getElementById(id); return e?(parseFloat(e.value)||0):0; };
+  const patients=num('a-pat'), mult=num('a-mult'), oc=num('a-oc')/100, tc=num('a-tc')/100, share=num('a-sh')/100;
+  let oAwp=0,oCost=0,tAwp=0,tCost=0; const lines=[];
+  document.querySelectorAll('#mix .mixrow').forEach(row=>{
+    const id=(row.querySelector('select')||{}).value; const units=parseFloat((row.querySelector('input')||{}).value)||0;
+    const f=fById(id); if(!f||!units) return;
+    const paAwp=(Number(f.awp)||0)*mult, extAwp=units*paAwp, extCost=units*(Number(f.cost)||0);
+    if(f.route==='Oral'){ oAwp+=extAwp; oCost+=extCost; } else { tAwp+=extAwp; tCost+=extCost; }
+    lines.push(f.product);
+  });
+  const oGross=oAwp*patients*oc, tGross=tAwp*patients*tc;
+  const gross=oGross+tGross, cost=(oCost+tCost)*patients, net=gross-cost, practice=net*share;
+  const el=document.getElementById('result'); if(!el) return;
+  el.innerHTML = `
+    <div class="lbl">Estimated practice ancillary revenue</div>
+    <div class="big">${money(practice)}<span style="font-size:15px;color:#547;font-weight:400;"> / month</span></div>
+    <div class="yr">${money(practice*12)} / year</div>
+    <div class="brk">Gross (AWP collected) ${money(gross)}/mo · Product cost ${money(cost)}/mo · Net ${money(net)}/mo · Practice keeps ${Math.round(share*100)}% of net${lines.length?' · '+lines.length+' medication'+(lines.length>1?'s':''):''}</div>
+    <div class="disc">Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. Pennsylvania basis.</div>`;
+}
+
+function fillFormTable(rows){
+  const b=document.getElementById('fbody'); if(!b) return;
+  b.innerHTML = rows.map(f=>`<tr>
+    <td>${esc(f.product)}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
+    <td class="num">${money(f.awp)}</td><td class="num">${money(f.cost)}</td><td class="num">${money(f.pa_reimb)}</td></tr>`).join('');
+}
+function filterForm(){
+  const q=(document.getElementById('fsearch').value||'').toLowerCase();
+  fillFormTable(FORM.filter(f=>(f.product+' '+(f.category||'')+' '+(f.route||'')).toLowerCase().includes(q)));
+}
+
+boot();
+</script>
+</body>
+</html>
