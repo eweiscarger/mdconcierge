@@ -3071,5 +3071,68 @@ async function enablePushAlerts(){
   }catch(e){ set('Could not enable: '+(e&&e.message||e)); }
 }
 </script>
+
+<!-- ===== In-app voice + text assistant ===== -->
+<div id="asst-fab" onclick="asstToggle()" title="Assistant (voice or text)" style="position:fixed;bottom:20px;right:20px;z-index:99998;width:56px;height:56px;border-radius:50%;background:#08214C;color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.4);">🎙️</div>
+<div id="asst-panel" style="position:fixed;bottom:86px;right:20px;z-index:99998;width:min(390px,94vw);height:min(540px,72vh);background:var(--bg,#0a1226);border:1px solid var(--border2,#26304d);border-radius:16px;box-shadow:0 12px 44px rgba(0,0,0,.55);display:none;flex-direction:column;overflow:hidden;">
+  <div style="padding:12px 14px;border-bottom:1px solid var(--border2,#26304d);display:flex;align-items:center;gap:10px;">
+    <div style="font-weight:700;font-size:14px;color:var(--text,#e8edf7);flex:1;">🎙️ Your assistant</div>
+    <label style="font-size:11px;color:var(--muted,#8894ac);display:flex;align-items:center;gap:4px;cursor:pointer;"><input type="checkbox" id="asst-speak" checked onchange="ASST_SPEAK=this.checked;if(!this.checked&&window.speechSynthesis)speechSynthesis.cancel();"> speak</label>
+    <span onclick="asstToggle()" style="cursor:pointer;color:var(--muted,#8894ac);font-size:18px;line-height:1;">&times;</span>
+  </div>
+  <div id="asst-log" style="flex:1;overflow-y:auto;padding:12px 14px;"></div>
+  <div id="asst-busy" style="display:none;padding:0 14px 8px;font-size:12px;color:var(--muted,#8894ac);">Thinking…</div>
+  <div style="padding:10px 12px;border-top:1px solid var(--border2,#26304d);display:flex;gap:8px;align-items:center;">
+    <button id="asst-mic" onclick="asstMic()" title="Hold a thought, tap to speak" style="background:transparent;border:1px solid var(--border2,#26304d);border-radius:10px;width:42px;height:42px;font-size:18px;cursor:pointer;color:var(--text,#e8edf7);">🎙️</button>
+    <input id="asst-input" placeholder="Ask or tell me anything…" onkeydown="if(event.key==='Enter')asstSend()" style="flex:1;padding:11px 12px;border:1px solid var(--border2,#26304d);border-radius:10px;background:var(--card,#0d1830);color:var(--text,#e8edf7);font-size:14px;">
+    <button onclick="asstSend()" style="background:#08214C;color:#fff;border:none;border-radius:10px;padding:0 15px;height:42px;font-weight:700;cursor:pointer;">Send</button>
+  </div>
+</div>
+<script>
+let ASST_HISTORY=[], ASST_SPEAK=true, ASST_LISTENING=false, asstRec=null;
+function asstFmt(t){ return ehtml(String(t||'')).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>'); }
+function asstToggle(){
+  const p=document.getElementById('asst-panel');
+  const show=p.style.display!=='flex'; p.style.display=show?'flex':'none';
+  if(show){ if(!document.getElementById('asst-log').children.length){ asstAdd('assistant',"Hi Eric. Ask me anything, like “what does my day look like,” “who are my hottest leads,” “log Dr. Smith as a client,” or “draft a follow-up to Dr. Rao.” I draft, I never send."); } setTimeout(()=>document.getElementById('asst-input').focus(),50); }
+  else if(window.speechSynthesis) speechSynthesis.cancel();
+}
+function asstAdd(role,text){
+  const log=document.getElementById('asst-log'); const d=document.createElement('div'); d.style.cssText='margin-bottom:11px;';
+  const isU=role==='user';
+  d.innerHTML='<div style="font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted,#8894ac);margin-bottom:3px;">'+(isU?'You':'Assistant')+'</div>'+
+    '<div style="font-size:13.5px;line-height:1.55;white-space:pre-wrap;color:var(--text,#e8edf7);background:'+(isU?'rgba(255,255,255,.05)':'rgba(43,53,80,.5)')+';border-radius:11px;padding:9px 12px;">'+(isU?ehtml(text):asstFmt(text))+'</div>';
+  log.appendChild(d); log.scrollTop=log.scrollHeight;
+}
+async function asstSend(cmd){
+  const inp=document.getElementById('asst-input');
+  cmd=(cmd||inp.value).trim(); if(!cmd)return; inp.value='';
+  asstAdd('user',cmd);
+  const busy=document.getElementById('asst-busy'); busy.style.display='block';
+  try{
+    const {data,error}=await sbClient.functions.invoke('assistant',{body:{command:cmd,history:ASST_HISTORY}});
+    busy.style.display='none';
+    if(error||!data||!data.ok){ asstAdd('assistant','Sorry, I hit a snag: '+((error&&error.message)||(data&&data.error)||'unknown error')); return; }
+    asstAdd('assistant',data.reply||'(no answer)');
+    ASST_HISTORY=data.history||ASST_HISTORY;
+    if(ASST_SPEAK)asstSpeak(data.reply);
+    if(data.actions&&data.actions.length){ try{ if(typeof loadMdrx==='function')await loadMdrx(); }catch(e){} const cv=document.getElementById('view-cockpit'); if(cv&&cv.classList.contains('active')&&typeof loadCockpit==='function')loadCockpit(); }
+  }catch(e){ busy.style.display='none'; asstAdd('assistant','Error: '+(e&&e.message||e)); }
+}
+function asstSpeak(t){ try{ if(!('speechSynthesis' in window))return; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(String(t||'').replace(/[*_#>`]/g,'').replace(/\s+/g,' ')); u.rate=1.05; speechSynthesis.speak(u); }catch(e){} }
+function asstMic(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ if(typeof showToast==='function')showToast('Voice input is not supported in this browser. Type instead.'); return; }
+  if(ASST_LISTENING){ if(asstRec)asstRec.stop(); return; }
+  asstRec=new SR(); asstRec.lang='en-US'; asstRec.interimResults=true; asstRec.continuous=false;
+  const mic=document.getElementById('asst-mic'), inp=document.getElementById('asst-input');
+  ASST_LISTENING=true; mic.textContent='⏺'; mic.style.color='#e0556b';
+  let finalT='';
+  asstRec.onresult=e=>{ let interim=''; for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal)finalT+=r[0].transcript; else interim+=r[0].transcript; } inp.value=(finalT+interim).trim(); };
+  asstRec.onerror=()=>{};
+  asstRec.onend=()=>{ ASST_LISTENING=false; mic.textContent='🎙️'; mic.style.color=''; if(inp.value.trim())asstSend(); };
+  try{ asstRec.start(); }catch(e){ ASST_LISTENING=false; mic.textContent='🎙️'; mic.style.color=''; }
+}
+</script>
 </body>
 </html>
