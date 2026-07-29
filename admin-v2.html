@@ -1342,7 +1342,7 @@ async function loadCockpit(){
     sbClient.from('mdrx_next_moves').select('*').eq('status','pending').order('recommended_date'),
     sbClient.from('mdrx_outbox').select('*').eq('status','pending').order('id'),
     sbClient.from('outreach_config').select('sending_paused,pause_reason').eq('id',1).maybeSingle(),
-    sbClient.from('mdrx_content_queue').select('*').eq('status','pending').order('created_at',{ascending:false})
+    sbClient.from('mdrx_content_queue').select('*').in('status',['pending','approved']).order('created_at',{ascending:false})
   ]);
   if(pr.error){box.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load cockpit: '+ehtml(pr.error.message)+'</div>';return;}
   const P=pr.data||[];
@@ -1379,7 +1379,12 @@ async function loadCockpit(){
     ${m.reason?'<div style="font-size:11.5px;color:var(--muted);margin:3px 0 6px;">'+ehtml(m.reason)+'</div>':''}
     <textarea id="nm-draft-${m.id}" style="width:100%;min-height:78px;font-size:13px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(m.draft||'')}</textarea>
     <div style="margin-top:6px;display:flex;gap:6px;"><button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;" onclick="mdrxApproveMove(${m.id})">Approve</button><button class="ib" onclick="mdrxDismissMove(${m.id})">Dismiss</button></div></div>`;}).join(''):'';
-  const cqList=(cq&&!cq.error&&cq.data)?cq.data:[];
+  const cqAll=(cq&&!cq.error&&cq.data)?cq.data:[];
+  const cqList=cqAll.filter(c=>c.status==='pending');
+  const cqRate=c=>((c.sent_count||0)?(c.engaged_count||0)/(c.sent_count||0):0);
+  const cqPerf=cqAll.filter(c=>c.status==='approved'&&c.kind==='opener'&&(((c.sent_count||0)>0)||((c.used_count||0)>0))).sort((a,b)=>cqRate(b)-cqRate(a));
+  const cqPerfHtml=cqPerf.map(c=>{const s=c.sent_count||0,e=c.engaged_count||0,rate=s?Math.round(e/s*100):0;return `<div style="display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--border2);padding:7px 0;"><div style="flex:1;min-width:160px;font-size:12.5px;">${ehtml(c.headline||(c.draft_hook||'').slice(0,64))}</div><div style="font-size:12px;color:var(--muted);white-space:nowrap;">${s} sent · ${e} clicks</div><div style="font-weight:700;color:${rate>=15?'var(--green)':'var(--gold)'};min-width:44px;text-align:right;">${s?rate+'%':'—'}</div></div>`;}).join('');
+  const cqPerfPanel=cqPerf.length?`<div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">🧪 Opener performance (A/B)</div><div class="ps">Approved openers by click rate as they rotate through recycled sends. The top ones are your winners.</div></div><div class="grp" style="margin:0;border:none;">${cqPerfHtml}</div></div>`:'';
   const cqKindPill=k=>k==='opportunity'?'<span class="nb" style="display:inline-block;background:#eef5fc;color:#1a4e8a;">💡 opportunity</span>':'<span class="nb" style="display:inline-block;background:#fff8e8;color:#9a6700;">✍️ opener</span>';
   const cqHtml=cqList.map(c=>`<div style="border-bottom:1px solid var(--border2);padding:11px 0;">
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;">${cqKindPill(c.kind)}${c.theme?'<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);">'+ehtml(c.theme)+'</span>':''}<b style="font-size:13.5px;">${ehtml(c.headline||'')}</b>${c.source_url?'<a href="'+ehtml(c.source_url)+'" target="_blank" rel="noopener" style="font-size:11.5px;color:var(--gold);margin-left:auto;">source &rarr;</a>':''}</div>
@@ -1426,6 +1431,7 @@ async function loadCockpit(){
     </div>
     ${nmList.length?`<div class="panel" style="margin-bottom:16px;border-left:3px solid var(--gold);"><div class="ph"><div class="pt">🎯 Recommended next moves</div><div class="ps">The AI picked the message, channel, and date from each lead's behavior. Approve to lock it in. Nothing sends until you enable sending.</div></div><div class="grp" style="margin:0;border:none;">${nmHtml}</div></div>`:''}
     ${cqPanel}
+    ${cqPerfPanel}
     <div class="panel" style="margin-bottom:0;"><div class="ph"><div class="pt">⏰ Due today (${due.length})</div><div class="ps">Every contact with an action due. Nothing sits idle.</div></div><div class="grp" style="margin:0;border:none;">${dueHtml}</div></div>`;
 }
 async function mdrxConfirmEnrich(id,provId){
@@ -1843,7 +1849,7 @@ function crmExport(){
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 /* ============================ MDRx Pharmacy CRM (Prompt 2: screens) ============================ */
-let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], MDRX_DRAFTS=[], MDRX_FORM=[], MDRX_QUOTE=null, mdrxTab='due', mdrxSearch='', mdrxOpenId=null, mdrxHome='All', mdrxSort='name', mdrxDQ=false;
+let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], MDRX_DRAFTS=[], MDRX_FORM=[], MDRX_QUOTE=null, mdrxTab='due', mdrxSearch='', mdrxOpenId=null, mdrxHome='All', mdrxSort='name', mdrxDQ=false, mdrxPracCtx=null;
 const MDRX_STAGES=[['target','Target','#6B95D4'],['contacted','Contacted','#c8922a'],['meeting','Meeting','#7a5cd0'],['document_review','Doc review','#d08a2c'],['signed','Signed','#2D6A4F']];
 const MDRX_BUCKETS=[['','—'],['cold','Cold'],['warm','Warm'],['previously_engaged','Previously engaged'],['existing_low_util','Existing low-util']];
 const MDRX_STATUS=[['active','Active'],['dormant','Dormant'],['lost','Lost']];
@@ -1894,6 +1900,7 @@ function mdrxKpis(){
     +card('Won',won,'signed or first Rx','green');
 }
 function renderMdrx(){
+  mdrxPracCtx=null;
   const k=document.getElementById('mdrx-kpis'); if(k)k.innerHTML=mdrxKpis();
   const tabs=[['due','⏰ Due today'],['inbox','📥 Inbox'+(MDRX_DRAFTS.length?' ('+MDRX_DRAFTS.length+')':'')],['board','▦ Pipeline'],['providers','👥 Contacts'],['clients','🤝 Clients'],['practices','🏢 Practices'],['cadence','⚙ Cadence']];
   const tb=document.getElementById('mdrx-tabs');
@@ -2353,17 +2360,17 @@ async function mdrxSaveContact(id){
   const g=x=>{const el=document.getElementById(x);return el?el.value.trim():'';};
   const p=MDRX_PROV.find(x=>x.id===mdrxOpenId)||{};
   const t=g('mdrx-c-title');
-  const rec={provider_id:mdrxOpenId,practice_id:p.practice_id||null,name:g('mdrx-c-name')||null,title:t||null,role:t||null,influence:g('mdrx-c-infl')||null,email:g('mdrx-c-email')||null,cell:g('mdrx-c-cell')||null,notes:g('mdrx-c-notes')||null,is_champion:!!((document.getElementById('mdrx-c-champ')||{}).checked)};
+  const rec={provider_id:mdrxPracCtx?null:mdrxOpenId,practice_id:mdrxPracCtx?mdrxPracCtx:(p.practice_id||null),name:g('mdrx-c-name')||null,title:t||null,role:t||null,influence:g('mdrx-c-infl')||null,email:g('mdrx-c-email')||null,cell:g('mdrx-c-cell')||null,notes:g('mdrx-c-notes')||null,is_champion:!!((document.getElementById('mdrx-c-champ')||{}).checked)};
   if(!rec.name&&!rec.email){showToast('Add a name or email.');return;}
   const res= id? await sbClient.from('mdrx_contacts').update(rec).eq('id',id): await sbClient.from('mdrx_contacts').insert(rec);
   if(res.error){showToast('Error: '+res.error.message);return;}
-  showToast('Saved'); await loadMdrx();
+  showToast('Saved'); const pc=mdrxPracCtx; await loadMdrx(); if(pc)mdrxEditPractice(pc);
 }
 async function mdrxDeleteContact(id){
   if(!confirm('Delete this contact?'))return;
   const {error}=await sbClient.from('mdrx_contacts').delete().eq('id',id);
   if(error){showToast('Error: '+error.message);return;}
-  showToast('Deleted'); await loadMdrx();
+  showToast('Deleted'); const pc=mdrxPracCtx; await loadMdrx(); if(pc)mdrxEditPractice(pc);
 }
 // ---- Documents (per contact + practice) ----
 function mdrxDocsHtml(p){
@@ -2762,7 +2769,22 @@ function mdrxSaveCadence(){
   ['cold','warm','previously_engaged','existing_low_util'].forEach(k=>{const g=s=>{const el=document.getElementById('mdrx-cad-'+k+'-'+s);return el?(parseInt(el.value,10)||0):0;};MDRX_CADENCE[k]={interval:g('interval'),max:g('max'),nurture:g('nurture')};});
   mdrxSaveCadenceStore(); showToast('Cadence saved');
 }
+function mdrxPracticeRosterHtml(id){
+  const rank={decision_maker:0,influencer:1,staff:2};
+  const docs=MDRX_PROV.filter(p=>p.practice_id===id);
+  const staff=MDRX_CONTACTS.filter(c=>c.practice_id===id).sort((a,b)=>(rank[a.influence]??3)-(rank[b.influence]??3));
+  const stagePill=s=>`<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);">${ehtml(s||'')}</span>`;
+  const docRows=docs.length?docs.map(p=>`<div onclick="mdrxOpen(${p.id})" style="cursor:pointer;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border2);padding:8px 0;">
+    <div style="flex:1;min-width:150px;"><b>${ehtml(mdrxProvName(p))}</b>${p.specialty?' <span style="font-size:11.5px;color:var(--muted);">'+ehtml(p.specialty)+'</span>':''}${p.needs_attention?' <span class="nb" style="display:inline-block;background:#fff8e8;color:#9a6700;">reach out</span>':''}</div>
+    ${stagePill(p.funnel_stage)}</div>`).join(''):'<div style="color:var(--muted);font-size:13px;padding:6px 0;">No physicians linked to this practice.</div>';
+  const staffRows=staff.length?staff.map(c=>`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-bottom:1px solid var(--border2);padding:8px 0;">
+    <div style="flex:1;min-width:160px;"><b>${ehtml(c.name||'(no name)')}</b> ${mdrxInflBadge(c.influence)} ${c.is_champion?'<span style="font-size:11px;color:#2D6A4F;font-weight:700;">★</span>':''}<div style="font-size:11.5px;color:var(--muted);">${ehtml([c.title||c.role,c.email,c.cell].filter(Boolean).join(' · '))}</div>${c.notes?`<div style="font-size:11px;color:var(--muted2);margin-top:2px;">${ehtml(c.notes)}</div>`:''}</div>
+    ${c.email?`<button class="ib" onclick="mdrxEmailContact(${c.id})">✉️</button>`:''}<button class="ib" onclick="mdrxEditContact(${c.id})">Edit</button></div>`).join(''):'<div style="color:var(--muted);font-size:13px;padding:6px 0;">No people yet. Add the owner, the admins who decide (decision makers), and the office staff who steer the scripts (heavy influence).</div>';
+  return `<div class="panel" style="margin-top:14px;"><div class="ph"><div class="pt">🩺 Physicians (${docs.length})</div><div class="ps">Everyone in this account. Click a name to open their record.</div></div><div style="padding:6px 14px 14px;">${docRows}</div></div>
+  <div class="panel" style="margin-top:14px;"><div class="ph"><div class="pt">👥 People &amp; roles (${staff.length})</div><div class="ps">Decision makers first, then the staff who steer the scripts.</div></div><div style="padding:6px 14px 14px;">${staffRows}<div id="mdrx-contact-edit"></div><button class="ib" style="margin-top:8px;" onclick="mdrxEditContact(0)">+ Add person</button></div></div>`;
+}
 function mdrxEditPractice(id){
+  mdrxPracCtx=id||null;
   const pr=id?(MDRX_PRAC.find(x=>x.id===id)||{}):{};
   const body=document.getElementById('mdrx-body'); if(!body)return;
   body.innerHTML=`<div class="panel" style="padding:16px 18px;">
@@ -2776,7 +2798,7 @@ function mdrxEditPractice(id){
       <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">Notes</label>
       <textarea id="mdrx-f-pr_notes" rows="3" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;">${ehtml(pr.notes||'')}</textarea>
     </div>
-  </div>`;
+  </div>${id?mdrxPracticeRosterHtml(id):''}`;
 }
 async function mdrxSavePractice(id){
   const s=v=>v===''?null:v;
