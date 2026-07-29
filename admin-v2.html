@@ -1916,9 +1916,12 @@ function mdrxDragStart(e,id){e.dataTransfer.setData('text/plain',String(id));}
 async function mdrxDrop(e,stage){e.preventDefault();const id=parseInt(e.dataTransfer.getData('text/plain'),10);if(id)await mdrxSetStage(id,stage);}
 async function mdrxSetStage(id,stage){
   const p=MDRX_PROV.find(x=>x.id===id); if(!p||p.stage===stage)return;
-  const {error}=await sbClient.from('mdrx_providers').update({stage}).eq('id',id);
+  // funnel_stage is the single source of truth; the DB trigger derives stage + contact_home from it.
+  const S2F={target:'Queued',contacted:'Contacted',meeting:'Meeting Booked',document_review:'Closing',signed:'Won'};
+  const fs=S2F[stage]||'Queued';
+  const {error}=await sbClient.from('mdrx_providers').update({funnel_stage:fs}).eq('id',id);
   if(error){showToast('Error: '+error.message);return;}
-  p.stage=stage; if(stage==='signed')p.is_won=true; showToast('Moved to '+mdrxStageLbl(stage)); renderMdrx();
+  p.stage=stage; p.funnel_stage=fs; if(stage==='signed')p.is_won=true; showToast('Moved to '+mdrxStageLbl(stage)); renderMdrx();
 }
 function mdrxDQMissing(p){
   const m=[];
