@@ -1196,6 +1196,14 @@ function showView(v,btn){
   if(v==='analytics')loadAnalytics();
   if(v==='access')loadAccessLog();
 }
+// Clicking a physician here jumps straight to their full record: what they did, what we
+// sent back, and what happens next. Same destination as the CRM board.
+async function funOpenProvider(id){
+  showView('mdrx', document.querySelector('[onclick*="mdrx"]'));
+  mdrxTab='providers';
+  if(!(MDRX_PROV||[]).length){ try{ await loadMdrx(); }catch(e){} }
+  mdrxOpen(id);
+}
 // ---- Funnel engagement view ----------------------------------------------
 const FUNNEL_BASE='https://mdconcierge.net/go.html';
 function funName(p){return (((p.first_name||'')+' '+(p.last_name||'')).trim())||'(no name)';}
@@ -1227,7 +1235,7 @@ async function loadFunnel(){
     const dim=seen?'':'opacity:.5;';
     const cta=p.funnel_booked?'📅 booked':(p.funnel_last_cta?ehtml(p.funnel_last_cta):'');
     const focus=[p.target_specialty,p.region].filter(Boolean).map(ehtml).join(' · ')||'<span style="color:var(--muted)">no focus set</span>';
-    return `<tr style="${dim}">
+    return `<tr style="${dim}cursor:pointer;" onclick="funOpenProvider(${p.id})" title="Open the full timeline">
       <td><b>${ehtml(funName(p))}</b>${p.credential?(' <span style="color:var(--muted);font-size:11px;">'+ehtml(p.credential)+'</span>'):''}</td>
       <td style="font-size:12px;">${focus}</td>
       <td>${p.intent_tier?('<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);">'+ehtml(p.intent_tier)+'</span>'):''}</td>
@@ -1237,7 +1245,7 @@ async function loadFunnel(){
       <td style="text-align:center;">${funTime(p.funnel_total_seconds)}</td>
       <td style="font-size:12px;">${cta}</td>
       <td style="font-size:12px;color:var(--muted);">${seen?funAgo(seen):'no activity'}</td>
-      <td style="white-space:nowrap;"><a href="${funLink(p.funnel_token,'brief')}" target="_blank" style="font-size:11px;">open</a> · <a href="javascript:void(0)" onclick="funCopy('${p.funnel_token}')" style="font-size:11px;">copy link</a></td>
+      <td style="white-space:nowrap;" onclick="event.stopPropagation()"><a href="${funLink(p.funnel_token,'brief')}" target="_blank" style="font-size:11px;">open</a> · <a href="javascript:void(0)" onclick="funCopy('${p.funnel_token}')" style="font-size:11px;">copy link</a></td>
     </tr>`;
   }).join('');
   box.innerHTML=`
