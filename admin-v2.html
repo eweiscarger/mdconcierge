@@ -1916,6 +1916,7 @@ async function loadMdrx(){
   if(err){if(body)body.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load CRM: '+ehtml(err.message)+'</div>';return;}
   MDRX_PROV=a.data||[]; MDRX_PRAC=b.data||[]; MDRX_PH=c.data||[]; MDRX_CONTACTS=d.data||[]; MDRX_UTIL=e.data||[];
   try{ const {data:dr}=await sbClient.from('mdrx_inbox_drafts').select('*').eq('status','pending').order('received_at',{ascending:false}); MDRX_DRAFTS=dr||[]; }catch(e2){ MDRX_DRAFTS=[]; }
+  await mdrxLoadTemplates();
   if(!MDRX_FORM.length){ try{ const {data:fm}=await sbClient.from('mdconcierge_formulary').select('*').order('route').order('product'); MDRX_FORM=fm||[]; }catch(e3){ MDRX_FORM=[]; } }
   const badge=document.getElementById('mdrx-due');
   if(badge){const t=mdrxToday();const n=MDRX_PROV.filter(p=>p.status==='active'&&p.next_action_date&&p.next_action_date<=t).length;badge.textContent=n;badge.style.display=n?'':'none';}
@@ -2554,12 +2555,33 @@ async function mdrxSendAgreements(){
   const body='Hi Dr. '+(p.last_name||'')+',\n\nThank you for your interest in the '+prog+'. As promised, attached are the agreements and our compliance opinion from Alice G. Gosfield and Associates for your review. I have also copied my partner, '+(ph.cc_partner_name||'my partner')+', so we are all connected.\n\nOnce you have had a chance to look, I am glad to walk through anything and answer any questions, whatever works best for your schedule.\n\nBest,\nEric';
   mdrxEmailPanel({title:'Send agreements to '+mdrxProvName(p),to:p.email,subject:'Agreements for the '+prog,body:body,kind:'agreements',attachments:atts});
 }
+// The cadence's own touch templates, mirrored to mdrx_templates on every cadence run so the
+// compose box can never drift from what actually goes out. Merge tokens filled per doctor.
+var MDRX_TPL=[];
+async function mdrxLoadTemplates(){
+  try{ const {data}=await sbClient.from('mdrx_templates').select('touch_no,label,subject,body_text').order('touch_no'); MDRX_TPL=data||[]; }catch(e){ MDRX_TPL=[]; }
+}
+function mdrxApplyTemplate(n){
+  if(!n){ return; }
+  const t=(MDRX_TPL||[]).find(x=>String(x.touch_no)===String(n)); if(!t)return;
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId)||{};
+  const fill=(s)=>String(s||'').split('{{last}}').join(p.last_name||'').split('{{token}}').join(p.funnel_token||'');
+  const sj=document.getElementById('mdrx-em-subj'), bd=document.getElementById('mdrx-em-body');
+  if(sj)sj.value=fill(t.subject);
+  if(bd)bd.value=fill(t.body_text);
+  if(!p.funnel_token) showToast('Heads up: no tracked link on this record, so the template links are generic.');
+}
 function mdrxEmailPanel(o){
   window._mdrxAtt=o.attachments||[];
   const pnl=document.getElementById('mdrx-action-panel'); if(!pnl)return;
   const f='padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
   pnl.innerHTML=`<div class="panel" style="padding:14px;border:1px solid var(--steel,#6B9FD4);">
     <div style="font-weight:700;font-size:14px;margin-bottom:8px;">${ehtml(o.title||'Compose email')}</div>
+    <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">Start from a cadence template</label>
+    <select id="mdrx-em-tpl" onchange="mdrxApplyTemplate(this.value)" style="width:100%;${f}margin-bottom:8px;">
+      <option value="">Blank message</option>
+      ${(MDRX_TPL||[]).map(t=>`<option value="${t.touch_no}">${ehtml(t.label||('Touch '+t.touch_no))}</option>`).join('')}
+    </select>
     <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">To</label><input id="mdrx-em-to" value="${ehtml(o.to||'')}" style="width:100%;${f}margin-bottom:8px;">
     <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">Subject</label><input id="mdrx-em-subj" value="${ehtml(o.subject||'')}" style="width:100%;${f}margin-bottom:8px;">
     <label style="display:block;font-size:11px;color:var(--muted);margin:0 0 3px;">Message (edit before sending)</label><textarea id="mdrx-em-body" rows="11" style="width:100%;${f}font-family:inherit;line-height:1.5;">${ehtml(o.body||'')}</textarea>
