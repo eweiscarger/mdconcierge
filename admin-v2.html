@@ -1867,7 +1867,7 @@ function crmExport(){
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 /* ============================ MDRx Pharmacy CRM (Prompt 2: screens) ============================ */
 let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], MDRX_DRAFTS=[], MDRX_FORM=[], MDRX_QUOTE=null, mdrxTab='due', mdrxSearch='', mdrxOpenId=null, mdrxHome='All', mdrxSort='name', mdrxDQ=false, mdrxPracCtx=null;
-const MDRX_STAGES=[['target','Target','#6B95D4'],['contacted','Contacted','#c8922a'],['meeting','Meeting','#7a5cd0'],['document_review','Doc review','#d08a2c'],['signed','Signed','#2D6A4F']];
+const MDRX_STAGES=[['target','Target','#6B95D4'],['contacted','Contacted','#c8922a'],['interested','Interested','#1e9e6a'],['meeting','Meeting','#7a5cd0'],['document_review','Doc review','#d08a2c'],['signed','Signed','#2D6A4F']];
 const MDRX_BUCKETS=[['','—'],['cold','Cold'],['warm','Warm'],['previously_engaged','Previously engaged'],['existing_low_util','Existing low-util']];
 const MDRX_STATUS=[['active','Active'],['dormant','Dormant'],['lost','Lost']];
 const MDRX_PHARM=['','PDRx','MDRx','EZmeds'];
@@ -1962,7 +1962,7 @@ async function mdrxDrop(e,stage){e.preventDefault();const id=parseInt(e.dataTran
 async function mdrxSetStage(id,stage){
   const p=MDRX_PROV.find(x=>x.id===id); if(!p||p.stage===stage)return;
   // funnel_stage is the single source of truth; the DB trigger derives stage + contact_home from it.
-  const S2F={target:'Queued',contacted:'Contacted',meeting:'Meeting Booked',document_review:'Closing',signed:'Won'};
+  const S2F={target:'Queued',contacted:'Contacted',interested:'Engaged',meeting:'Meeting Booked',document_review:'Closing',signed:'Won'};
   const fs=S2F[stage]||'Queued';
   const {error}=await sbClient.from('mdrx_providers').update({funnel_stage:fs}).eq('id',id);
   if(error){showToast('Error: '+error.message);return;}
@@ -2186,11 +2186,13 @@ async function mdrxDelete(id){
 }
 async function mdrxLoadTimeline(id){
   if(!id)return; const el=document.getElementById('mdrx-timeline'); if(!el)return;
-  const [act,ev,dr,ql]=await Promise.all([
+  const [act,ev,dr,ql,ob,nm]=await Promise.all([
     sbClient.from('mdrx_activity').select('*').eq('provider_id',id),
     sbClient.from('mdrx_funnel_events').select('event,page,link,cta,scroll,seconds,created_at').eq('provider_id',id).order('created_at',{ascending:false}).limit(120),
     sbClient.from('mdrx_inbox_drafts').select('subject,snippet,sentiment,received_at').eq('provider_id',id),
-    sbClient.from('quote_links').select('recipient_name,view_count,first_viewed_at,last_viewed_at').eq('provider_id',id)
+    sbClient.from('quote_links').select('recipient_name,view_count,first_viewed_at,last_viewed_at').eq('provider_id',id),
+    sbClient.from('mdrx_outbox').select('touch_no,subject,status,sent_at,scheduled_date,plain_retry').eq('provider_id',id).order('id'),
+    sbClient.from('mdrx_next_moves').select('recommended_date,channel,angle,reason,draft,status').eq('provider_id',id).order('recommended_date',{ascending:false}).limit(10)
   ]);
   MDRX_ACT=act.data||[];  // manual activity only (used for prior-touch counting)
   const items=[];
@@ -2207,9 +2209,32 @@ async function mdrxLoadTimeline(id){
   });
   (dr.data||[]).forEach(d=>items.push({when:d.received_at,icon:'📨',title:'Replied'+(d.subject?': '+d.subject:''),detail:(d.sentiment?'['+d.sentiment+'] ':'')+(d.snippet||'')}));
   (ql.data||[]).forEach(q=>{ if(q.first_viewed_at)items.push({when:q.first_viewed_at,icon:'📄',title:'Opened the dispensing tool',detail:(q.view_count||0)+' view'+(q.view_count===1?'':'s')+(q.last_viewed_at&&q.last_viewed_at!==q.first_viewed_at?' · last '+String(q.last_viewed_at).slice(0,16).replace('T',' '):'')}); });
+  // what WE sent them, so the feed reads as a conversation rather than only their side
+  const upcoming=[];
+  (ob.data||[]).forEach(o=>{
+    const label='Touch '+(o.touch_no||1)+(o.plain_retry?' (plain-text retry)':'')+(o.subject?': '+o.subject:'');
+    if(o.status==='sent') items.push({when:o.sent_at,icon:'📧',title:'We sent '+label,detail:''});
+    else if(o.status==='pending') upcoming.push({when:o.scheduled_date,icon:'📬',title:'Queued to send: '+label,detail:'Waiting for your approval in Today → Ready to send'});
+    else if(o.status==='skipped') items.push({when:o.scheduled_date,icon:'⏭️',title:'Skipped '+label,detail:''});
+  });
+  // what the engine plans to do next, and what it recommends
+  (nm.data||[]).forEach(n=>{
+    const ch={email:'✉️',call:'📞',text:'💬'}[n.channel]||'•';
+    const t=(n.status==='approved'?'Planned':'Recommended')+' '+(n.channel||'move')+(n.angle?' · '+n.angle:'');
+    const row={when:n.recommended_date,icon:ch,title:t,detail:(n.reason?n.reason+'\n\n':'')+(n.draft||'')};
+    if(n.status==='dismissed') return;
+    (String(n.recommended_date||'')>=mdrxToday()?upcoming:items).push(row);
+  });
+  const prov=(MDRX_PROV||[]).find(x=>x.id===id);
+  if(prov&&prov.funnel_next_date&&prov.next_step) upcoming.push({when:prov.funnel_next_date,icon:'🗓️',title:'Cadence: '+prov.next_step+' scheduled',detail:'Queues automatically on this date'});
+  if(prov&&prov.brief_sent_at) items.push({when:prov.brief_sent_at,icon:'📘',title:'We sent the Executive Brief',detail:''});
+  upcoming.sort((a,b)=>String(a.when||'').localeCompare(String(b.when||'')));
   items.sort((a,b)=>String(b.when||'').localeCompare(String(a.when||'')));
-  if(!items.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">No activity yet. Use the buttons above to log a call, meeting, or note.</div>';return;}
-  el.innerHTML=items.map(a=>`<div style="border-left:2px solid var(--border2);padding:6px 0 6px 12px;margin-bottom:4px;"><div style="font-size:12.5px;"><b>${a.icon} ${ehtml(a.title)}</b> <span style="color:var(--muted);font-size:11px;">${String(a.when||'').slice(0,16).replace('T',' ')}</span></div>${a.detail?`<div style="font-size:12px;color:var(--muted2);margin-top:2px;white-space:pre-wrap;">${ehtml(a.detail)}</div>`:''}</div>`).join('');
+  const row=(a,c)=>`<div style="border-left:2px solid ${c||'var(--border2)'};padding:6px 0 6px 12px;margin-bottom:4px;"><div style="font-size:12.5px;"><b>${a.icon} ${ehtml(a.title)}</b> <span style="color:var(--muted);font-size:11px;">${String(a.when||'').slice(0,16).replace('T',' ')}</span></div>${a.detail?`<div style="font-size:12px;color:var(--muted2);margin-top:2px;white-space:pre-wrap;">${ehtml(a.detail)}</div>`:''}</div>`;
+  const nextBlock=upcoming.length?`<div style="margin-bottom:12px;"><div style="font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px;">WHAT HAPPENS NEXT</div>${upcoming.map(a=>row(a,'#1e9e6a')).join('')}</div>`:'';
+  if(!items.length&&!upcoming.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">No activity yet. Use the buttons above to log a call, meeting, or note.</div>';return;}
+  const histBlock=items.length?`<div style="font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px;">HISTORY</div>${items.map(a=>row(a)).join('')}`:'';
+  el.innerHTML=nextBlock+histBlock;
 }
 async function mdrxBrief(id){
   let ov=document.getElementById('mdrx-brief-ov');
