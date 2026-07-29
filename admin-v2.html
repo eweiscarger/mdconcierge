@@ -2127,7 +2127,8 @@ function mdrxDetailHtml(id){
     <button class="ib" onclick="mdrxCompose('call')">📞 Log call</button>
     <button class="ib" onclick="mdrxCompose('meeting')">🤝 Log meeting</button>
     <button class="ib" onclick="mdrxCompose('note')">📝 Add note</button>
-    <button class="ib" onclick="mdrxDraftOutreach()">✉️ Draft outreach</button>
+    <button class="ib" onclick="mdrxEmailBlank()">✉️ Email</button>
+    <button class="ib" onclick="mdrxDraftOutreach()">🪄 Draft outreach</button>
     <button class="ib" onclick="mdrxSendAgreements()">📎 Send agreements</button>
     <button class="ib" onclick="mdrxDocusign()">📄 Request DocuSign contract</button>
     <button class="ib" onclick="mdrxQuote()">🧮 Generate quote</button>
@@ -2507,6 +2508,13 @@ function mdrxReferralAsk(){
   const body='Hi Dr. '+(p.last_name||'')+",\n\nGreat to see how the program is working for your workers' comp patients. Most of the doctors I work with came through a colleague who had seen it firsthand. Is there anyone in your circle who handles similar workers' comp or post-surgical patients and might want me to walk them through it? I will do all the lifting, you would just point me in their direction.\n\nEither way, thank you for trusting us with your patients.\n\nBest,\nEric";
   mdrxEmailPanel({title:'Ask for a referral',to:p.email,subject:'A quick ask',body:body,kind:'referral'});
 }
+// Plain email straight from the record. Sends as eric@, logs itself to the timeline.
+function mdrxEmailBlank(){
+  const p=MDRX_PROV.find(x=>x.id===mdrxOpenId); if(!p)return;
+  if(!p.email){ showToast("Add the doctor's email first."); return; }
+  mdrxEmailPanel({title:'Email '+mdrxProvName(p),to:p.email,subject:'',
+    body:'Dr. '+(p.last_name||'')+',\n\n\n\nBest,',kind:'manual'});
+}
 async function mdrxDraftOutreach(){
   const p=MDRX_PROV.find(x=>x.id===mdrxOpenId); if(!p)return;
   if(!p.email){ showToast("Add the doctor's email first."); return; }
@@ -2562,8 +2570,10 @@ async function mdrxEmailSend(kind){
   if(error||!data||!data.ok){showToast('Send failed: '+((data&&data.error)||(error&&error.message)||'unknown'));return;}
   if(p){ try{ await sbClient.from('mdrx_activity').insert({provider_id:p.id,type:'email_out',subject:subject||'Email',notes:'To: '+to.join(', '),created_by:'eric'}); }catch(e){}
     if(kind==='referral'){ try{ await sbClient.from('mdrx_providers').update({referral_asked_at:mdrxToday()}).eq('id',p.id); }catch(e){} }
-    if(kind==='outreach'){ try{ const upd={}; if(p.stage==='target')upd.stage='contacted'; const prior=MDRX_ACT.filter(a=>['call','meeting','email_out'].includes(a.type)).length; const sug=mdrxSuggest(p,prior); upd.next_action=sug.action; upd.next_action_date=sug.date; await sbClient.from('mdrx_providers').update(upd).eq('id',p.id); }catch(e){} }
-    if(kind==='agreements'){ try{ if(['contacted','meeting'].includes(p.stage)) await sbClient.from('mdrx_providers').update({stage:'document_review'}).eq('id',p.id); }catch(e){} } }
+    // funnel_stage is the source of truth; the DB trigger derives stage + contact_home from it.
+    // Writing stage directly here used to get overwritten on the next funnel update.
+    if(kind==='outreach'||kind==='manual'){ try{ const upd={}; if(['New','Queued'].includes(p.funnel_stage))upd.funnel_stage='Contacted'; const prior=MDRX_ACT.filter(a=>['call','meeting','email_out'].includes(a.type)).length; const sug=mdrxSuggest(p,prior); upd.next_action=sug.action; upd.next_action_date=sug.date; await sbClient.from('mdrx_providers').update(upd).eq('id',p.id); }catch(e){} }
+    if(kind==='agreements'){ try{ if(['Engaged','Replied','Materials Sent','Meeting Booked','Met','Follow-up'].includes(p.funnel_stage)) await sbClient.from('mdrx_providers').update({funnel_stage:'Closing'}).eq('id',p.id); }catch(e){} } }
   window._mdrxAtt=[];
   const pnl=document.getElementById('mdrx-action-panel'); if(pnl)pnl.innerHTML='';
   showToast('Sent ✓'); await loadMdrx();
