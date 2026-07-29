@@ -1332,7 +1332,7 @@ async function loadCockpit(){
   const box=document.getElementById('cockpit-body');
   box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
   const today=new Date().toISOString().slice(0,10);
-  const [pr,bk,rep,ql,mdrxd,enr,nm,ob]=await Promise.all([
+  const [pr,bk,rep,ql,mdrxd,enr,nm,ob,cf]=await Promise.all([
     sbClient.from('mdrx_providers').select('id,first_name,last_name,practice_name,funnel_stage,contact_home,next_step,funnel_next_date,intent_score,funnel_score,intent_tier,email,target_specialty,region,needs_attention,funnel_last_seen_at'),
     sbClient.from('bookings').select('*').gte('slot_start',today+'T00:00:00').lte('slot_start',today+'T23:59:59'),
     sbClient.from('funnel_replies').select('id,status').eq('status','pending'),
@@ -1340,7 +1340,8 @@ async function loadCockpit(){
     sbClient.from('mdrx_inbox_drafts').select('id,from_name,from_addr,subject,sentiment,hot,status,provider_id').eq('status','pending'),
     sbClient.from('enrichment_suggestions').select('*').eq('status','pending').order('confidence'),
     sbClient.from('mdrx_next_moves').select('*').eq('status','pending').order('recommended_date'),
-    sbClient.from('mdrx_outbox').select('*').eq('status','pending').order('id')
+    sbClient.from('mdrx_outbox').select('*').eq('status','pending').order('id'),
+    sbClient.from('outreach_config').select('sending_paused,pause_reason').eq('id',1).maybeSingle()
   ]);
   if(pr.error){box.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load cockpit: '+ehtml(pr.error.message)+'</div>';return;}
   const P=pr.data||[];
@@ -1385,7 +1386,8 @@ async function loadCockpit(){
     <div style="margin-top:4px;font-size:11px;color:var(--muted);">Your signature attaches automatically on send.</div>
     <div style="margin-top:6px;display:flex;gap:6px;"><button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;" onclick="mdrxSendOutbox([${o.id}])">Send this one</button><button class="ib" onclick="mdrxSkipOutbox(${o.id})">Skip</button></div>
   </div>`;}).join('');
-  const obPanel=outboxList.length?`<div class="panel" style="margin-bottom:16px;border:2px solid var(--green);"><div class="ph"><div class="pt">📤 Ready to send (${outboxList.length})</div><div class="ps">The day's queued outreach. Edit any, skip any, then send. Your signature attaches automatically. Nothing goes out until you click send.</div></div><div style="padding:10px 14px 4px;"><button onclick="mdrxSendOutbox([${outboxList.map(o=>o.id).join(',')}])" style="padding:10px 20px;background:var(--green);color:#fff;border:none;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;">✅ Send all ${outboxList.length}</button></div><div class="grp" style="margin:0;border:none;padding:2px 14px 12px;">${obHtml}</div></div>`:'';
+  const paused=!!(cf&&cf.data&&cf.data.sending_paused);
+  const obPanel=outboxList.length?`<div class="panel" style="margin-bottom:16px;border:2px solid ${paused?'#c0392b':'var(--green)'};"><div class="ph"><div class="pt">📤 Ready to send (${outboxList.length})</div><div class="ps">The day's queued outreach. Edit any, skip any, then send. Your signature attaches automatically. Nothing goes out until you click send.</div></div><div style="padding:10px 14px 4px;">${paused?`<div style="background:#4a1414;border:1px solid #c0392b;border-radius:8px;padding:10px 12px;color:#ff9b9b;font-size:13px;">⛔ Sending is PAUSED — ${ehtml((cf.data&&cf.data.pause_reason)||'deliverability guard')}. <button class="ib" onclick="mdrxResumeSending()" style="margin-left:8px;">Resume sending</button></div>`:`<button onclick="mdrxSendOutbox([${outboxList.map(o=>o.id).join(',')}])" style="padding:10px 20px;background:var(--green);color:#fff;border:none;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;">✅ Send all ${outboxList.length}</button>`}</div><div class="grp" style="margin:0;border:none;padding:2px 14px 12px;">${obHtml}</div></div>`:'';
   box.innerHTML=`
     <style>#view-cockpit .row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border2);}#view-cockpit .row:last-child{border-bottom:none;}#view-cockpit .meta{flex:1;min-width:0;}#view-cockpit .nm{font-size:14px;font-weight:600;}#view-cockpit .ds{font-size:12px;color:var(--muted);}#view-cockpit .grp{padding:2px 14px;}</style>
     ${obPanel}
@@ -1449,6 +1451,11 @@ async function mdrxSendOutbox(ids){
 async function mdrxSkipOutbox(id){
   await sbClient.from('mdrx_outbox').update({status:'skipped'}).eq('id',id);
   showToast('Skipped'); loadCockpit();
+}
+async function mdrxResumeSending(){
+  if(!confirm('Resume sending? Only do this after you have addressed whatever caused the pause.'))return;
+  await sbClient.from('outreach_config').update({sending_paused:false,pause_reason:null}).eq('id',1);
+  showToast('Sending resumed'); loadCockpit();
 }
 // ---- Pipeline board (Task 7) ----------------------------------------------
 const PIPE_STAGES=['New','Queued','Contacted','Engaged','Replied','Materials Sent','Meeting Booked','Met','Follow-up','Closing','Won','Not Now','Lost','Unsubscribed'];
