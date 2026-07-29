@@ -45,7 +45,7 @@
     <hr class="soft"/>
     <div class="ctarow">
       <a class="cta" href="book.html" data-keep data-cta="book">Book a 15-minute call</a>
-      <a class="cta ghost" href="mailto:eric@mdconcierge.net?subject=More%20information%20on%20the%20Platform&body=Please%20send%20me%20more%20about%20the%20work-comp%20pharmacy%20program." data-cta="request-info">Request more information</a>
+      <a class="cta ghost" id="reqinfo-btn" href="#" data-cta="request-info" onclick="return requestInfo(event)">Request more information</a>
     </div>
     <p class="fine" style="text-align:center;margin-top:12px;">Workers-comp claims only. Not legal advice.</p>
 
@@ -56,6 +56,27 @@
     Independent licensed pharmacy. Workers-comp claims only. Not legal advice.
   </div>
 </div>
+<script>
+// "Request more information": ask the engine to auto-send the Executive Brief to this
+// physician (resolved from their ?p= token). POST, not a link, so email scanners can't
+// trigger it. Falls back to emailing Eric if the page is opened without a token.
+function requestInfo(e){
+  if(e) e.preventDefault();
+  var token=new URLSearchParams(location.search).get('p')||'';
+  var btn=document.getElementById('reqinfo-btn');
+  if(!token){ location.href="mailto:eric@mdconcierge.net?subject=More%20information%20on%20the%20Platform&body=Please%20send%20me%20more%20about%20the%20work-comp%20pharmacy%20program."; return false; }
+  if(btn){ btn.textContent='Sending…'; btn.style.pointerEvents='none'; btn.style.opacity='.7'; }
+  fetch("https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/request-info",{
+    method:"POST", headers:{"Content-Type":"application/json"}, mode:"cors",
+    body: JSON.stringify({token:token})
+  }).then(reqInfoDone).catch(reqInfoDone);
+  return false;
+}
+function reqInfoDone(){
+  var row=document.querySelector('.ctarow');
+  if(row) row.outerHTML='<div style="background:#EEF3FB;border:1px solid #CFE0F0;border-radius:11px;padding:16px 18px;color:#1b3a5c;font-weight:600;text-align:center;">Thanks. We just emailed you a short brief. Please check your inbox.</div>';
+}
+</script>
 <script src="funnel-assets/track.js"></script>
 </body>
 </html>
