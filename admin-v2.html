@@ -2583,6 +2583,14 @@ var MDRX_TPL=[];
 async function mdrxLoadTemplates(){
   try{ const {data}=await sbClient.from('mdrx_templates').select('touch_no,label,subject,body_text').order('touch_no'); MDRX_TPL=data||[]; }catch(e){ MDRX_TPL=[]; }
 }
+// Fill the select whenever a compose panel opens, regardless of how Eric got to this record.
+// Relying on loadMdrx having run first meant the dropdown could come up empty.
+async function mdrxFillTemplateSelect(){
+  const sel=document.getElementById('mdrx-em-tpl'); if(!sel)return;
+  if(!(MDRX_TPL||[]).length) await mdrxLoadTemplates();
+  if(!(MDRX_TPL||[]).length){ sel.innerHTML='<option value="">Blank message (templates unavailable)</option>'; return; }
+  sel.innerHTML='<option value="">Blank message</option>'+MDRX_TPL.map(t=>`<option value="${t.touch_no}">${ehtml(t.label||('Touch '+t.touch_no))}</option>`).join('');
+}
 function mdrxApplyTemplate(n){
   if(!n){ return; }
   const t=(MDRX_TPL||[]).find(x=>String(x.touch_no)===String(n)); if(!t)return;
@@ -2612,6 +2620,7 @@ function mdrxEmailPanel(o){
     <button class="ib" onclick="document.getElementById('mdrx-action-panel').innerHTML=''">Cancel</button>
   </div>`;
   pnl.scrollIntoView({behavior:'smooth',block:'center'});
+  mdrxFillTemplateSelect();
 }
 async function mdrxEmailSend(kind){
   const p=MDRX_PROV.find(x=>x.id===mdrxOpenId);
