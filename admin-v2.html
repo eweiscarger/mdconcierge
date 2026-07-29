@@ -1615,7 +1615,7 @@ async function replyAction(id,mode){
   const attach=(mode==='materials'||r.suggested_action==='send_materials')?REPLY_MATERIALS:[];
   const subject=/^re:/i.test(r.subject||'')?r.subject:('Re: '+(r.subject||'MDconcierge'));
   try{
-    const {error}=await sbClient.functions.invoke('send-mail',{body:{to:[r.from_addr],subject,text,attachments:attach}});
+    const {error}=await sbClient.functions.invoke('send-mail',{body:{signature:true,to:[r.from_addr],subject,text,attachments:attach}});
     if(error)throw error;
     await sbClient.from('funnel_replies').update({status:'sent',draft_reply:text}).eq('id',id);
     if(msg){msg.style.color='var(--green)';msg.textContent='Sent.';}
@@ -2369,7 +2369,7 @@ async function mdrxSendDocusign(){
   const body=((document.getElementById('mdrx-ds-body')||{}).value||'').trim();
   if(!to.length){showToast('Add at least one recipient.');return;}
   showToast('Sending…');
-  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{to,subject,text:body}});
+  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{signature:true,to,subject,text:body}});
   if(error||!data||!data.ok){showToast('Send failed: '+((data&&data.error)||(error&&error.message)||'unknown'));return;}
   try{ await sbClient.from('mdrx_activity').insert({provider_id:p.id,type:'email_out',subject:'DocuSign requested from MDRx',notes:'To: '+to.join(', ')+'\nSubject: '+subject,created_by:'eric'}); }catch(e){}
   const pnl=document.getElementById('mdrx-action-panel'); if(pnl)pnl.innerHTML='';
@@ -2576,7 +2576,7 @@ async function mdrxEmailSend(kind){
   const bodyt=(((document.getElementById('mdrx-em-body')||{}).value)||'').trim();
   if(!to.length){showToast('Add a recipient.');return;}
   showToast('Sending…');
-  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{to,subject,text:bodyt,attachments:window._mdrxAtt||[]}});
+  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{signature:true,to,subject,text:bodyt,attachments:window._mdrxAtt||[]}});
   if(error||!data||!data.ok){showToast('Send failed: '+((data&&data.error)||(error&&error.message)||'unknown'));return;}
   if(p){ try{ await sbClient.from('mdrx_activity').insert({provider_id:p.id,type:'email_out',subject:subject||'Email',notes:'To: '+to.join(', '),created_by:'eric'}); }catch(e){}
     if(kind==='referral'){ try{ await sbClient.from('mdrx_providers').update({referral_asked_at:mdrxToday()}).eq('id',p.id); }catch(e){} }
@@ -2632,7 +2632,7 @@ async function mdrxSendDraft(id){
   if(!text){showToast('Draft is empty, write a reply first.');return;}
   const subject=/^re:/i.test(d.subject||'')?d.subject:('Re: '+(d.subject||''));
   showToast('Sending…');
-  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{to:[d.from_addr],subject,text}});
+  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{signature:true,to:[d.from_addr],subject,text}});
   if(error||!data||!data.ok){showToast('Send failed: '+((data&&data.error)||(error&&error.message)||'unknown'));return;}
   try{ await sbClient.from('mdrx_inbox_drafts').update({status:'sent',draft_reply:text}).eq('id',id); }catch(e){}
   if(d.provider_id){ try{ await sbClient.from('mdrx_activity').insert({provider_id:d.provider_id,type:'email_out',subject:'Reply: '+(d.subject||''),notes:'To: '+d.from_addr,created_by:'eric'}); }catch(e){} }
