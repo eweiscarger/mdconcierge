@@ -1827,7 +1827,7 @@ function renderMdrx(){
   const tb=document.getElementById('mdrx-tabs');
   if(tb)tb.innerHTML=tabs.map(([key,lbl])=>{const on=(mdrxTab===key&&mdrxOpenId===null);return `<button onclick="mdrxOpenId=null;mdrxTab='${key}';renderMdrx()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:${on?'#2b3550':'transparent'};color:${on?'#fff':'var(--muted2)'};font-weight:700;font-size:13px;cursor:pointer;">${lbl}</button>`;}).join('');
   const body=document.getElementById('mdrx-body'); if(!body)return;
-  if(mdrxOpenId!==null){ body.innerHTML=mdrxDetailHtml(mdrxOpenId); mdrxLoadTimeline(mdrxOpenId); return; }
+  if(mdrxOpenId!==null){ body.innerHTML=mdrxDetailHtml(mdrxOpenId); mdrxLoadTimeline(mdrxOpenId); mdrxLoadDocs(mdrxOpenId); return; }
   if(mdrxTab==='due') body.innerHTML=mdrxDueHtml();
   else if(mdrxTab==='inbox') body.innerHTML=mdrxInboxHtml();
   else if(mdrxTab==='board') body.innerHTML=mdrxBoardHtml();
@@ -2050,7 +2050,7 @@ function mdrxDetailHtml(id){
       ${id?`<button class="ib" style="color:#e0556b;" onclick="mdrxDelete(${id})">Delete</button>`:''}
       <button onclick="mdrxSave(${id||0})" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">${isNew?'Create provider':'Save changes'}</button>
     </div>${importBar}${form}${locsBlock}${buttons}
-  </div>${isNew?'':mdrxStaffHtml(p)+mdrxUtilHtml(p)}${timeline}`;
+  </div>${isNew?'':mdrxStaffHtml(p)+mdrxDocsHtml(p)+mdrxUtilHtml(p)}${timeline}`;
 }
 function mdrxVal(id){const el=document.getElementById('mdrx-f-'+id);return el?el.value:'';}
 async function mdrxSave(id){
@@ -2289,6 +2289,54 @@ async function mdrxDeleteContact(id){
   const {error}=await sbClient.from('mdrx_contacts').delete().eq('id',id);
   if(error){showToast('Error: '+error.message);return;}
   showToast('Deleted'); await loadMdrx();
+}
+// ---- Documents (per contact + practice) ----
+function mdrxDocsHtml(p){
+  return `<div class="panel" style="margin-top:14px;"><div class="ph"><div class="pt">📁 Documents</div><div class="ps">Contracts, DocuSigns, formularies, collateral. Private to your team, shared across this practice.</div></div>
+    <div style="padding:6px 14px 14px;">
+      <input type="file" id="mdrx-doc-file" style="display:none;" onchange="mdrxUploadDoc(${p.id})">
+      <button class="ib" onclick="document.getElementById('mdrx-doc-file').click()">⬆ Upload document</button>
+      <span id="mdrx-doc-status" style="font-size:12px;color:var(--muted);margin-left:8px;"></span>
+      <div id="mdrx-docs" style="margin-top:10px;">Loading…</div>
+    </div></div>`;
+}
+async function mdrxLoadDocs(id){
+  const el=document.getElementById('mdrx-docs'); if(!el)return;
+  const p=MDRX_PROV.find(x=>x.id===id)||{};
+  const filt = p.practice_id ? `provider_id.eq.${id},practice_id.eq.${p.practice_id}` : `provider_id.eq.${id}`;
+  const {data,error}=await sbClient.from('mdrx_documents').select('*').or(filt).order('created_at',{ascending:false});
+  if(error){el.innerHTML='<span style="color:#c0392b;font-size:12px;">'+ehtml(error.message)+'</span>';return;}
+  window._mdrxDocs=data||[];
+  if(!window._mdrxDocs.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">No documents yet. Upload contracts, DocuSigns, or collateral.</div>';return;}
+  el.innerHTML=window._mdrxDocs.map(d=>`<div style="display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border2);padding:7px 0;">
+    <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">📄 ${ehtml(d.name)}</div><div style="font-size:11px;color:var(--muted);">${d.size?(Math.round(d.size/1024)+' KB · '):''}${ehtml((d.created_at||'').slice(0,10))}${d.provider_id!==id?' · practice-wide':''}</div></div>
+    <button class="ib" onclick="mdrxDownloadDoc(${d.id})">Download</button>
+    <button class="ib" style="color:#e0556b;" onclick="mdrxDeleteDoc(${d.id})">✕</button></div>`).join('');
+}
+async function mdrxUploadDoc(id){
+  const inp=document.getElementById('mdrx-doc-file'); const file=inp&&inp.files&&inp.files[0]; if(!file)return;
+  const st=document.getElementById('mdrx-doc-status'); if(st)st.textContent='Uploading '+file.name+'…';
+  const safe=file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+  const path='p'+id+'/'+Date.now()+'_'+safe;
+  const {error:upErr}=await sbClient.storage.from('documents').upload(path,file,{upsert:false});
+  if(upErr){ if(st)st.textContent='Upload failed: '+upErr.message; return; }
+  const p=MDRX_PROV.find(x=>x.id===id)||{};
+  const {error:insErr}=await sbClient.from('mdrx_documents').insert({provider_id:id,practice_id:p.practice_id||null,name:file.name,path,size:file.size,content_type:file.type||null,uploaded_by:'eric'});
+  if(st)st.textContent=insErr?('Saved file, metadata error: '+insErr.message):'Uploaded ✓';
+  if(inp)inp.value=''; mdrxLoadDocs(id);
+}
+async function mdrxDownloadDoc(docId){
+  const d=(window._mdrxDocs||[]).find(x=>x.id===docId); if(!d)return;
+  const {data,error}=await sbClient.storage.from('documents').createSignedUrl(d.path,120);
+  if(error){showToast('Error: '+error.message);return;}
+  window.open(data.signedUrl,'_blank');
+}
+async function mdrxDeleteDoc(docId){
+  const d=(window._mdrxDocs||[]).find(x=>x.id===docId); if(!d)return;
+  if(!confirm('Delete '+d.name+'?'))return;
+  await sbClient.storage.from('documents').remove([d.path]);
+  await sbClient.from('mdrx_documents').delete().eq('id',docId);
+  showToast('Deleted'); mdrxLoadDocs(mdrxOpenId);
 }
 function mdrxEmailContact(id){
   const c=MDRX_CONTACTS.find(x=>x.id===id), p=MDRX_PROV.find(x=>x.id===mdrxOpenId);
