@@ -2134,6 +2134,28 @@ function mdrxDetailHtml(id){
     ${col(g('Sales')+mdrxSel('pharmacy','Pharmacy',p.pharmacy,MDRX_PHARM)+mdrxSel('competition','Competition',p.competition,MDRX_COMPET)+mdrxSel('claims_purchase','Claims purchase',p.claims_purchase||'unknown',MDRX_CLAIMS)+mdrxSel('relationship_bucket','Relationship bucket',p.relationship_bucket,MDRX_BUCKETS))}
     ${col(g('Pipeline')+mdrxSel('stage','Stage',p.stage||'target',MDRX_STAGES.map(s=>[s[0],s[1]]))+mdrxSel('status','Status',p.status||'active',MDRX_STATUS)+mdrxF('next_action','Next action',p.next_action)+mdrxF('next_action_date','Next action date',p.next_action_date,'date')+mdrxF('first_rx_received','First Rx received',p.first_rx_received,'date')+mdrxF('hook','Hook (re-engagement)',p.hook)+mdrxF('lost_reason','Lost reason',p.lost_reason))}
   </div>`;
+  // The plan, stated. A rep should never have to work out what happens next or record it.
+  const planBanner=isNew?'':(()=>{
+    const t=mdrxToday();
+    const when=p.funnel_next_date||p.next_action_date||'';
+    const what=p.next_step||p.next_action||'No next step set';
+    const overdue=when&&when<t, today=when===t;
+    const c=overdue?'#e0556b':today?'#1e9e6a':'var(--steel,#6B9FD4)';
+    const lbl=overdue?('OVERDUE since '+when):today?'DUE TODAY':(when?('Scheduled '+when):'No date set');
+    const owner=p.funnel_stage==='Engaged'||p.funnel_stage==='Replied'?'AI paused the cadence, this one is yours':'Handled automatically unless you change it';
+    return `<div class="panel" style="margin:0 0 14px;border-left:4px solid ${c};">
+      <div style="padding:12px 16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+        <div style="flex:1;min-width:220px;">
+          <div style="font-size:10.5px;letter-spacing:.08em;color:var(--muted);font-weight:700;">NEXT STEP</div>
+          <div style="font-size:15px;font-weight:700;margin-top:2px;">${ehtml(what)}</div>
+          <div style="font-size:12px;color:var(--muted2);margin-top:2px;">${ehtml(owner)}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;font-weight:800;color:${c};">${ehtml(lbl)}</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px;">Stage: ${ehtml(p.funnel_stage||'New')}</div>
+        </div>
+      </div></div>`;
+  })();
   const buttons=isNew?'':`<div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0;">
     <button class="ib" onclick="mdrxCompose('call')">📞 Log call</button>
     <button class="ib" onclick="mdrxCompose('meeting')">🤝 Log meeting</button>
@@ -2168,7 +2190,7 @@ function mdrxDetailHtml(id){
       <button class="ib" onclick="mdrxOpenId=null;renderMdrx()" title="Close" style="font-size:15px;line-height:1;padding:7px 13px;font-weight:700;">✕ Close</button>
       ${id?`<button class="ib" style="color:#e0556b;" onclick="mdrxDelete(${id})">Delete</button>`:''}
       <button onclick="mdrxSave(${id||0})" style="padding:9px 18px;background:#08214C;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">${isNew?'Create provider':'Save changes'}</button>
-    </div>${importBar}${form}${locsBlock}${buttons}
+    </div>${planBanner}${importBar}${form}${locsBlock}${buttons}
   </div>${isNew?'':mdrxStaffHtml(p)+mdrxDocsHtml(p)+mdrxUtilHtml(p)}${timeline}`;
 }
 function mdrxVal(id){const el=document.getElementById('mdrx-f-'+id);return el?el.value:'';}
