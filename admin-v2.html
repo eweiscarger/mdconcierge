@@ -1328,6 +1328,14 @@ async function loadBooking(){
 function ckScore(p){return (Number(p.intent_score)||0)+(Number(p.funnel_score)||0);}
 function ckName(p){return (((p.first_name||'')+' '+(p.last_name||'')).trim())||'(no name)';}
 function ckWhen(iso){try{return new Date(iso).toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit'});}catch(e){return '';}}
+let ckTab='today';
+function showCkTab(t){
+  ckTab=t;
+  ['today','leads','approvals','content'].forEach(k=>{
+    const pane=document.getElementById('ckpane-'+k); if(pane)pane.style.display=(k===t)?'':'none';
+    const btn=document.getElementById('ckt-'+k); if(btn)btn.classList.toggle('on',k===t);
+  });
+}
 async function loadCockpit(){
   const box=document.getElementById('cockpit-body');
   box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
@@ -1404,35 +1412,44 @@ async function loadCockpit(){
   const paused=!!(cf&&cf.data&&cf.data.sending_paused);
   const obPanel=outboxList.length?`<div class="panel" style="margin-bottom:16px;border:2px solid ${paused?'#c0392b':'var(--green)'};"><div class="ph"><div class="pt">📤 Ready to send (${outboxList.length})</div><div class="ps">The day's queued outreach. Edit any, skip any, then send. Your signature attaches automatically. Nothing goes out until you click send.</div></div><div style="padding:10px 14px 4px;">${paused?`<div style="background:#4a1414;border:1px solid #c0392b;border-radius:8px;padding:10px 12px;color:#ff9b9b;font-size:13px;">⛔ Sending is PAUSED — ${ehtml((cf.data&&cf.data.pause_reason)||'deliverability guard')}. <button class="ib" onclick="mdrxResumeSending()" style="margin-left:8px;">Resume sending</button></div>`:`<button onclick="mdrxSendOutbox([${outboxList.map(o=>o.id).join(',')}])" style="padding:10px 20px;background:var(--green);color:#fff;border:none;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;">✅ Send all ${outboxList.length}</button>`}</div><div class="grp" style="margin:0;border:none;padding:2px 14px 12px;">${obHtml}</div></div>`:'';
   box.innerHTML=`
-    <style>#view-cockpit .row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border2);}#view-cockpit .row:last-child{border-bottom:none;}#view-cockpit .meta{flex:1;min-width:0;}#view-cockpit .nm{font-size:14px;font-weight:600;}#view-cockpit .ds{font-size:12px;color:var(--muted);}#view-cockpit .grp{padding:2px 14px;}</style>
-    ${obPanel}
-    <div class="kpi-row" style="margin-bottom:16px;">
+    <style>#view-cockpit .row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border2);}#view-cockpit .row:last-child{border-bottom:none;}#view-cockpit .meta{flex:1;min-width:0;}#view-cockpit .nm{font-size:14px;font-weight:600;}#view-cockpit .ds{font-size:12px;color:var(--muted);}#view-cockpit .grp{padding:2px 14px;}
+    .cktabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+    .cktab-btn{padding:8px 15px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-weight:700;font-size:13.5px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;}
+    .cktab-btn.on{background:#2b3550;color:#fff;}
+    .cktab-btn .cb{display:inline-block;min-width:18px;text-align:center;background:var(--gold);color:#241800;border-radius:9px;font-size:11px;padding:0 5px;font-weight:800;}</style>
+    <div class="kpi-row" style="margin-bottom:14px;">
       ${outboxList.length?kpi('Ready to send',outboxList.length,'awaiting your go','green'):''}
       ${kpi('Meetings today',bookingsToday.length+pipeMeet.length,'on the calendar','gold')}
       ${kpi('Need approval',approvals,'replies to review','purple')}
       ${kpi('Hot leads',hottest.length,'score 15+','green')}
       ${kpi('Due today',due.length,'follow-ups','blue')}
-      ${kpi('Materials opened',qlOpened.length,qlLinks.length+' tool link'+(qlLinks.length===1?'':'s')+' sent','green')}
-      ${enrichList.length?kpi('To confirm',enrichList.length,'data matches found','purple'):''}
-      ${nmList.length?kpi('Next moves',nmList.length,'AI-recommended','gold'):''}
-      ${cqList.length?kpi('Content ideas',cqList.length,'openers + opportunities','purple'):''}
       ${kpi('Pipeline',homeCount['Pipeline']||0,(homeCount['Leads']||0)+' leads','blue')}
     </div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:280px;">
-        <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">📅 Today's meetings</div></div><div class="grp" style="margin:0;border:none;">${meetHtml}</div></div>
-        <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">✅ Needs your approval</div><div class="ps">${approvals?('<b>'+approvals+'</b> reply draft(s) waiting'+(mdrxHot.length?' &middot; <span style="color:#c0392b;font-weight:700;">'+mdrxHot.length+' hot</span>':'')):'Nothing waiting'}</div></div><div style="padding:10px 14px;">${approvals?((rep.data||[]).length?'<a href="javascript:void(0)" onclick="showView(\'replies\',document.querySelector(\'[onclick*=replies]\'))" style="font-weight:700;color:var(--gold);display:block;margin-bottom:4px;">Funnel replies: '+(rep.data||[]).length+' &rarr;</a>':'')+(mdrxNeedReply.length?'<a href="javascript:void(0)" onclick="showView(\'mdrx\',document.querySelector(\'[onclick*=mdrx]\'))" style="font-weight:700;color:var(--gold);">MDRx replies: '+mdrxNeedReply.length+' &rarr;</a>':''):'<span style="color:var(--muted);font-size:13px;">You are all caught up.</span>'}</div></div>
-      </div>
-      <div style="flex:1;min-width:280px;">
-        <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">🔥 Hottest leads</div><div class="ps">By priority score (list intent + engagement)</div></div><div class="grp" style="margin:0;border:none;">${hotHtml}</div></div>
-        <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">📄 Materials opened</div><div class="ps">${qlOpened.length} of ${qlLinks.length} opened their dispensing tool. Opens tracked per person.</div></div><div class="grp" style="margin:0;border:none;">${matHtml}</div></div>
-        ${enrichList.length?`<div class="panel" style="margin-bottom:16px;border-left:3px solid var(--steel,#6B9FD4);"><div class="ph"><div class="pt">🔎 Enrichment to confirm</div><div class="ps">The data agent found likely matches for thin records. Confirm to fill them in, or reject.</div></div><div class="grp" style="margin:0;border:none;">${enrHtml}</div></div>`:''}
-      </div>
+    <div class="cktabs">
+      <button class="cktab-btn" id="ckt-today" onclick="showCkTab('today')">📋 Today${outboxList.length?'<span class="cb">'+outboxList.length+'</span>':''}</button>
+      <button class="cktab-btn" id="ckt-leads" onclick="showCkTab('leads')">🔥 Leads${hottest.length?'<span class="cb">'+hottest.length+'</span>':''}</button>
+      <button class="cktab-btn" id="ckt-approvals" onclick="showCkTab('approvals')">✅ Approvals${(nmList.length+enrichList.length+approvals)?'<span class="cb">'+(nmList.length+enrichList.length+approvals)+'</span>':''}</button>
+      <button class="cktab-btn" id="ckt-content" onclick="showCkTab('content')">🧠 Content${cqList.length?'<span class="cb">'+cqList.length+'</span>':''}</button>
     </div>
-    ${nmList.length?`<div class="panel" style="margin-bottom:16px;border-left:3px solid var(--gold);"><div class="ph"><div class="pt">🎯 Recommended next moves</div><div class="ps">The AI picked the message, channel, and date from each lead's behavior. Approve to lock it in. Nothing sends until you enable sending.</div></div><div class="grp" style="margin:0;border:none;">${nmHtml}</div></div>`:''}
-    ${cqPanel}
-    ${cqPerfPanel}
-    <div class="panel" style="margin-bottom:0;"><div class="ph"><div class="pt">⏰ Due today (${due.length})</div><div class="ps">Every contact with an action due. Nothing sits idle.</div></div><div class="grp" style="margin:0;border:none;">${dueHtml}</div></div>`;
+    <div class="cktab-pane" id="ckpane-today">
+      ${obPanel}
+      <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">📅 Today's meetings</div></div><div class="grp" style="margin:0;border:none;">${meetHtml}</div></div>
+      <div class="panel" style="margin-bottom:0;"><div class="ph"><div class="pt">⏰ Due today (${due.length})</div><div class="ps">Every contact with an action due. Nothing sits idle.</div></div><div class="grp" style="margin:0;border:none;">${dueHtml}</div></div>
+    </div>
+    <div class="cktab-pane" id="ckpane-leads" style="display:none;">
+      <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">🔥 Hottest leads</div><div class="ps">By priority score (list intent + engagement)</div></div><div class="grp" style="margin:0;border:none;">${hotHtml}</div></div>
+      <div class="panel" style="margin-bottom:0;"><div class="ph"><div class="pt">📄 Materials opened</div><div class="ps">${qlOpened.length} of ${qlLinks.length} opened their dispensing tool. Opens tracked per person.</div></div><div class="grp" style="margin:0;border:none;">${matHtml}</div></div>
+    </div>
+    <div class="cktab-pane" id="ckpane-approvals" style="display:none;">
+      <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">✅ Replies needing approval</div><div class="ps">${approvals?('<b>'+approvals+'</b> reply draft(s) waiting'+(mdrxHot.length?' &middot; <span style="color:#c0392b;font-weight:700;">'+mdrxHot.length+' hot</span>':'')):'Nothing waiting'}</div></div><div style="padding:10px 14px;">${approvals?((rep.data||[]).length?'<a href="javascript:void(0)" onclick="showView(\'replies\',document.querySelector(\'[onclick*=replies]\'))" style="font-weight:700;color:var(--gold);display:block;margin-bottom:4px;">Funnel replies: '+(rep.data||[]).length+' &rarr;</a>':'')+(mdrxNeedReply.length?'<a href="javascript:void(0)" onclick="showView(\'mdrx\',document.querySelector(\'[onclick*=mdrx]\'))" style="font-weight:700;color:var(--gold);">MDRx replies: '+mdrxNeedReply.length+' &rarr;</a>':''):'<span style="color:var(--muted);font-size:13px;">You are all caught up.</span>'}</div></div>
+      ${nmList.length?`<div class="panel" style="margin-bottom:16px;border-left:3px solid var(--gold);"><div class="ph"><div class="pt">🎯 Recommended next moves</div><div class="ps">The AI picked the message, channel, and date from each lead's behavior. Approve to lock it in. Nothing sends until you enable sending.</div></div><div class="grp" style="margin:0;border:none;">${nmHtml}</div></div>`:''}
+      ${enrichList.length?`<div class="panel" style="margin-bottom:0;border-left:3px solid var(--steel,#6B9FD4);"><div class="ph"><div class="pt">🔎 Enrichment to confirm</div><div class="ps">The data agent found likely matches for thin records. Confirm to fill them in, or reject.</div></div><div class="grp" style="margin:0;border:none;">${enrHtml}</div></div>`:''}
+    </div>
+    <div class="cktab-pane" id="ckpane-content" style="display:none;">
+      ${cqPanel||'<div class="panel" style="padding:18px;color:var(--muted);font-size:13px;">No content ideas to review right now. The news scout runs Mondays and drops fresh openers and opportunities here.</div>'}
+      ${cqPerfPanel}
+    </div>`;
+  showCkTab(ckTab);
 }
 async function mdrxConfirmEnrich(id,provId){
   const {data:s}=await sbClient.from('enrichment_suggestions').select('found').eq('id',id).maybeSingle();
