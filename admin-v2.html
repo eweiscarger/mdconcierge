@@ -1506,8 +1506,8 @@ async function loadPipeline(){
 }
 // ---- Replies review (Task 5) ----------------------------------------------
 let FUNNEL_REPLIES=[];
+// Legal-foundation write-ups only — NOT the program overview (kept back so we don't give away specifics).
 const REPLY_MATERIALS=[
-  {filename:'MDRx-Overview.pdf',path:'https://mdconcierge.net/docs/mdrx-overview.pdf'},
   {filename:'Siegel-700-Pharmacy.pdf',path:'https://mdconcierge.net/docs/siegel-700pharmacy.pdf'},
   {filename:'Gosfield-Factoring.pdf',path:'https://mdconcierge.net/docs/gosfield-factoring.pdf'}
 ];
@@ -1531,7 +1531,7 @@ async function loadReplies(){
         <textarea id="rdraft-${r.id}" class="ib" style="width:100%;min-height:120px;font-size:14px;line-height:1.5;">${ehtml(r.draft_reply||'')}</textarea>
         <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <button class="btn" style="background:var(--green);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;" onclick="replyAction(${r.id},'send')">Approve &amp; Send</button>
-          <button class="btn" style="background:#1a4e8a;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;" onclick="replyAction(${r.id},'materials')">Send + attach 3 PDFs</button>
+          <button class="btn" style="background:#1a4e8a;color:#fff;border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;" onclick="replyAction(${r.id},'materials')">Send + attach write-ups</button>
           <button class="btn" style="background:#eee;color:#555;border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;" onclick="replyAction(${r.id},'dismiss')">Dismiss</button>
           <span id="rmsg-${r.id}" style="font-size:12.5px;"></span>
         </div>`}
