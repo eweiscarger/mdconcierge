@@ -2646,20 +2646,38 @@ function mdrxModelCopy(){
   const el=document.getElementById('mdrx-ml-url'); if(!el)return;
   el.select(); try{ document.execCommand('copy'); showToast('Link copied. Safe to paste anywhere, it still only opens for them.'); }catch(e){ showToast('Copy failed, select it manually.'); }
 }
+// Each state's work comp pharmacy rule, mirrored from pharmacy-model.html so the email can name
+// the doctor's own fee schedule. Only the sentence matters here; the tool does the math.
+const FS_RULES={AL:'AWP + 5%',AK:'AWP',AZ:'AWP - 15% brand, AWP - 25% generic',AR:'AWP',CO:'AWP',
+ CT:'AWP - 20% brand, AWP - 80% generic',DE:'AWP - 31.9% brand, AWP - 38% generic',FL:'AWP',GA:'AWP',
+ HI:'AWP + 40%',ID:'AWP',KS:'AWP - 10% brand, AWP - 15% generic',KY:'AWP - 10% brand, AWP - 15% generic',
+ LA:'AWP + 10% brand, AWP + 40% generic',MI:'AWP - 10%',MN:'AWP - 12%',MS:'AWP - 10% brand, AWP - 15% generic',
+ MT:'AWP - 10% brand, AWP - 25% generic',NV:'AWP',NM:'AWP - 10%',NY:'AWP - 12% brand, AWP - 20% generic',
+ NC:'AWP - 5%',OH:'AWP - 15%',OK:'AWP - 10%',OR:'AWP - 16.5%',PA:'AWP + 10%',RI:'AWP - 10%',SC:'AWP',
+ TN:'AWP',TX:'AWP + 9% brand, AWP + 25% generic',VT:'AWP',WI:'AWP',WY:'AWP - 10%'};
 function mdrxModelHtml(p,link,intro,close){
   const prac=link.practice||p.practice_name||'your practice';
+  const st=(p.state||'').toUpperCase();
+  const rule=FS_RULES[st];
+  const stLine=rule
+    ? `The multiplier follows your state's workers' compensation pharmacy fee schedule automatically (${ehtml(st)} pays ${ehtml(rule)}).`
+    : `You can set the reimbursement basis for your state, or type your own number over it.`;
   return `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a2233;font-size:15px;line-height:1.6;max-width:560px;">
   <p>Hi Dr. ${ehtml(p.last_name||'')},</p>
   <p>${ehtml(intro)}</p>
-  <p>As promised, here is an interactive tool that models the workers' compensation dispensing opportunity for ${ehtml(prac)}. The link is private to you.</p>
-  <p><b>Build your own formulary mix</b>: pick the medications you would dispense, set your monthly patient volume, and it instantly estimates the ancillary revenue your practice keeps. Every assumption is editable, so you can test it against your own numbers.</p>
-  <p>The defaults are intentionally <b>conservative</b>: <b>80% collections</b> on orals, <b>70%</b> on topicals, and the practice keeping <b>65% of net</b> on a Pennsylvania basis (1.1&times; AWP). The <b>full formulary</b>, including product cost (what the practice pays), is at the bottom.</p>
-  <p>These are just the most common medications. Thousands more appear in your EHR, so if you dispense something you do not see, let me know and I will get it added.</p>
+  <p>Here is the tool I mentioned. It models what dispensing would mean for ${ehtml(prac)} using your numbers, not mine.</p>
+  <p style="margin-bottom:6px;"><b>How to use it, about two minutes:</b></p>
+  <ol style="margin:0 0 14px;padding-left:20px;">
+    <li style="margin-bottom:5px;">Set your state and your monthly patient volume. ${stLine}</li>
+    <li style="margin-bottom:5px;">Add the medications you would actually dispense and how many each patient gets per month.</li>
+    <li>The estimate updates as you type. Every assumption is editable, so change anything that does not match your practice.</li>
+  </ol>
+  <p>The defaults are deliberately <b>conservative</b>: <b>80% collections</b> on orals, <b>70%</b> on topicals, and your practice keeping <b>65% of net</b>. The <b>full formulary</b>, including what the practice pays for each product, is at the bottom.</p>
   <p style="text-align:center;margin:26px 0;">
     <a href="${ehtml(link.url)}" style="background:#08214C;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:13px 26px;border-radius:9px;display:inline-block;">Open your dispensing analysis</a>
   </p>
   <p style="font-size:12.5px;color:#5b6675;">If the button does not work, paste this into your browser:<br><span style="color:#3f6ea5;">${ehtml(link.url)}</span></p>
-  <p>Your private link is unique to you and expires in <b>60 days</b>.</p>
+  <p>If you dispense something that is not on the list, tell me and I will add it. Thousands more are available. Your private link is unique to you and expires in <b>60 days</b>.</p>
   <p>${ehtml(close)}</p>
   <p>Best,</p>
   </div>`;
@@ -2688,7 +2706,17 @@ async function mdrxModelSend(){
   if(!f.to.length){ showToast('Add a recipient.'); return; }
   if(!f.subject){ showToast('Add a subject.'); return; }
   const html=mdrxModelHtml(p,MDRX_MODEL,f.intro,f.close);
-  const text='Hi Dr. '+(p.last_name||'')+',\n\n'+f.intro+'\n\nAs promised, here is an interactive tool that models the workers’ compensation dispensing opportunity for '+(MDRX_MODEL.practice||'your practice')+'. Build your own formulary mix, set your monthly volume, and it estimates what your practice keeps. Every assumption is editable.\n\n'+MDRX_MODEL.url+'\n\nYour private link is unique to you and expires in 60 days.\n\n'+f.close+'\n\nBest,\nEric';
+  const st=(p.state||'').toUpperCase(), rule=FS_RULES[st];
+  const text='Hi Dr. '+(p.last_name||'')+',\n\n'+f.intro
+    +'\n\nHere is the tool I mentioned. It models what dispensing would mean for '+(MDRX_MODEL.practice||'your practice')+' using your numbers, not mine.\n\n'
+    +'How to use it, about two minutes:\n'
+    +'1. Set your state and your monthly patient volume. '+(rule?('The multiplier follows your state fee schedule automatically ('+st+' pays '+rule+').'):'You can set the reimbursement basis for your state, or type your own number over it.')+'\n'
+    +'2. Add the medications you would actually dispense and how many each patient gets per month.\n'
+    +'3. The estimate updates as you type. Every assumption is editable.\n\n'
+    +'The defaults are deliberately conservative: 80% collections on orals, 70% on topicals, and your practice keeping 65% of net. The full formulary, including what the practice pays, is at the bottom.\n\n'
+    +MDRX_MODEL.url+'\n\n'
+    +'If you dispense something that is not on the list, tell me and I will add it. Your private link is unique to you and expires in 60 days.\n\n'
+    +f.close+'\n\nBest,\nEric';
   showToast('Sending…');
   const {data,error}=await sbClient.functions.invoke('send-mail',{body:{signature:true,to:f.to,subject:f.subject,html:html,text:text}});
   if(error||!data||!data.ok){ showToast('Send failed: '+((data&&data.error)||(error&&error.message)||'unknown')); return; }
