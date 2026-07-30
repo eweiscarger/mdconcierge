@@ -14,12 +14,14 @@
   h1{ text-align:center; font-size:27px; margin:8px 0 4px; color:var(--navy); }
   .sub{ text-align:center; color:var(--muted); font-size:15px; margin:0 0 22px; }
   .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:16px; }
+  .card h2{ font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--navy); margin:0 0 10px; }
   .shot{ border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#fff; }
   .shot img{ display:block; width:100%; height:auto; }
   ol{ margin:0; padding-left:22px; }
-  li{ margin-bottom:12px; }
+  li{ margin-bottom:14px; }
   li b{ color:var(--navy); }
   .note{ font-size:13.5px; color:var(--muted); }
+  .tip{ background:rgba(107,159,212,.10); border:1px solid var(--line); border-radius:10px; padding:11px 14px; font-size:14px; margin-top:12px; }
   .cta{ text-align:center; margin:22px 0 6px; }
   .btn{ display:inline-block; background:var(--navy); color:#fff; text-decoration:none; font-weight:700; font-size:15px; padding:13px 26px; border-radius:9px; }
   .foot{ text-align:center; color:var(--muted); font-size:12.5px; margin-top:26px; }
@@ -31,19 +33,42 @@
 <div class="wrap">
   <div class="kicker">MDconcierge Pharmacy Partner</div>
   <h1>How to use your dispensing analysis</h1>
-  <p class="sub">Under a minute. Everything in it is yours to change.</p>
+  <p class="sub">About a minute. Every number in it is yours to change.</p>
 
   <div class="card">
-    <div class="shot"><img src="funnel-assets/model-walkthrough.gif" alt="Walkthrough: choose your state, set your patient volume, add medications, and the estimate updates instantly."></div>
+    <h2>Opening it</h2>
+    <ol>
+      <li><b>Click the link in your email.</b> It asks who you are: press <b>Continue as</b> your own name and you are straight in. Your device remembers you, so it only ever asks once.</li>
+      <li><b>Sharing it with a partner or your office manager?</b> Just forward the email. They press <b>I'm someone else</b>, give a name and email, and they are in too. Nobody is locked out and there is no password to pass around.</li>
+    </ol>
+    <div class="tip">The analysis is confidential and prepared for one practice, so each person is asked to say who they are. Anyone who skips that step still gets the full calculator, but the product cost column stays hidden until they do.</div>
   </div>
 
   <div class="card">
+    <h2>Using it</h2>
     <ol>
-      <li><b>Pick your state.</b> Every state sets its own workers' compensation pharmacy fee schedule, and they are not close to each other. Pennsylvania pays AWP plus 10%. New York pays AWP minus 12% on brand and minus 20% on generic. Choosing your state sets the multiplier for you, and you can type your own number over it any time.</li>
-      <li><b>Set your monthly patient volume,</b> then add the medications you would actually dispense and how many of each an average patient receives per month.</li>
-      <li><b>Read the estimate.</b> It updates as you type. The defaults are deliberately conservative: 80% collections on orals, 70% on topicals, and your practice keeping 65% of net. Change any of them to match how your practice really runs.</li>
+      <li><b>Pick your state.</b> Every state sets its own workers' compensation pharmacy fee schedule and they are nowhere near each other. Pennsylvania pays AWP plus 10%. New York pays AWP minus 12% on brand and minus 20% on generic. Choosing your state sets the multiplier for you, and you can type your own number over it whenever you like. <b>Show all states</b> lists every one.</li>
+      <li><b>Set your monthly patient volume</b> — how many workers' compensation patients you treat in a typical month.</li>
+      <li><b>Build your mix from the formulary.</b> Scroll to the full formulary at the bottom, then filter by category or route, search by name, or click any column heading to sort. Sorting by reimbursement is the quick way to see what is worth dispensing. <b>Tick the products you actually dispense and press "Add to my mix."</b></li>
+      <li><b>Set how many of each</b> an average patient receives per month, and read the estimate. It updates as you type.</li>
     </ol>
-    <p class="note" style="margin-bottom:0;">The full formulary, including what the practice pays for each product, sits at the bottom of the tool. These are the most common medications only. If you dispense something that is not on the list, say so and it gets added.</p>
+  </div>
+
+  <div class="card">
+    <h2>What the numbers assume</h2>
+    <p style="margin-top:0;">The defaults are deliberately conservative and every one of them is editable:</p>
+    <ul style="margin:0;padding-left:22px;">
+      <li><b>80% collections</b> on oral scripts, <b>70%</b> on topicals.</li>
+      <li>Your practice keeps <b>65% of net.</b></li>
+      <li>The practice carries the <b>cost of the medication plus a per-script dispensing fee</b>. Both come out before the split, and both are already deducted from the figure you see.</li>
+    </ul>
+    <p class="note" style="margin-bottom:0;">The formulary lists the most common medications only. Thousands more are available, so if you dispense something that is not on the list, say so and it gets added.</p>
+  </div>
+
+  <div class="card">
+    <h2>A quick look</h2>
+    <div class="shot"><img src="funnel-assets/model-walkthrough.gif" alt="Choosing a state, setting patient volume, adding medications, and the estimate updating."></div>
+    <p class="note" style="margin:10px 0 0;">Your own copy shows the full formulary including what the practice pays for each product.</p>
   </div>
 
   <div class="cta">
