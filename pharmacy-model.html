@@ -70,6 +70,8 @@ const app = document.getElementById('app');
 const money = n => '$' + Math.round(n||0).toLocaleString('en-US');
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let FORM = [], REC = {};
+// Someone who skipped the sign-in gets the tool and the estimate, but not the price book.
+let HIDE_COST = false;
 
 function tokenFromUrl(){
   const u = new URL(location.href);
@@ -157,12 +159,20 @@ async function unlock(token, viewer){
     if(viewer){ try{ localStorage.setItem(whoKey(token), JSON.stringify(viewer)); }catch(e){} }
     FORM = data.formulary || []; REC = data.recipient || {};
     const V = data.viewer || REC;
+    HIDE_COST = !!V.hide_cost;
     watermark(V.name || REC.name, V.email || REC.email);
     return render(data.expires_at);
   }
   const reason = (data && data.reason) || 'error';
   if(reason === 'identify'){ return identifyScreen(data.recipient_name, data.practice, 'choose'); }
   return errScreen(reason, data && data.expires_at);
+}
+
+// Lets a skipper change their mind and sign in without hunting for the original email.
+function reIdentify(){
+  const t = tokenFromUrl();
+  try{ localStorage.removeItem(whoKey(t)); }catch(e){}
+  identifyScreen(REC.name, REC.practice, 'guest');
 }
 
 async function boot(){
@@ -360,10 +370,11 @@ function render(expires){
 
     <div class="card">
       <h2>Full formulary <span id="basis-form" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;">· ${FORM.length} products</span></h2>
+      ${HIDE_COST?`<p class="hint" style="margin:0 0 10px;">Product cost is left out of this copy because the sign-in was skipped. <a href="#" onclick="reIdentify();return false;" style="color:var(--steel);">Add your name and email</a> and it appears.</p>`:''}
       <input id="fsearch" class="noprint" placeholder="Search by product, category, or route…" oninput="filterForm()">
       <div class="tablewrap">
         <table id="ftable">
-          <thead><tr><th>Product</th><th>Category</th><th>Route</th><th class="num">MFG AWP</th><th class="num">Product cost</th><th class="num" id="th-reimb">PA reimb / unit</th></tr></thead>
+          <thead><tr><th>Product</th><th>Category</th><th>Route</th><th class="num">MFG AWP</th>${HIDE_COST?'':'<th class="num">Product cost</th>'}<th class="num" id="th-reimb">PA reimb / unit</th></tr></thead>
           <tbody id="fbody"></tbody>
         </table>
       </div>
@@ -437,7 +448,7 @@ function fillFormTable(rows){
   const mult = el ? (parseFloat(el.value)||0) : 1.1;
   b.innerHTML = rows.map(f=>`<tr>
     <td>${esc(f.product)}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
-    <td class="num">${money(f.awp)}</td><td class="num">${money(f.cost)}</td><td class="num">${money((Number(f.awp)||0)*mult)}</td></tr>`).join('');
+    <td class="num">${money(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money(f.cost)}</td>`}<td class="num">${money((Number(f.awp)||0)*mult)}</td></tr>`).join('');
 }
 function filterForm(){
   const q=(document.getElementById('fsearch').value||'').toLowerCase();
