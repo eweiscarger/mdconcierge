@@ -30,6 +30,14 @@
   .assume select{ display:block; margin-top:4px; width:150px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); background:#fff; }
   .dtbtn{ border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:999px; padding:5px 14px; font-size:12px; font-weight:700; cursor:pointer; }
   .dtbtn.on{ border-color:var(--navy); background:var(--navy); color:#fff; }
+  .fctl{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; align-items:center; }
+  .fctl input, .fctl select{ padding:9px 11px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); background:#fff; }
+  .fctl input{ flex:1; min-width:200px; }
+  th.sortable{ cursor:pointer; user-select:none; white-space:nowrap; }
+  th.sortable:hover{ color:var(--navy); }
+  #ftable tbody tr{ cursor:pointer; }
+  #ftable tbody tr:hover{ background:#f6f9fd; }
+  #ftable tbody tr.selrow{ background:#eef6ff; }
   .mixrow{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
   .mixrow select{ flex:1; min-width:180px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; background:#fff; }
   .mixrow input{ width:76px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; }
@@ -280,8 +288,9 @@ function applyState(code, keepMult){
   ['basis-sub','basis-foot','basis-disc'].forEach(id=>{ const e=document.getElementById(id); if(e) e.textContent = basisLabel(); });
   const fh=document.getElementById('basis-form');
   if(fh) fh.textContent = FORM.length+' products · '+s.c+' reimbursement = '+(m!=null? m+' × MFG AWP' : 'set manually');
-  const th=document.getElementById('th-reimb'); if(th) th.textContent = s.c+' reimb / unit';
-  fillFormTable(FORM); compute();
+  // The reimbursement column header carries the state code, and it is rebuilt from ST inside
+  // renderFormHead, so refreshing the table is enough to relabel it.
+  applyForm(); compute();
 }
 function setDrugType(t){
   DRUGTYPE = t;
@@ -371,13 +380,20 @@ function render(expires){
     <div class="card">
       <h2>Full formulary <span id="basis-form" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;">· ${FORM.length} products</span></h2>
       ${HIDE_COST?`<p class="hint" style="margin:0 0 10px;">Product cost is left out of this copy because the sign-in was skipped. <a href="#" onclick="reIdentify();return false;" style="color:var(--steel);">Add your name and email</a> and it appears.</p>`:''}
-      <input id="fsearch" class="noprint" placeholder="Search by product, category, or route…" oninput="filterForm()">
+      <p class="hint noprint" style="margin:0 0 8px;">Filter and sort to find what you dispense, tick the ones you want, then add them to your mix in one go. Click any column heading to sort.</p>
+      <div class="fctl noprint">
+        <input id="fsearch" placeholder="Search product, category, or route…" oninput="applyForm()">
+        <select id="fcat" onchange="applyForm()">${['<option value="">All categories</option>'].concat([...new Set(FORM.map(f=>f.category).filter(Boolean))].sort().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`)).join('')}</select>
+        <select id="froute" onchange="applyForm()"><option value="">All routes</option><option value="Oral">Oral</option><option value="Topical">Topical</option></select>
+        <button class="btn" onclick="clearForm()">Clear</button>
+      </div>
       <div class="tablewrap">
         <table id="ftable">
-          <thead><tr><th>Product</th><th>Category</th><th>Route</th><th class="num">MFG AWP</th>${HIDE_COST?'':'<th class="num">Product cost</th>'}<th class="num" id="th-reimb">PA reimb / unit</th></tr></thead>
+          <thead id="fhead"></thead>
           <tbody id="fbody"></tbody>
         </table>
       </div>
+      <div id="selbar" class="noprint" style="display:none;"></div>
     </div>
 
     <p class="foot">Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. <span id="basis-foot">Pennsylvania basis</span>. Fee schedule data as of ${FS_ASOF}.<br>
@@ -385,6 +401,7 @@ function render(expires){
   </div>`;
 
   document.getElementById('fs-key').innerHTML = fsKeyHtml();
+  renderFormHead();
   // Default to the doctor's own state when the CRM knows it, so the numbers are right on arrival.
   const home = stateByCode(REC.state) ? REC.state.toUpperCase() : 'PA';
   document.getElementById('a-state').value = home;
@@ -440,20 +457,100 @@ function compute(){
     <div class="disc">${fee?('Net of the $'+fee.toFixed(2)+' per script dispensing fee charged to the practice. '):''}Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. <span id="basis-disc">${esc(basisLabel())}</span>.</div>`;
 }
 
+// Sorting, filtering, and picking straight off the formulary. Ninety products is too many to
+// hunt through in a dropdown, so the table itself is the picker: narrow it down, tick what you
+// dispense, add the lot in one click.
+let FSORT = { key:'product', dir:1 };
+const FSEL = new Set();
+const curMult = () => { const el=document.getElementById('a-mult'); return el ? (parseFloat(el.value)||0) : 1.1; };
+const reimbOf = f => (Number(f.awp)||0) * curMult();
+
+function formCols(){
+  return [
+    {k:'product', label:'Product'},
+    {k:'category',label:'Category'},
+    {k:'route',   label:'Route'},
+    {k:'awp',     label:'MFG AWP', num:true},
+  ].concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}])
+   .concat([{k:'reimb', label:(ST?ST.c:'PA')+' reimb / unit', num:true}]);
+}
+function sortForm(k){
+  FSORT = (FSORT.key===k) ? {key:k, dir:-FSORT.dir} : {key:k, dir: (k==='product'||k==='category'||k==='route') ? 1 : -1};
+  applyForm();
+}
+function renderFormHead(){
+  const h=document.getElementById('fhead'); if(!h) return;
+  h.innerHTML = '<tr><th style="width:34px;"></th>' + formCols().map(c=>{
+    const on = FSORT.key===c.k;
+    const arrow = on ? (FSORT.dir>0?' ▲':' ▼') : '';
+    return `<th class="${c.num?'num ':''}sortable" onclick="sortForm('${c.k}')" title="Sort by ${esc(c.label)}">${esc(c.label)}${arrow}</th>`;
+  }).join('') + '</tr>';
+}
+function applyForm(){
+  const q=((document.getElementById('fsearch')||{}).value||'').toLowerCase();
+  const cat=((document.getElementById('fcat')||{}).value||'');
+  const rt=((document.getElementById('froute')||{}).value||'');
+  let rows = FORM.filter(f=>{
+    if(cat && (f.category||'')!==cat) return false;
+    if(rt){ const isOral=(f.route==='Oral'); if(rt==='Oral'&&!isOral) return false; if(rt==='Topical'&&isOral) return false; }
+    if(q && !((f.product+' '+(f.category||'')+' '+(f.route||'')).toLowerCase().includes(q))) return false;
+    return true;
+  });
+  const k=FSORT.key, d=FSORT.dir;
+  rows.sort((a,b)=>{
+    const va = k==='reimb'?reimbOf(a):(k==='awp'||k==='cost'?Number(a[k])||0:String(a[k]||'').toLowerCase());
+    const vb = k==='reimb'?reimbOf(b):(k==='awp'||k==='cost'?Number(b[k])||0:String(b[k]||'').toLowerCase());
+    return va<vb ? -d : va>vb ? d : 0;
+  });
+  renderFormHead();
+  fillFormTable(rows);
+  const cnt=document.getElementById('fcount');
+  if(cnt) cnt.textContent = rows.length===FORM.length ? '' : (rows.length+' of '+FORM.length+' shown');
+}
+function clearForm(){
+  ['fsearch','fcat','froute'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  applyForm();
+}
 function fillFormTable(rows){
   const b=document.getElementById('fbody'); if(!b) return;
   // Reimbursement is derived from the live multiplier, not the stored PA figure, so the column
   // always agrees with the state selected above.
-  const el=document.getElementById('a-mult');
-  const mult = el ? (parseFloat(el.value)||0) : 1.1;
-  b.innerHTML = rows.map(f=>`<tr>
+  b.innerHTML = rows.map(f=>`<tr class="${FSEL.has(String(f.id))?'selrow':''}" onclick="toggleSel('${f.id}')">
+    <td class="noprint" style="text-align:center;"><input type="checkbox" ${FSEL.has(String(f.id))?'checked':''} onclick="event.stopPropagation();toggleSel('${f.id}')"></td>
     <td>${esc(f.product)}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
-    <td class="num">${money(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money(f.cost)}</td>`}<td class="num">${money((Number(f.awp)||0)*mult)}</td></tr>`).join('');
+    <td class="num">${money(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money(f.cost)}</td>`}<td class="num">${money(reimbOf(f))}</td></tr>`).join('');
 }
-function filterForm(){
-  const q=(document.getElementById('fsearch').value||'').toLowerCase();
-  fillFormTable(FORM.filter(f=>(f.product+' '+(f.category||'')+' '+(f.route||'')).toLowerCase().includes(q)));
+function toggleSel(id){
+  id=String(id);
+  if(FSEL.has(id)) FSEL.delete(id); else FSEL.add(id);
+  applyForm(); renderSelBar();
 }
+function renderSelBar(){
+  const bar=document.getElementById('selbar'); if(!bar) return;
+  if(!FSEL.size){ bar.style.display='none'; bar.innerHTML=''; return; }
+  bar.style.display='block';
+  bar.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:11px 14px;background:#eef6ff;border:1px solid var(--steel);border-radius:10px;">
+    <b style="font-size:14px;">${FSEL.size} selected</b>
+    <button class="btn solid" onclick="addSelected()">Add to my mix</button>
+    <button class="btn" onclick="FSEL.clear();applyForm();renderSelBar();">Clear selection</button>
+  </div>`;
+}
+function addSelected(){
+  const ids=[...FSEL];
+  if(!ids.length) return;
+  ids.forEach(id=>{
+    // Re-use an empty row before making a new one, so the mix does not fill up with blanks.
+    let row=[...document.querySelectorAll('#mix .mixrow')].find(r=>!r.querySelector('select').value);
+    if(!row){ addLine(); const all=document.querySelectorAll('#mix .mixrow'); row=all[all.length-1]; }
+    row.querySelector('select').value=String(id);
+    if(!parseFloat(row.querySelector('input').value)) row.querySelector('input').value='1';
+  });
+  FSEL.clear(); applyForm(); renderSelBar(); compute();
+  const mix=document.getElementById('mix');
+  if(mix) mix.scrollIntoView({behavior:'smooth', block:'center'});
+}
+// Kept so the multiplier and state handlers can refresh the table without knowing the details.
+function filterForm(){ applyForm(); }
 
 boot();
 </script>
