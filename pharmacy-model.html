@@ -95,18 +95,82 @@ function errScreen(reason, expires){
   app.innerHTML = '<div class="state"><span class="pill">MDconcierge Pharmacy Partner</span><h1>'+m[0]+'</h1>'+exp+'<p class="sub">'+m[1]+'</p><p class="foot">Eric Weiscarger · MDconcierge · eric@mdconcierge.net</p></div>';
 }
 
+// The link is meant to be shareable: a doctor will send it to a partner or his administrator and
+// they should get straight in. Everyone signs the guest book on the way, which costs the doctor
+// one click and a guest one line, and means every copy of this page carries the name of whoever
+// is looking at it. Remembered per device, so nobody is asked twice.
+const whoKey = t => 'pm:who:' + t;
+
+function identifyScreen(recipientName, practice, mode){
+  const who = esc(recipientName || 'you');
+  const guestForm = `
+    <div style="margin:18px auto 0;max-width:340px;text-align:left;">
+      <label style="display:block;font-size:12px;color:#5b6675;margin-bottom:4px;">Your name</label>
+      <input id="who-name" placeholder="Jane Miller" style="width:100%;padding:11px 12px;border:1px solid #cfd8e3;border-radius:9px;font-size:15px;box-sizing:border-box;margin-bottom:10px;">
+      <label style="display:block;font-size:12px;color:#5b6675;margin-bottom:4px;">Your email</label>
+      <input id="who-email" type="email" autocomplete="email" placeholder="you@practice.com" style="width:100%;padding:11px 12px;border:1px solid #cfd8e3;border-radius:9px;font-size:15px;box-sizing:border-box;">
+      <div id="who-msg" style="font-size:12px;color:#b4472f;min-height:16px;margin-top:6px;"></div>
+      <button id="who-go" style="width:100%;background:#08214C;color:#fff;border:none;border-radius:9px;padding:12px;font-weight:700;font-size:15px;cursor:pointer;">Open the analysis</button>
+      <div style="text-align:center;margin-top:10px;"><a href="#" id="who-skip" style="font-size:12.5px;color:#5b6675;">Skip and just open it</a></div>
+    </div>`;
+  const chooser = `
+    <div style="margin:18px auto 0;max-width:340px;">
+      <button id="who-me" style="width:100%;background:#08214C;color:#fff;border:none;border-radius:9px;padding:12px;font-weight:700;font-size:15px;cursor:pointer;">Continue as ${who}</button>
+      <button id="who-other" style="width:100%;margin-top:8px;background:#fff;color:#08214C;border:1px solid #6B9FD4;border-radius:9px;padding:11px;font-weight:600;font-size:14px;cursor:pointer;">I'm someone else</button>
+    </div>`;
+  app.innerHTML = '<div class="state"><span class="pill">MDconcierge Pharmacy Partner</span>'
+    + '<h1>Workers\' compensation dispensing analysis</h1>'
+    + '<p class="sub">Prepared for <b>' + who + '</b>' + (practice ? ' · ' + esc(practice) : '') + '.</p>'
+    + (mode === 'guest'
+        ? '<p class="sub">Tell us who you are and it opens. This is shared with colleagues all the time, we just like to know who we are helping.</p>'
+        : '<p class="sub">Confidential and prepared for one practice. Feel free to share it with your partners or your staff, we just ask each person to say who they are.</p>')
+    + (mode === 'guest' ? guestForm : chooser)
+    + '<p class="foot">Eric Weiscarger · MDconcierge · eric@mdconcierge.net</p></div>';
+
+  if(mode === 'guest'){
+    const n = document.getElementById('who-name'), e2 = document.getElementById('who-email'), go = document.getElementById('who-go');
+    const submit = () => {
+      const nm=(n.value||'').trim(), em=(e2.value||'').trim();
+      if(!nm || !em || em.indexOf('@')<1){ document.getElementById('who-msg').textContent='Name and email, then you are in.'; return; }
+      go.disabled = true; go.textContent = 'Opening…';
+      unlock(tokenFromUrl(), {name:nm, email:em});
+    };
+    go.onclick = submit;
+    document.getElementById('who-skip').onclick = ev => { ev.preventDefault(); unlock(tokenFromUrl(), {anon:true}); };
+    [n,e2].forEach(el=>el.onkeydown = ev => { if(ev.key==='Enter') submit(); });
+    n.focus();
+  } else {
+    document.getElementById('who-me').onclick = () => unlock(tokenFromUrl(), {name:recipientName, self:true});
+    document.getElementById('who-other').onclick = () => identifyScreen(recipientName, practice, 'guest');
+  }
+}
+
+async function unlock(token, viewer){
+  const body = viewer ? { token, viewer } : { token };
+  let data;
+  try{
+    const r = await fetch(FN, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    data = await r.json();
+  }catch(e){ return errScreen('error'); }
+
+  if(data && data.ok){
+    if(viewer){ try{ localStorage.setItem(whoKey(token), JSON.stringify(viewer)); }catch(e){} }
+    FORM = data.formulary || []; REC = data.recipient || {};
+    const V = data.viewer || REC;
+    watermark(V.name || REC.name, V.email || REC.email);
+    return render(data.expires_at);
+  }
+  const reason = (data && data.reason) || 'error';
+  if(reason === 'identify'){ return identifyScreen(data.recipient_name, data.practice, 'choose'); }
+  return errScreen(reason, data && data.expires_at);
+}
+
 async function boot(){
   const token = tokenFromUrl();
   if(!token){ return errScreen('missing'); }
-  let data;
-  try{
-    const r = await fetch(FN, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token }) });
-    data = await r.json();
-  }catch(e){ return errScreen('error'); }
-  if(!data || !data.ok){ return errScreen((data&&data.reason)||'error', data&&data.expires_at); }
-  FORM = data.formulary || []; REC = data.recipient || {};
-  watermark(REC.name, REC.email);
-  render(data.expires_at);
+  let remembered = null;
+  try{ remembered = JSON.parse(localStorage.getItem(whoKey(token)) || 'null'); }catch(e){}
+  unlock(token, remembered);
 }
 
 // ---- State workers' comp pharmacy fee schedules ------------------------------------------------
@@ -252,7 +316,7 @@ function render(expires){
 
     <div class="card">
       <h2>How to use this</h2>
-      <p class="hint" style="margin-bottom:0;">Build your own medication mix below and the estimated practice revenue updates instantly. Every assumption is editable. The defaults are intentionally conservative (oral scripts modeled at 80% collections, topicals at 70%, and your practice keeping 65% of net). The full formulary, including product cost, is at the bottom.</p>
+      <p class="hint" style="margin-bottom:0;">Build your own medication mix below and the estimated practice revenue updates instantly. Every assumption is editable. The defaults are intentionally conservative (oral scripts modeled at 80% collections, topicals at 70%, and your practice keeping 65% of net). The practice carries the cost of the medication plus a per-script dispensing fee, both deducted before the split. The full formulary, including product cost, is at the bottom.</p>
     </div>
 
     <div class="card">
@@ -273,6 +337,7 @@ function render(expires){
         <button id="dt-br" class="dtbtn" onclick="setDrugType('br')">Brand</button>
       </div>
       <p class="hint" id="fs-note" style="margin:8px 0 0;"></p>
+      <p class="hint" id="df-note" style="margin:6px 0 0;"></p>
       <p class="hint noprint" style="margin:8px 0 0;">
         <button id="fs-key-btn" class="btn" onclick="toggleKey()">Show all states</button>
         <span style="margin-left:8px;">Fee schedules as of ${FS_ASOF}. They change; confirm your state before relying on it.</span>
@@ -347,13 +412,21 @@ function compute(){
   const oGross=oAwp*patients*oc, tGross=tAwp*patients*tc;
   const feeCost=(oScripts+tScripts)*fee*patients;
   const gross=oGross+tGross, cost=(oCost+tCost)*patients+feeCost, net=gross-cost, practice=net*share;
+  // Say plainly that the fee is the practice's cost and that it is already taken out, rather than
+  // leaving it to be discovered inside a breakdown line.
+  const dfn=document.getElementById('df-note');
+  if(dfn){
+    dfn.innerHTML = fee
+      ? '<b>Dispensing fee:</b> $'+fee.toFixed(2)+' per script is charged to the practice. It is counted as a cost and is already deducted from the figures below.'
+      : '<b>Dispensing fee:</b> none applied. Set it above if your agreement includes one.';
+  }
   const el=document.getElementById('result'); if(!el) return;
   el.innerHTML = `
     <div class="lbl">Estimated practice ancillary revenue</div>
     <div class="big">${money(practice)}<span style="font-size:15px;color:#547;font-weight:400;"> / month</span></div>
     <div class="yr">${money(practice*12)} / year</div>
     <div class="brk">Gross (AWP collected) ${money(gross)}/mo · Product cost ${money(cost)}/mo${feeCost?' (includes '+money(feeCost)+'/mo in dispensing fees)':''} · Net ${money(net)}/mo · Practice keeps ${Math.round(share*100)}% of net${lines.length?' · '+lines.length+' medication'+(lines.length>1?'s':''):''}</div>
-    <div class="disc">Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. <span id="basis-disc">${esc(basisLabel())}</span>.</div>`;
+    <div class="disc">${fee?('Net of the $'+fee.toFixed(2)+' per script dispensing fee charged to the practice. '):''}Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. <span id="basis-disc">${esc(basisLabel())}</span>.</div>`;
 }
 
 function fillFormTable(rows){
