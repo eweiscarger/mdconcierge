@@ -158,9 +158,7 @@ const STATES = [
   {c:'OH',n:'Ohio',br:0.85,gr:0.85,dfb:3.50,dfg:3.50,r:'AWP - 15%'},
   {c:'OK',n:'Oklahoma',br:0.90,gr:0.90,dfb:5.00,dfg:5.00,r:'AWP - 10%'},
   {c:'OR',n:'Oregon',br:0.835,gr:0.835,dfb:2.00,dfg:2.00,r:'AWP - 16.5%'},
-  // PA's published schedule carries no separate dispensing fee; the $6 is Eric's actual
-  // per-script fee, which he confirmed, and it beats the guide for his own state.
-  {c:'PA',n:'Pennsylvania',br:1.10,gr:1.10,dfb:6.00,dfg:6.00,r:'AWP + 10%'},
+  {c:'PA',n:'Pennsylvania',br:1.10,gr:1.10,dfb:0,dfg:0,r:'AWP + 10%'},
   {c:'RI',n:'Rhode Island',br:0.90,gr:0.90,dfb:0,dfg:0,r:'AWP - 10%'},
   {c:'SC',n:'South Carolina',br:1.00,gr:1.00,dfb:5.00,dfg:5.00,r:'AWP (no percentage adjustment)'},
   {c:'SD',n:'South Dakota',basis:'other',r:'Usual and customary, no AWP fee schedule'},
@@ -189,9 +187,10 @@ function applyState(code, keepMult){
   const m = stMult(s, DRUGTYPE);
   const inp = document.getElementById('a-mult');
   if(inp && !keepMult && m != null) inp.value = m;
+  // The state's own dispensing fee is extra REIMBURSEMENT the schedule pays out, which is a
+  // different thing from the per-script fee the practice pays under the program. It stays
+  // informational and out of the math, which keeps the estimate conservative.
   const df = DRUGTYPE==='br' ? s.dfb : s.dfg;
-  const dfi = document.getElementById('a-df');
-  if(dfi && !keepMult) dfi.value = (df==null?0:df);
   const note = document.getElementById('fs-note');
   if(note){
     if(s.basis==='other'){
@@ -199,7 +198,7 @@ function applyState(code, keepMult){
       note.style.color = '#b4472f';
     } else {
       note.innerHTML = '<b>'+esc(s.n)+':</b> '+esc(s.r)
-        + (df ? ' &middot; plus a $'+df.toFixed(2)+' dispensing fee per script' : ' &middot; no separate dispensing fee')
+        + (df ? ' &middot; the schedule also pays a $'+df.toFixed(2)+' dispensing fee per script, left out of the estimate below' : '')
         + ' &middot; brand '+s.br.toFixed(3).replace(/0+$/,'').replace(/\.$/,'')+'&times; / generic '+s.gr.toFixed(3).replace(/0+$/,'').replace(/\.$/,'')+'&times;';
       note.style.color = '';
     }
@@ -263,7 +262,7 @@ function render(expires){
         <label>Patients / month<input id="a-pat" type="number" value="100" oninput="compute()"></label>
         <label>State<select id="a-state" onchange="applyState(this.value)">${STATES.map(s=>`<option value="${s.c}">${esc(s.n)}</option>`).join('')}</select></label>
         <label>AWP multiplier<input id="a-mult" type="number" step="0.001" value="1.1" oninput="multChanged()"></label>
-        <label>Dispensing fee / script<input id="a-df" type="number" step="0.01" value="6" oninput="compute()"></label>
+        <label>Dispensing fee / script (cost)<input id="a-df" type="number" step="0.01" value="6" oninput="compute()"></label>
         <label>Oral collection %<input id="a-oc" type="number" value="80" oninput="compute()"></label>
         <label>Topical collection %<input id="a-tc" type="number" value="70" oninput="compute()"></label>
         <label>Practice share %<input id="a-sh" type="number" value="65" oninput="compute()"></label>
@@ -343,17 +342,17 @@ function compute(){
     if(f.route==='Oral'){ oAwp+=extAwp; oCost+=extCost; oScripts+=units; } else { tAwp+=extAwp; tCost+=extCost; tScripts+=units; }
     lines.push(f.product);
   });
-  // The dispensing fee is paid per script and collects at the same rate the drug does, so it
-  // rides inside gross rather than being bolted on after collections.
-  const oGross=(oAwp+oScripts*fee)*patients*oc, tGross=(tAwp+tScripts*fee)*patients*tc;
-  const feeGross=(oScripts*fee)*patients*oc+(tScripts*fee)*patients*tc;
-  const gross=oGross+tGross, cost=(oCost+tCost)*patients, net=gross-cost, practice=net*share;
+  // The dispensing fee is a charge against the practice, not something it collects: it adds to
+  // what the medication costs, the same $6 per script nationally regardless of state.
+  const oGross=oAwp*patients*oc, tGross=tAwp*patients*tc;
+  const feeCost=(oScripts+tScripts)*fee*patients;
+  const gross=oGross+tGross, cost=(oCost+tCost)*patients+feeCost, net=gross-cost, practice=net*share;
   const el=document.getElementById('result'); if(!el) return;
   el.innerHTML = `
     <div class="lbl">Estimated practice ancillary revenue</div>
     <div class="big">${money(practice)}<span style="font-size:15px;color:#547;font-weight:400;"> / month</span></div>
     <div class="yr">${money(practice*12)} / year</div>
-    <div class="brk">Gross (AWP collected) ${money(gross)}/mo${feeGross?' · includes '+money(feeGross)+'/mo in dispensing fees':''} · Product cost ${money(cost)}/mo · Net ${money(net)}/mo · Practice keeps ${Math.round(share*100)}% of net${lines.length?' · '+lines.length+' medication'+(lines.length>1?'s':''):''}</div>
+    <div class="brk">Gross (AWP collected) ${money(gross)}/mo · Product cost ${money(cost)}/mo${feeCost?' (includes '+money(feeCost)+'/mo in dispensing fees)':''} · Net ${money(net)}/mo · Practice keeps ${Math.round(share*100)}% of net${lines.length?' · '+lines.length+' medication'+(lines.length>1?'s':''):''}</div>
     <div class="disc">Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. <span id="basis-disc">${esc(basisLabel())}</span>.</div>`;
 }
 
