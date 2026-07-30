@@ -2677,6 +2677,7 @@ function mdrxModelHtml(p,link,intro,close){
     <a href="${ehtml(link.url)}" style="background:#08214C;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:13px 26px;border-radius:9px;display:inline-block;">Open your dispensing analysis</a>
   </p>
   <p style="font-size:12.5px;color:#5b6675;">If the button does not work, paste this into your browser:<br><span style="color:#3f6ea5;">${ehtml(link.url)}</span></p>
+  <p style="font-size:13.5px;color:#5b6675;">Prefer to see it first? Here is a quick walkthrough: <a href="https://mdconcierge.net/model-howto.html" style="color:#3f6ea5;">how to use it in under a minute</a>.</p>
   <p>If you dispense something that is not on the list, tell me and I will add it. Thousands more are available. Your private link is unique to you and expires in <b>60 days</b>.</p>
   <p>${ehtml(close)}</p>
   <p>Best,</p>
@@ -2715,6 +2716,7 @@ async function mdrxModelSend(){
     +'3. The estimate updates as you type. Every assumption is editable.\n\n'
     +'The defaults are deliberately conservative: 80% collections on orals, 70% on topicals, and your practice keeping 65% of net. The full formulary, including what the practice pays, is at the bottom.\n\n'
     +MDRX_MODEL.url+'\n\n'
+    +'Prefer to see it first? A quick walkthrough: https://mdconcierge.net/model-howto.html\n\n'
     +'If you dispense something that is not on the list, tell me and I will add it. Your private link is unique to you and expires in 60 days.\n\n'
     +f.close+'\n\nBest,\nEric';
   showToast('Sending…');
