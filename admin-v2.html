@@ -2596,9 +2596,9 @@ async function mdrxSendAgreements(){
 }
 // ---- Interactive dispensing model -----------------------------------------------------------
 // Sends the doctor the tool where he builds his OWN formulary mix, rather than a quote Eric built
-// for him. The link is issued per recipient and only opens for the address it was sent to, so a
-// forwarded link is inert. Re-sending re-uses the same link, which keeps the view count on the
-// record a true running total instead of resetting every follow-up.
+// for him. Each recipient gets their own unguessable link so views are attributable to a person.
+// Re-sending re-uses that link, which keeps the view count on the record a true running total
+// instead of resetting every follow-up.
 var MDRX_MODEL=null;
 async function mdrxSendModel(){
   const p=MDRX_PROV.find(x=>x.id===mdrxOpenId); if(!p)return;
@@ -2621,7 +2621,7 @@ function mdrxModelPanel(p,link){
   pnl.innerHTML=`<div class="panel" style="padding:14px;border:1px solid var(--steel,#6B9FD4);">
     <div style="font-weight:700;font-size:14px;margin-bottom:8px;">Send the dispensing model to ${ehtml(mdrxProvName(p))}</div>
     <div style="background:rgba(107,149,212,.10);border:1px solid var(--border2);border-radius:9px;padding:10px 12px;margin-bottom:10px;">
-      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Private link, opens only for ${ehtml(link.recipient_email)} · ${seen}${reused}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Private link for ${ehtml(link.recipient_email)} · ${seen}${reused}</div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
         <input id="mdrx-ml-url" readonly value="${ehtml(link.url)}" style="flex:1;min-width:240px;${f}font-size:11.5px;">
         <button class="ib" onclick="mdrxModelCopy()">📋 Copy link</button>
@@ -2659,7 +2659,7 @@ function mdrxModelHtml(p,link,intro,close){
     <a href="${ehtml(link.url)}" style="background:#08214C;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:13px 26px;border-radius:9px;display:inline-block;">Open your dispensing analysis</a>
   </p>
   <p style="font-size:12.5px;color:#5b6675;">If the button does not work, paste this into your browser:<br><span style="color:#3f6ea5;">${ehtml(link.url)}</span></p>
-  <p>For your security the link opens only for this email address, so it will ask you to confirm it the first time. Your link is unique to you and expires in <b>60 days</b>.</p>
+  <p>Your private link is unique to you and expires in <b>60 days</b>.</p>
   <p>${ehtml(close)}</p>
   <p>Best,</p>
   </div>`;
@@ -2688,14 +2688,14 @@ async function mdrxModelSend(){
   if(!f.to.length){ showToast('Add a recipient.'); return; }
   if(!f.subject){ showToast('Add a subject.'); return; }
   const html=mdrxModelHtml(p,MDRX_MODEL,f.intro,f.close);
-  const text='Hi Dr. '+(p.last_name||'')+',\n\n'+f.intro+'\n\nAs promised, here is an interactive tool that models the workers’ compensation dispensing opportunity for '+(MDRX_MODEL.practice||'your practice')+'. Build your own formulary mix, set your monthly volume, and it estimates what your practice keeps. Every assumption is editable.\n\n'+MDRX_MODEL.url+'\n\nFor your security the link opens only for this email address, so it will ask you to confirm it the first time. It expires in 60 days.\n\n'+f.close+'\n\nBest,\nEric';
+  const text='Hi Dr. '+(p.last_name||'')+',\n\n'+f.intro+'\n\nAs promised, here is an interactive tool that models the workers’ compensation dispensing opportunity for '+(MDRX_MODEL.practice||'your practice')+'. Build your own formulary mix, set your monthly volume, and it estimates what your practice keeps. Every assumption is editable.\n\n'+MDRX_MODEL.url+'\n\nYour private link is unique to you and expires in 60 days.\n\n'+f.close+'\n\nBest,\nEric';
   showToast('Sending…');
   const {data,error}=await sbClient.functions.invoke('send-mail',{body:{signature:true,to:f.to,subject:f.subject,html:html,text:text}});
   if(error||!data||!data.ok){ showToast('Send failed: '+((data&&data.error)||(error&&error.message)||'unknown')); return; }
   try{
     await sbClient.from('mdrx_activity').insert({provider_id:p.id,type:'email_out',
       subject:'Sent the interactive dispensing model',
-      notes:'To: '+f.to.join(', ')+'. Private link '+MDRX_MODEL.url+' (opens only for '+MDRX_MODEL.recipient_email+', expires in 60 days).',
+      notes:'To: '+f.to.join(', ')+'. Private link '+MDRX_MODEL.url+' (issued to '+MDRX_MODEL.recipient_email+', expires in 60 days).',
       created_by:'eric'});
   }catch(e){}
   try{

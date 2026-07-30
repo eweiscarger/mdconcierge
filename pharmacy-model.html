@@ -92,72 +92,18 @@ function errScreen(reason, expires){
   app.innerHTML = '<div class="state"><span class="pill">MDconcierge Pharmacy Partner</span><h1>'+m[0]+'</h1>'+exp+'<p class="sub">'+m[1]+'</p><p class="foot">Eric Weiscarger · MDconcierge · eric@mdconcierge.net</p></div>';
 }
 
-// The link is private to one recipient, so it only opens for the address it was issued to.
-// A forwarded link lands on this screen instead of the analysis. Once verified we remember the
-// address on this device, so the doctor is never re-challenged on a revisit.
-const memKey = t => 'pm:v1:' + t;
-
-function gateScreen(hint, practice, failed){
-  const forWho = practice ? ('prepared for ' + esc(practice)) : 'prepared for a specific recipient';
-  const warn = failed
-    ? '<p class="sub" style="color:#b4472f;">That address does not match this link. This analysis was sent to one person. If it was forwarded to you, reply to Eric and he will send you your own.</p>'
-    : '<p class="sub">Confirm the email address this was sent to.</p>';
-  app.innerHTML = '<div class="state"><span class="pill">MDconcierge Pharmacy Partner</span>'
-    + '<h1>Your dispensing analysis</h1>'
-    + '<p class="sub">This analysis is confidential and ' + forWho + '.</p>'
-    + warn
-    + '<div style="margin:18px auto 0;max-width:340px;text-align:left;">'
-    + '<label style="display:block;font-size:12px;color:#5b6675;margin-bottom:4px;">Email address'
-    + (hint ? ' <span style="color:#8a97a8;">(' + esc(hint) + ')</span>' : '') + '</label>'
-    + '<input id="gate-email" type="email" autocomplete="email" placeholder="you@practice.com" '
-    + 'style="width:100%;padding:11px 12px;border:1px solid #cfd8e3;border-radius:9px;font-size:15px;box-sizing:border-box;">'
-    + '<div id="gate-msg" style="font-size:12px;color:#b4472f;min-height:16px;margin-top:6px;"></div>'
-    + '<button id="gate-go" style="width:100%;margin-top:4px;background:#08214C;color:#fff;border:none;'
-    + 'border-radius:9px;padding:12px;font-weight:700;font-size:15px;cursor:pointer;">Open my analysis</button>'
-    + '</div>'
-    + '<p class="foot">Eric Weiscarger · MDconcierge · eric@mdconcierge.net</p></div>';
-  const input = document.getElementById('gate-email');
-  const go = document.getElementById('gate-go');
-  const submit = () => {
-    const v = (input.value||'').trim();
-    if(!v){ document.getElementById('gate-msg').textContent = 'Enter your email address.'; return; }
-    go.disabled = true; go.textContent = 'Checking…';
-    unlock(tokenFromUrl(), v);
-  };
-  go.onclick = submit;
-  input.onkeydown = e => { if(e.key === 'Enter') submit(); };
-  input.focus();
-}
-
-async function unlock(token, email){
-  let data;
-  try{
-    const r = await fetch(FN, { method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(email ? { token, email } : { token }) });
-    data = await r.json();
-  }catch(e){ return errScreen('error'); }
-
-  if(data && data.ok){
-    if(email){ try{ localStorage.setItem(memKey(token), email); }catch(e){} }
-    FORM = data.formulary || []; REC = data.recipient || {};
-    watermark(REC.name, REC.email);
-    return render(data.expires_at);
-  }
-  const reason = (data && data.reason) || 'error';
-  if(reason === 'email_required'){ return gateScreen(data.hint, data.practice, false); }
-  if(reason === 'email_mismatch'){
-    try{ localStorage.removeItem(memKey(token)); }catch(e){}
-    return gateScreen('', '', true);
-  }
-  return errScreen(reason, data && data.expires_at);
-}
-
 async function boot(){
   const token = tokenFromUrl();
   if(!token){ return errScreen('missing'); }
-  let remembered = '';
-  try{ remembered = localStorage.getItem(memKey(token)) || ''; }catch(e){}
-  unlock(token, remembered);
+  let data;
+  try{
+    const r = await fetch(FN, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token }) });
+    data = await r.json();
+  }catch(e){ return errScreen('error'); }
+  if(!data || !data.ok){ return errScreen((data&&data.reason)||'error', data&&data.expires_at); }
+  FORM = data.formulary || []; REC = data.recipient || {};
+  watermark(REC.name, REC.email);
+  render(data.expires_at);
 }
 
 function render(expires){
