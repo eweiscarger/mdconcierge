@@ -352,6 +352,7 @@ function render(expires){
         <label>State<select id="a-state" onchange="applyState(this.value)">${STATES.map(s=>`<option value="${s.c}">${esc(s.n)}</option>`).join('')}</select></label>
         <label>AWP multiplier<input id="a-mult" type="number" step="0.001" value="1.1" oninput="multChanged()"></label>
         <label>Dispensing fee / Rx (cost)<input id="a-df" type="number" step="0.01" value="6" oninput="compute()"></label>
+        <label>Shipping / Rx (cost)<input id="a-ship" type="number" step="0.01" value="6" oninput="compute()"></label>
         <label>Oral collection %<input id="a-oc" type="number" value="80" oninput="compute()"></label>
         <label>Topical collection %<input id="a-tc" type="number" value="70" oninput="compute()"></label>
         <label>Practice share %<input id="a-sh" type="number" value="65" oninput="compute()"></label>
@@ -432,7 +433,7 @@ function multChanged(){ compute(); filterForm(); }
 function compute(){
   const num = id => { const e=document.getElementById(id); return e?(parseFloat(e.value)||0):0; };
   const patients=num('a-pat'), mult=num('a-mult'), oc=num('a-oc')/100, tc=num('a-tc')/100, share=num('a-sh')/100;
-  const fee=num('a-df');
+  const fee=num('a-df'), ship=num('a-ship');
   let oAwp=0,oCost=0,tAwp=0,tCost=0,oScripts=0,tScripts=0; const lines=[];
   document.querySelectorAll('#mix .mixrow').forEach(row=>{
     const id=(row.querySelector('select')||{}).value; const units=parseFloat((row.querySelector('input')||{}).value)||0;
@@ -441,28 +442,28 @@ function compute(){
     if(f.route==='Oral'){ oAwp+=extAwp; oCost+=extCost; oScripts+=units; } else { tAwp+=extAwp; tCost+=extCost; tScripts+=units; }
     lines.push(f.product);
   });
-  // The dispensing fee is a charge against the practice, not something it collects: it adds to
-  // what the medication costs, a flat $6 nationally. It is charged once per Rx order, not once
-  // per medication, so a patient on three drugs still carries a single fee.
+  // Dispensing and shipping are charges against the practice, not something it collects, and both
+  // are per Rx order rather than per medication: a patient on five drugs carries one $6 dispensing
+  // fee and one $6 shipping charge, not five of each.
   const oGross=oAwp*patients*oc, tGross=tAwp*patients*tc;
   const anyScripts=(oScripts+tScripts)>0;
-  const feeCost=anyScripts ? fee*patients : 0;
+  const feeCost=anyScripts ? (fee+ship)*patients : 0;
   const gross=oGross+tGross, cost=(oCost+tCost)*patients+feeCost, net=gross-cost, practice=net*share;
   // Say plainly that the fee is the practice's cost and that it is already taken out, rather than
   // leaving it to be discovered inside a breakdown line.
   const dfn=document.getElementById('df-note');
   if(dfn){
-    dfn.innerHTML = fee
-      ? '<b>Dispensing fee:</b> $'+fee.toFixed(2)+' per Rx is charged to the practice, once per patient order rather than per medication. It is counted as a cost and is already deducted from the figures below.'
-      : '<b>Dispensing fee:</b> none applied. Set it above if your agreement includes one.';
+    dfn.innerHTML = (fee||ship)
+      ? '<b>Practice pays per Rx:</b> $'+fee.toFixed(2)+' dispensing and $'+ship.toFixed(2)+' shipping, $'+(fee+ship).toFixed(2)+' in total. Both are charged once per patient order, not per medication, so a patient on five drugs still carries one of each. Both are counted as costs and are already deducted from the figures below.'
+      : '<b>Dispensing and shipping:</b> none applied. Set them above if your agreement includes them.';
   }
   const el=document.getElementById('result'); if(!el) return;
   el.innerHTML = `
     <div class="lbl">Estimated practice ancillary revenue</div>
     <div class="big">${money(practice)}<span style="font-size:15px;color:#547;font-weight:400;"> / month</span></div>
     <div class="yr">${money(practice*12)} / year</div>
-    <div class="brk">Gross (AWP collected) ${money(gross)}/mo · Product cost ${money(cost)}/mo${feeCost?' (includes '+money(feeCost)+'/mo in dispensing fees)':''} · Net ${money(net)}/mo · Practice keeps ${Math.round(share*100)}% of net${lines.length?' · '+lines.length+' medication'+(lines.length>1?'s':''):''}</div>
-    <div class="disc">${fee?('Net of the $'+fee.toFixed(2)+' per Rx dispensing fee charged to the practice. '):''}Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. <span id="basis-disc">${esc(basisLabel())}</span>.</div>`;
+    <div class="brk">Gross (AWP collected) ${money(gross)}/mo · Product cost ${money(cost)}/mo${feeCost?' (includes '+money(feeCost)+'/mo in dispensing and shipping)':''} · Net ${money(net)}/mo · Practice keeps ${Math.round(share*100)}% of net${lines.length?' · '+lines.length+' medication'+(lines.length>1?'s':''):''}</div>
+    <div class="disc">${(fee||ship)?('Net of the $'+(fee+ship).toFixed(2)+' per Rx the practice pays for dispensing and shipping. '):''}Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. <span id="basis-disc">${esc(basisLabel())}</span>.</div>`;
 }
 
 // Sorting, filtering, and picking straight off the formulary. Ninety products is too many to
