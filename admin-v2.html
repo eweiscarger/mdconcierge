@@ -273,6 +273,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" onclick="showView('crm',this)"><span class="ni-ic">⚖️</span> Attorney CRM <span class="nb" id="crm-count" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('mdrx',this)"><span class="ni-ic">💊</span> MDRx Pharmacy CRM <span class="nb" id="mdrx-due" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('funnel',this)"><span class="ni-ic">🎯</span> Funnel Engagement <span class="nb" id="funnel-hot" style="display:none;">0</span></button>
+    <button class="ni" onclick="showView('linkedin',this)"><span class="ni-ic">🤝</span> LinkedIn queue</button>
     <button class="ni" onclick="openPresenter()" title="Opens the dispensing model in a clean tab. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary</button>
     <button class="ni" onclick="showView('booking',this)"><span class="ni-ic">📅</span> Booking &amp; Availability <span class="nb" id="booking-pending" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('pipeline',this)"><span class="ni-ic">📊</span> Pipeline <span class="nb" id="pipe-due" style="display:none;">0</span></button>
@@ -471,6 +472,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   </div>
 
   <!-- ACCESS LOG VIEW -->
+  <div class="view" id="view-linkedin"></div>
+
   <div class="view" id="view-access">
     <div class="panel" style="margin-bottom:0;">
       <div class="ph"><div class="pt">Access &amp; activity log</div><div class="ps">Every case open, accept, reveal &amp; access across all cases — newest first. Sensitive events are flagged.</div></div>
@@ -1182,7 +1185,7 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={cockpit:'Daily Cockpit',leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',booking:'Booking & Availability',pipeline:'Pipeline',replies:'Replies',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',access:'Access Log',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={cockpit:'Daily Cockpit',leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',booking:'Booking & Availability',pipeline:'Pipeline',replies:'Replies',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',linkedin:'LinkedIn Queue',access:'Access Log',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
@@ -1196,6 +1199,7 @@ function showView(v,btn){
   if(v==='tools')renderTools();
   if(v==='analytics')loadAnalytics();
   if(v==='access')loadAccessLog();
+  if(v==='linkedin')loadLinkedIn();
 }
 // Clicking a physician here jumps straight to their full record: what they did, what we
 // sent back, and what happens next. Same destination as the CRM board.
@@ -2594,6 +2598,95 @@ async function mdrxSendAgreements(){
   const body='Hi Dr. '+(p.last_name||'')+',\n\nThank you for your interest in the '+prog+'. As promised, attached are the agreements and our compliance opinion from Alice G. Gosfield and Associates for your review. I have also copied my partner, '+(ph.cc_partner_name||'my partner')+', so we are all connected.\n\nOnce you have had a chance to look, I am glad to walk through anything and answer any questions, whatever works best for your schedule.\n\nBest,\nEric';
   mdrxEmailPanel({title:'Send agreements to '+mdrxProvName(p),to:p.email,subject:'Agreements for the '+prog,body:body,kind:'agreements',attachments:atts});
 }
+// ---- LinkedIn queue ---------------------------------------------------------------------------
+// LinkedIn forbids automating connection requests, and the account at risk is the one whose
+// credibility this play depends on. So the engine does everything except the click: it decides
+// who, drafts the note, tells the rep what has already happened with that lead, and tracks what
+// was sent. Eric opens the profile, pastes, sends, marks it done.
+var LI_ROWS=[];
+async function loadLinkedIn(){
+  const el=document.getElementById('view-linkedin');
+  el.innerHTML='<div class="panel" style="padding:16px;">Loading the queue…</div>';
+  const {data,error}=await sbClient.from('linkedin_queue').select('*')
+    .in('status',['needs_profile','ready','sent'])
+    .order('priority',{ascending:true}).order('id',{ascending:true});
+  if(error){ el.innerHTML='<div class="panel" style="padding:16px;">Could not load: '+ehtml(error.message)+'</div>'; return; }
+  LI_ROWS=data||[];
+  renderLinkedIn();
+}
+function liWeekCount(){
+  const wk=Date.now()-7*86400000;
+  return LI_ROWS.filter(r=>r.sent_at && new Date(r.sent_at).getTime()>wk).length;
+}
+function renderLinkedIn(){
+  const el=document.getElementById('view-linkedin');
+  const ready=LI_ROWS.filter(r=>r.status==='ready');
+  const need=LI_ROWS.filter(r=>r.status==='needs_profile');
+  const sent=LI_ROWS.filter(r=>r.status==='sent');
+  const used=liWeekCount(), left=Math.max(0,100-used);
+  const card=(r)=>{
+    const isAdmin=r.role==='administrator';
+    const search='https://www.linkedin.com/search/results/people/?keywords='+encodeURIComponent((isAdmin?'practice administrator ':'')+(r.person_name==='Practice administrator'?'':r.person_name)+' '+(r.practice_name||''));
+    return `<div class="panel" style="padding:13px 15px;margin-bottom:9px;border-left:3px solid ${isAdmin?'#C8922A':'#6B9FD4'};">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline;">
+        <div><b style="font-size:14px;">${ehtml(r.person_name)}</b>
+          <span style="font-size:11px;color:var(--muted);margin-left:7px;">${isAdmin?'ADMINISTRATOR':'PHYSICIAN'}</span></div>
+        <div style="font-size:12px;color:var(--muted);">${ehtml(r.practice_name||'')}</div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin:5px 0 8px;">${ehtml(r.context||'')}</div>
+      <textarea id="li-note-${r.id}" rows="3" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:12.5px;font-family:inherit;">${ehtml(r.note_draft||'')}</textarea>
+      <div style="font-size:10.5px;color:var(--muted);margin:3px 0 8px;">Connection notes cap at 300 characters.</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;">
+        <button class="ib" onclick="liCopy(${r.id})">📋 Copy note</button>
+        ${r.profile_url
+          ? `<a class="ib" href="${ehtml(r.profile_url)}" target="_blank" rel="noopener">↗ Open profile</a>`
+          : `<a class="ib" href="${ehtml(search)}" target="_blank" rel="noopener">🔍 Find on LinkedIn</a>`}
+        <button class="ib" onclick="liSetUrl(${r.id})">🔗 Save profile URL</button>
+        <button class="ib" onclick="liMark(${r.id},'sent')">✓ Request sent</button>
+        <button class="ib" onclick="liMark(${r.id},'skipped')">Skip</button>
+      </div>
+    </div>`;
+  };
+  el.innerHTML=`
+    <div class="panel" style="padding:14px 16px;margin-bottom:12px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:5px;">Connect before the next email lands</div>
+      <div style="font-size:12.5px;color:var(--muted);">A request sent a day or two ahead of a touch means the email arrives from a name they have already seen. LinkedIn does not permit automated requests, so the engine picks the target, writes the note and tracks the outcome. You send it.</div>
+      <div style="margin-top:9px;font-size:12.5px;">
+        <b>${left}</b> of your ~100 weekly invitations left · <b>${ready.length}</b> ready to send · <b>${need.length}</b> need a profile · <b>${sent.length}</b> sent
+      </div>
+    </div>
+    ${ready.length?`<div class="ph" style="padding:0 2px 6px;"><div class="pt">Ready to send</div></div>${ready.map(card).join('')}`:''}
+    ${need.length?`<div class="ph" style="padding:10px 2px 6px;"><div class="pt">Need a profile URL · hottest first</div></div>${need.slice(0,25).map(card).join('')}`:''}
+    ${sent.length?`<div class="ph" style="padding:10px 2px 6px;"><div class="pt">Requests sent (${sent.length})</div></div>
+      <div class="panel" style="padding:12px 15px;font-size:12.5px;color:var(--muted);">${sent.map(r=>ehtml(r.person_name)+' · '+ehtml(r.practice_name||'')).join('<br>')}</div>`:''}
+  `;
+}
+function liCopy(id){
+  const t=document.getElementById('li-note-'+id); if(!t)return;
+  t.select(); try{ document.execCommand('copy'); showToast('Note copied. Paste it into the invitation.'); }catch(e){ showToast('Select and copy manually.'); }
+}
+async function liSetUrl(id){
+  const r=LI_ROWS.find(x=>x.id===id); if(!r)return;
+  const url=prompt('Paste their LinkedIn profile URL:', r.profile_url||'https://www.linkedin.com/in/');
+  if(!url)return;
+  await sbClient.from('linkedin_queue').update({profile_url:url.trim(), status:'ready'}).eq('id',id);
+  showToast('Saved. Moved to ready.'); loadLinkedIn();
+}
+async function liMark(id,status){
+  const r=LI_ROWS.find(x=>x.id===id); if(!r)return;
+  const note=(document.getElementById('li-note-'+id)||{}).value||r.note_draft;
+  const patch={status, note_draft:note};
+  if(status==='sent') patch.sent_at=new Date().toISOString();
+  await sbClient.from('linkedin_queue').update(patch).eq('id',id);
+  if(status==='sent' && r.provider_id){
+    try{ await sbClient.from('mdrx_activity').insert({provider_id:r.provider_id,type:'note',
+      subject:'LinkedIn connection request sent',
+      notes:'To '+r.person_name+(r.practice_name?' at '+r.practice_name:'')+'. '+(r.context||''),created_by:'eric'}); }catch(e){}
+  }
+  showToast(status==='sent'?'Marked sent and logged on the record.':'Skipped.');
+  loadLinkedIn();
+}
+
 // ---- Interactive dispensing model -----------------------------------------------------------
 // Sends the doctor the tool where he builds his OWN formulary mix, rather than a quote Eric built
 // for him. Each recipient gets their own unguessable link so views are attributable to a person.
