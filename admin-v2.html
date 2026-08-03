@@ -2675,7 +2675,7 @@ function mdrxModelHtml(p,link,intro,close){
     <li style="margin-bottom:5px;">In the formulary at the bottom, filter or sort to find what you dispense, <b>tick those products and press "Add to my mix."</b> Sorting by reimbursement shows what is worth dispensing.</li>
     <li>Set how many of each an average patient gets per month. The estimate updates as you type, and every assumption is editable.</li>
   </ol>
-  <p>The defaults are deliberately <b>conservative</b>: <b>80% collections</b> on orals, <b>70%</b> on topicals, and your practice keeping <b>65% of net</b>. The practice carries the cost of the medication plus a per-Rx dispensing fee, both already deducted. The <b>full formulary</b>, including what the practice pays for each product, is at the bottom.</p>
+  <p>The defaults are deliberately <b>conservative</b>: <b>80% collections</b> on orals, <b>70%</b> on topicals, and your practice keeping <b>65% of net</b>. The practice carries the cost of the medication plus per-Rx dispensing and shipping fees, both already deducted. The <b>full formulary</b>, including what the practice pays for each product, is at the bottom.</p>
   <p style="font-size:13.5px;color:#5b6675;">Happy to share it with a partner or your administrator: just forward this email. They press "I'm someone else", give a name, and they are in.</p>
   <p style="text-align:center;margin:26px 0;">
     <a href="${ehtml(link.url)}" style="background:#08214C;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:13px 26px;border-radius:9px;display:inline-block;">Open your dispensing analysis</a>
@@ -2719,7 +2719,7 @@ async function mdrxModelSend(){
     +'2. Set your state and your monthly patient volume. '+(rule?('The multiplier follows your state fee schedule automatically ('+st+' pays '+rule+').'):'You can set the reimbursement basis for your state, or type your own number over it.')+'\n'
     +'3. In the formulary at the bottom, filter or sort to find what you dispense, tick those products and press "Add to my mix".\n'
     +'4. Set how many of each an average patient gets per month. The estimate updates as you type.\n\n'
-    +'The defaults are deliberately conservative: 80% collections on orals, 70% on topicals, and your practice keeping 65% of net. The practice carries the cost of the medication plus a per-Rx dispensing fee, both already deducted. The full formulary, including what the practice pays, is at the bottom.\n\n'
+    +'The defaults are deliberately conservative: 80% collections on orals, 70% on topicals, and your practice keeping 65% of net. The practice carries the cost of the medication plus per-Rx dispensing and shipping fees, both already deducted. The full formulary, including what the practice pays, is at the bottom.\n\n'
     +'Happy to share it with a partner or your administrator: just forward this email. They press "I am someone else", give a name, and they are in.\n\n'
     +MDRX_MODEL.url+'\n\n'
     +'Prefer to see it first? A quick walkthrough: https://mdconcierge.net/model-howto.html\n\n'
