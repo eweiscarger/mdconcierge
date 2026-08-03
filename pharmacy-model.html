@@ -28,8 +28,6 @@
   .assume label{ font-size:11px; color:var(--muted); font-weight:600; }
   .assume input{ display:block; margin-top:4px; width:92px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); }
   .assume select{ display:block; margin-top:4px; width:150px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); background:#fff; }
-  .dtbtn{ border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:999px; padding:5px 14px; font-size:12px; font-weight:700; cursor:pointer; }
-  .dtbtn.on{ border-color:var(--navy); background:var(--navy); color:#fff; }
   .fctl{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; align-items:center; }
   .fctl input, .fctl select{ padding:9px 11px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); background:#fff; }
   .fctl input{ flex:1; min-width:200px; }
@@ -266,7 +264,12 @@ const ACTIVE = ['AL','AZ','CO','DC','FL','IN','KS','LA','MO','NE','NM','OK','PA'
 const SERVED = STATES.filter(s => ACTIVE.includes(s.c));
 
 let ST = STATES.find(s=>s.c==='PA');
-let DRUGTYPE = 'gr';   // generic is what actually moves in work comp, so it leads
+// Every product in this formulary dispenses as a generic: the brand names in the product column
+// are the AWP reference label, and acquisition cost sits at a median 5% of AWP, which no brand
+// does. So the generic rate always applies and there is no basis to ask the doctor to choose.
+// Offering the choice let someone apply a brand rate to a generic basket and understate himself
+// by 20-25% in Louisiana or Texas.
+const DRUGTYPE = 'gr';
 
 function stateByCode(c){ return STATES.find(s=>s.c===String(c||'').toUpperCase()); }
 // States with no published AWP schedule (usual and customary, "reasonable", prevailing community
@@ -293,9 +296,12 @@ function applyState(code, keepMult){
       note.innerHTML = '<b>'+esc(s.n)+':</b> '+esc(s.r)+'. With no published AWP schedule to follow, this is modelled at <b>flat AWP</b> as a working assumption. Change it to whatever you actually collect.';
       note.style.color = '';
     } else {
+      const gr = s.gr.toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
+      const br = s.br.toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
       note.innerHTML = '<b>'+esc(s.n)+':</b> '+esc(s.r)
         + (df ? ' &middot; the schedule also pays a $'+df.toFixed(2)+' dispensing fee per script, left out of the estimate below' : '')
-        + ' &middot; brand '+s.br.toFixed(3).replace(/0+$/,'').replace(/\.$/,'')+'&times; / generic '+s.gr.toFixed(3).replace(/0+$/,'').replace(/\.$/,'')+'&times;';
+        + ' &middot; generic rate '+gr+'&times; applied'
+        + (s.br!==s.gr ? ' (its brand rate is '+br+'&times;, which does not apply here)' : '');
       note.style.color = '';
     }
   }
@@ -305,12 +311,6 @@ function applyState(code, keepMult){
   // The reimbursement column header carries the state code, and it is rebuilt from ST inside
   // renderFormHead, so refreshing the table is enough to relabel it.
   applyForm(); compute();
-}
-function setDrugType(t){
-  DRUGTYPE = t;
-  document.getElementById('dt-br').className = 'dtbtn'+(t==='br'?' on':'');
-  document.getElementById('dt-gr').className = 'dtbtn'+(t==='gr'?' on':'');
-  applyState(ST.c);
 }
 function fsKeyHtml(){
   const rows = SERVED.map(s=>{
@@ -365,12 +365,8 @@ function render(expires){
         <label>Topical collection %<input id="a-tc" type="number" value="70" oninput="compute()"></label>
         <label>Practice share %<input id="a-sh" type="number" value="65" oninput="compute()"></label>
       </div>
-      <div style="margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-        <span style="font-size:12px;color:var(--muted);">Rate basis:</span>
-        <button id="dt-gr" class="dtbtn on" onclick="setDrugType('gr')">Generic</button>
-        <button id="dt-br" class="dtbtn" onclick="setDrugType('br')">Brand</button>
-      </div>
-      <p class="hint" id="fs-note" style="margin:8px 0 0;"></p>
+      <p class="hint" style="margin:8px 0 0;">Every product here dispenses as a <b>generic</b>, so your state's generic rate is applied throughout. Brand names in the formulary are the AWP reference, not what ships.</p>
+      <p class="hint" id="fs-note" style="margin:6px 0 0;"></p>
       <p class="hint" id="df-note" style="margin:6px 0 0;"></p>
       <p class="hint noprint" style="margin:8px 0 0;">
         <button id="fs-key-btn" class="btn" onclick="toggleKey()">Show all states</button>
