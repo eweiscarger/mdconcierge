@@ -2648,8 +2648,11 @@ function mdrxModelCopy(){
 }
 // Each state's work comp pharmacy rule, mirrored from pharmacy-model.html so the email can name
 // the doctor's own fee schedule. Only the sentence matters here; the tool does the math.
+// Physician-dispensing rates. Florida pays a dispensing practitioner more than the pharmacy
+// counter, so the practitioner figure is the one quoted.
 const FS_RULES={AL:'AWP + 5%',AK:'AWP',AZ:'AWP - 15% brand, AWP - 25% generic',AR:'AWP',CO:'AWP',
- CT:'AWP - 20% brand, AWP - 80% generic',DE:'AWP - 31.9% brand, AWP - 38% generic',FL:'AWP',GA:'AWP',
+ FL:'AWP + 12.5% for dispensing physicians',
+ CT:'AWP - 20% brand, AWP - 80% generic',DE:'AWP - 31.9% brand, AWP - 38% generic',GA:'AWP',
  HI:'AWP + 40%',ID:'AWP',KS:'AWP - 10% brand, AWP - 15% generic',KY:'AWP - 10% brand, AWP - 15% generic',
  LA:'AWP + 10% brand, AWP + 40% generic',MI:'AWP - 10%',MN:'AWP - 12%',MS:'AWP - 10% brand, AWP - 15% generic',
  MT:'AWP - 10% brand, AWP - 25% generic',NV:'AWP',NM:'AWP - 10%',NY:'AWP - 12% brand, AWP - 20% generic',
