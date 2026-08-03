@@ -273,6 +273,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" onclick="showView('crm',this)"><span class="ni-ic">⚖️</span> Attorney CRM <span class="nb" id="crm-count" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('mdrx',this)"><span class="ni-ic">💊</span> MDRx Pharmacy CRM <span class="nb" id="mdrx-due" style="display:none;">0</span></button>
     <button class="ni" onclick="showView('funnel',this)"><span class="ni-ic">🎯</span> Funnel Engagement <span class="nb" id="funnel-hot" style="display:none;">0</span></button>
+    <button class="ni" onclick="showView('deals',this)"><span class="ni-ic">🎯</span> Deals</button>
     <button class="ni" onclick="showView('linkedin',this)"><span class="ni-ic">🤝</span> LinkedIn queue</button>
     <button class="ni" onclick="openPresenter()" title="Opens the dispensing model in a clean tab. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary</button>
     <button class="ni" onclick="showView('booking',this)"><span class="ni-ic">📅</span> Booking &amp; Availability <span class="nb" id="booking-pending" style="display:none;">0</span></button>
@@ -472,6 +473,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   </div>
 
   <!-- ACCESS LOG VIEW -->
+  <div class="view" id="view-deals"></div>
+
   <div class="view" id="view-linkedin"></div>
 
   <div class="view" id="view-access">
@@ -1185,7 +1188,7 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={cockpit:'Daily Cockpit',leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',booking:'Booking & Availability',pipeline:'Pipeline',replies:'Replies',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',linkedin:'LinkedIn Queue',access:'Access Log',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={cockpit:'Daily Cockpit',leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',booking:'Booking & Availability',pipeline:'Pipeline',replies:'Replies',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',deals:'Deals',linkedin:'LinkedIn Queue',access:'Access Log',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
@@ -1200,6 +1203,7 @@ function showView(v,btn){
   if(v==='analytics')loadAnalytics();
   if(v==='access')loadAccessLog();
   if(v==='linkedin')loadLinkedIn();
+  if(v==='deals')loadDeals();
 }
 // Clicking a physician here jumps straight to their full record: what they did, what we
 // sent back, and what happens next. Same destination as the CRM board.
@@ -2598,6 +2602,113 @@ async function mdrxSendAgreements(){
   const body='Hi Dr. '+(p.last_name||'')+',\n\nThank you for your interest in the '+prog+'. As promised, attached are the agreements and our compliance opinion from Alice G. Gosfield and Associates for your review. I have also copied my partner, '+(ph.cc_partner_name||'my partner')+', so we are all connected.\n\nOnce you have had a chance to look, I am glad to walk through anything and answer any questions, whatever works best for your schedule.\n\nBest,\nEric';
   mdrxEmailPanel({title:'Send agreements to '+mdrxProvName(p),to:p.email,subject:'Agreements for the '+prog,body:body,kind:'agreements',attachments:atts});
 }
+// ---- Deal room ---------------------------------------------------------------------------------
+// The cadence machinery serves the 276 people who are not in a deal. This serves the handful who
+// are. It answers the three questions a rep has before any deal conversation: who decides and who
+// have I not got yet, what is actually in the way, and what do I say. Risk is computed from the
+// shape of the deal rather than from activity counts, because a single-threaded deal that looks
+// busy is still fragile.
+var DEAL_ROWS=[], DEAL_CONTACTS=[], DEAL_LINKS=[];
+const DEAL_STAGES=['Won','Closing','Meeting Booked','Materials Sent','Met','Follow-up'];
+
+async function loadDeals(){
+  const el=document.getElementById('view-deals');
+  el.innerHTML='<div class="panel" style="padding:16px;">Loading the deals…</div>';
+  const [{data:prov},{data:cons},{data:links}]=await Promise.all([
+    sbClient.from('mdrx_providers').select('id,first_name,last_name,credentials,email,cell,office_phone,practice_name,practice_id,state,funnel_stage,stage,first_rx_received,next_step,next_action_date,last_touch_at,touch_count,funnel_open_count,funnel_clicked,engaged_at')
+      .in('funnel_stage',DEAL_STAGES).order('funnel_stage'),
+    sbClient.from('mdrx_contacts').select('*'),
+    sbClient.from('quote_links').select('recipient_name,recipient_email,provider_id,view_count,last_viewed_at,revoked'),
+  ]);
+  DEAL_ROWS=prov||[]; DEAL_CONTACTS=cons||[]; DEAL_LINKS=links||[];
+  renderDeals();
+}
+
+const daysSince=(d)=>d?Math.floor((Date.now()-new Date(d).getTime())/86400000):null;
+
+// Everyone we know at the practice: the physician, any siblings at the same practice, and staff.
+function dealPeople(p){
+  const out=[{name:mdrxProvName(p), role:'Physician', kind:'physician', email:p.email, id:p.id}];
+  DEAL_ROWS.filter(x=>x.id!==p.id && x.practice_name && x.practice_name===p.practice_name)
+    .forEach(x=>out.push({name:mdrxProvName(x), role:'Physician, same practice', kind:'physician', email:x.email, id:x.id}));
+  DEAL_CONTACTS.filter(c=>c.provider_id===p.id || (p.practice_id && c.practice_id===p.practice_id))
+    .forEach(c=>out.push({name:c.name, role:(c.title||c.role||'Contact')+(c.influence==='decision_maker'?' · decision maker':''), kind:'staff', email:c.email}));
+  return out;
+}
+
+// What is actually wrong with this deal, in the order it matters.
+function dealRisks(p, people){
+  const r=[]; const quiet=daysSince(p.last_touch_at);
+  const staff=people.filter(x=>x.kind==='staff');
+  if(p.funnel_stage==='Won' && !p.first_rx_received)
+    r.push({sev:'hot', txt:'Signed but no first script yet. Revenue does not start until one is written.'});
+  if(!staff.length)
+    r.push({sev:'warn', txt:'Single threaded. Nobody at the practice but the physician, so if he goes quiet the deal has no other way in.'});
+  if(!staff.some(s=>/decision maker/i.test(s.role)) && staff.length)
+    r.push({sev:'warn', txt:'No decision maker identified among the staff contacts.'});
+  if(quiet!=null && quiet>=7 && p.funnel_stage!=='Won')
+    r.push({sev:'warn', txt:`Quiet for ${quiet} days.`});
+  const unopened=DEAL_LINKS.filter(l=>l.provider_id===p.id && !l.revoked && !l.view_count);
+  if(unopened.length)
+    r.push({sev:'info', txt:`${unopened.map(u=>u.recipient_name).join(', ')} never opened the analysis sent to them.`});
+  return r;
+}
+
+// The single next move, and the one thing to bring to it.
+function dealMove(p, people, risks){
+  const staff=people.filter(x=>x.kind==='staff');
+  if(p.funnel_stage==='Won' && !p.first_rx_received)
+    return {move:'Get the first script written. Ask what is holding it up: staff training, the ordering workflow, or a patient they have in mind.',
+            asset:'Nothing to send. This is a phone call to the practice, not an email.'};
+  if(p.next_action_date && p.next_action_date>new Date().toISOString().slice(0,10))
+    return {move:`Holding until ${p.next_action_date}. ${ehtml(p.next_step||'')}`, asset:'Nothing until then. Chasing early costs more than waiting.'};
+  if(!staff.length)
+    return {move:'Find the practice administrator and get them into the deal before it stalls on one person.',
+            asset:'LinkedIn queue has an administrator target for this practice.'};
+  return {move: p.next_step || 'Confirm what is outstanding and who else needs to see it.',
+          asset:'Offer to build the dispensing analysis around their own numbers rather than sending a generic one.'};
+}
+
+function renderDeals(){
+  const el=document.getElementById('view-deals');
+  const won=DEAL_ROWS.filter(p=>p.funnel_stage==='Won');
+  const live=DEAL_ROWS.filter(p=>p.funnel_stage!=='Won');
+  const card=(p)=>{
+    const people=dealPeople(p), risks=dealRisks(p,people), mv=dealMove(p,people,risks);
+    const quiet=daysSince(p.last_touch_at);
+    const sevColor={hot:'#c0563a',warn:'#C8922A',info:'var(--muted)'};
+    return `<div class="panel" style="padding:15px 17px;margin-bottom:11px;border-left:3px solid ${p.funnel_stage==='Won'?'#2f8f5b':'#6B9FD4'};">
+      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline;">
+        <div><b style="font-size:15px;">${ehtml(mdrxProvName(p))}</b>
+          <span style="font-size:12px;color:var(--muted);margin-left:8px;">${ehtml(p.practice_name||'')}${p.state?' · '+ehtml(p.state):''}</span></div>
+        <div style="font-size:11.5px;font-weight:700;color:var(--muted);">${ehtml(p.funnel_stage)}${quiet!=null?' · quiet '+quiet+'d':''}</div>
+      </div>
+
+      <div style="margin:10px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;">Who is in it</div>
+      <div style="font-size:12.5px;">${people.map(x=>`<div>${ehtml(x.name)} <span style="color:var(--muted);">— ${ehtml(x.role)}</span></div>`).join('')}</div>
+
+      ${risks.length?`<div style="margin:11px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;">What is in the way</div>
+      ${risks.map(r=>`<div style="font-size:12.5px;color:${sevColor[r.sev]};margin-bottom:3px;">${ehtml(r.txt)}</div>`).join('')}`:''}
+
+      <div style="margin:11px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;">The move</div>
+      <div style="font-size:13px;">${mv.move}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px;">${mv.asset}</div>
+
+      <div style="margin-top:11px;display:flex;gap:7px;flex-wrap:wrap;">
+        <button class="ib" onclick="mdrxOpen(${p.id});showView('mdrx',document.querySelector('.ni'))">Open record</button>
+        <button class="ib" onclick="mdrxBrief(${p.id})">🧾 Pre-call brief</button>
+      </div>
+    </div>`;
+  };
+  el.innerHTML=`
+    <div class="panel" style="padding:14px 16px;margin-bottom:12px;">
+      <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${won.length+live.length} deals that can actually close</div>
+      <div style="font-size:12.5px;color:var(--muted);">Who decides, what is in the way, and the single next move. Everything else in this CRM serves the people who are not here yet.</div>
+    </div>
+    ${won.length?`<div class="ph" style="padding:0 2px 6px;"><div class="pt">Signed · waiting on first scripts</div></div>${won.map(card).join('')}`:''}
+    ${live.length?`<div class="ph" style="padding:10px 2px 6px;"><div class="pt">In play</div></div>${live.map(card).join('')}`:''}`;
+}
+
 // ---- LinkedIn queue ---------------------------------------------------------------------------
 // LinkedIn forbids automating connection requests, and the account at risk is the one whose
 // credibility this play depends on. So the engine does everything except the click: it decides
