@@ -194,9 +194,10 @@ async function boot(){
 // ---- State workers' comp pharmacy fee schedules ------------------------------------------------
 // Every state sets its own WC pharmacy reimbursement. Most are a percentage of AWP, which is the
 // multiplier this model runs on: PA pays AWP + 10% (1.10), New York pays AWP - 12% (0.88).
-// These are the rates a DISPENSING PHYSICIAN is paid, which is what this model is about. Where a
-// state prices practitioner dispensing differently from the pharmacy counter, the practitioner
-// rate is the one used (Florida pays a dispensing physician AWP +12.5%, a pharmacy AWP + $4.18).
+// These are the PHARMACY fee schedule rates, which is what this program bills under: the script
+// is filled and shipped by the mail-order pharmacy, not handed to the patient in the office. Some
+// states publish a separate, higher rate for a physician who dispenses in office (Florida pays a
+// dispensing practitioner AWP +12.5%); that rate does not apply here and is not used.
 // br/gr are the brand and generic multipliers; dfb/dfg are the per-script dispensing fees the
 // schedule pays out, shown but deliberately NOT added to the estimate, so it never overstates.
 // basis 'other' means the state does not price off AWP at all (usual and customary, "reasonable",
@@ -214,11 +215,9 @@ const STATES = [
   {c:'CT',n:'Connecticut',br:0.80,gr:0.20,dfb:5.00,dfg:8.00,r:'AWP - 20% brand, AWP - 80% generic (eff. 7/15/2026)'},
   {c:'DE',n:'Delaware',br:0.681,gr:0.62,dfb:3.29,dfg:4.10,r:'AWP - 31.9% brand, AWP - 38% generic'},
   {c:'DC',n:'District of Columbia',basis:'other',r:'Usual and customary, no AWP fee schedule'},
-  // Florida is the one state that prices physician dispensing differently from the pharmacy
-  // counter: a registered dispensing practitioner is paid AWP +12.5% + $8.00 on the original
-  // manufacturer NDC, where a pharmacy gets AWP + $4.18. This model is physician dispensing, so
-  // the practitioner rate is the right one.
-  {c:'FL',n:'Florida',br:1.125,gr:1.125,dfb:8.00,dfg:8.00,r:'AWP + 12.5% for dispensing physicians (a pharmacy is paid AWP + $4.18)'},
+  // Florida also has a practitioner-dispensing rate of AWP +12.5% + $8.00, which does NOT apply
+  // here: this program is mail order, so the pharmacy schedule is the one that pays.
+  {c:'FL',n:'Florida',br:1.00,gr:1.00,dfb:4.18,dfg:4.18,r:'AWP (no percentage adjustment)'},
   {c:'GA',n:'Georgia',br:1.00,gr:1.00,dfb:4.83,dfg:7.25,r:'AWP (no percentage adjustment)'},
   {c:'HI',n:'Hawaii',br:1.40,gr:1.40,dfb:0,dfg:0,r:'AWP + 40%'},
   {c:'ID',n:'Idaho',br:1.00,gr:1.00,dfb:5.00,dfg:8.00,r:'AWP (no percentage adjustment)'},
@@ -366,7 +365,7 @@ function render(expires){
       <p class="hint" id="df-note" style="margin:6px 0 0;"></p>
       <p class="hint noprint" style="margin:8px 0 0;">
         <button id="fs-key-btn" class="btn" onclick="toggleKey()">Show all states</button>
-        <span style="margin-left:8px;">Rates a dispensing physician is paid, as of ${FS_ASOF}. They change; confirm your state before relying on it.</span>
+        <span style="margin-left:8px;">Pharmacy fee schedule rates as of ${FS_ASOF}. They change; confirm your state before relying on it.</span>
       </p>
       <div id="fs-key" style="display:none;margin-top:10px;"></div>
     </div>
