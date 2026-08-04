@@ -1441,8 +1441,9 @@ async function loadCockpit(){
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;"><b style="font-size:13.5px;">${ehtml(op?ckName(op):('#'+o.provider_id))}</b><span style="font-size:11.5px;color:var(--muted);">${ehtml(o.to_email||'')}</span>${op&&op.practice_name?'<span style="font-size:11.5px;color:var(--muted);">'+ehtml(op.practice_name)+'</span>':''}<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);margin-left:auto;">Touch ${o.touch_no}</span></div>
     <div style="font-size:12.5px;font-weight:700;margin:4px 0;">${ehtml(o.subject||'')}</div>
     <textarea id="ob-${o.id}" data-orig="${ehtml(o.body_text||'')}" style="width:100%;min-height:120px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(o.body_text||'')}</textarea>
-    <div style="margin-top:4px;font-size:11px;color:var(--muted);">Your signature attaches automatically on send.</div>
-    <div style="margin-top:6px;display:flex;gap:6px;"><button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;" onclick="mdrxSendOutbox([${o.id}])">Send this one</button><button class="ib" onclick="mdrxSkipOutbox(${o.id})">Skip</button></div>
+    <div style="margin-top:4px;font-size:11px;color:var(--muted);">The box above is the plain-text version, so links show as raw URLs. Preview to see what the physician actually gets.</div>
+    <div id="obpv-${o.id}" style="display:none;margin-top:8px;border:1px solid var(--border2);border-radius:10px;overflow:hidden;background:#F6F9FD;"></div>
+    <div style="margin-top:6px;display:flex;gap:6px;"><button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;" onclick="mdrxSendOutbox([${o.id}])">Send this one</button><button class="ib" onclick="mdrxPreview(${o.id})" id="obpvb-${o.id}">👁 Preview</button><button class="ib" onclick="mdrxSkipOutbox(${o.id})">Skip</button></div>
   </div>`;}).join('');
   const paused=!!(cf&&cf.data&&cf.data.sending_paused);
   const obPanel=outboxList.length?`<div class="panel" style="margin-bottom:16px;border:2px solid ${paused?'#c0392b':'var(--green)'};"><div class="ph"><div class="pt">📤 Ready to send (${outboxList.length})</div><div class="ps">The day's queued outreach. Edit any, skip any, then send. Your signature attaches automatically. Nothing goes out until you click send.</div></div><div style="padding:10px 14px 4px;">${paused?`<div style="background:#4a1414;border:1px solid #c0392b;border-radius:8px;padding:10px 12px;color:#ff9b9b;font-size:13px;">⛔ Sending is PAUSED — ${ehtml((cf.data&&cf.data.pause_reason)||'deliverability guard')}. <button class="ib" onclick="mdrxResumeSending()" style="margin-left:8px;">Resume sending</button></div>`:`<button onclick="mdrxSendOutbox([${outboxList.map(o=>o.id).join(',')}])" style="padding:10px 20px;background:var(--green);color:#fff;border:none;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;">✅ Send all ${outboxList.length}</button>`}</div><div class="grp" style="margin:0;border:none;padding:2px 14px 12px;">${obHtml}</div></div>`:'';
@@ -1529,6 +1530,59 @@ async function mdrxRejectContent(id){
   await sbClient.from('mdrx_content_queue').update({status:'rejected',reviewed_at:new Date().toISOString()}).eq('id',id);
   showToast('Rejected'); loadCockpit();
 }
+// The edit box shows the plain-text alternative, where a link is a raw URL. That is not what the
+// physician receives, and reading the queue that way makes every email look unfinished. Preview
+// renders the actual HTML - and when the text has been edited, renders it the same way the send
+// path will, so the preview is never a flattering lie.
+function mdrxPvLabel(url){
+  var to=((String(url).match(/[?&]to=([a-z_]+)/i)||['',''])[1]||'').toLowerCase();
+  if(/unsubscribe/i.test(url))return 'click here';
+  if(to==='book')return 'See my calendar';
+  if(to==='execbrief')return 'Read the brief';
+  if(to==='model')return 'Open the model';
+  if(to==='program'||to==='brief'||to==='overview')return 'See how it works';
+  return 'See the details';
+}
+function mdrxTextToHtml(t){
+  var body=String(t||'').replace(/\r\n/g,'\n').trim();
+  var om=body.match(/If you aren't interested[\s\S]*$/);
+  var optout=om?om[0]:'';
+  if(om)body=body.slice(0,om.index).trim();
+  body=body.replace(/\n+Best,[\s\S]*$/,'');
+  var out=body.split(/\n{2,}/).map(function(par){
+    var line=par.trim(); if(!line)return '';
+    if(/^https?:\/\/\S+$/.test(line))
+      return '<p style="margin:22px 0;"><a href="'+line+'" style="background:#08214C;color:#fff;text-decoration:none;font-weight:700;font-size:15px;padding:13px 26px;border-radius:9px;display:inline-block;">'+mdrxPvLabel(line)+'</a></p>';
+    return '<p style="font-size:15px;line-height:1.65;color:#1a2233;margin:0 0 14px;">'
+      +ehtml(line).replace(/(https?:\/\/[^\s<>"')]+)/g,function(u){return '<a href="'+u+'" style="color:#2F5EA8;font-weight:600;">'+mdrxPvLabel(u)+'</a>';})+'</p>';
+  }).filter(Boolean).join('');
+  out+='<p style="font-size:12px;color:#8a93a1;border-top:1px dashed #c9d6e6;padding-top:10px;margin-top:18px;">[ your signature attaches here on send ]</p>';
+  if(optout){
+    var u=(optout.match(/https?:\/\/[^\s]+/)||[''])[0];
+    out+='<p style="font-size:11px;line-height:1.5;color:#9aa3af;margin:14px 0 0;">If you aren\'t interested, or don\'t wish to hear from me anymore, <a href="'+u+'" style="color:#9aa3af;">click here</a> and I won\'t write again.</p>';
+  }
+  return '<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:600px;padding:18px;">'+out+'</div>';
+}
+async function mdrxPreview(id){
+  var box=document.getElementById('obpv-'+id), btn=document.getElementById('obpvb-'+id);
+  if(!box)return;
+  if(box.style.display!=='none'){ box.style.display='none'; box.innerHTML=''; if(btn)btn.textContent='👁 Preview'; return; }
+  if(btn)btn.textContent='Hide preview';
+  const ta=document.getElementById('ob-'+id);
+  const edited=ta&&ta.dataset.orig!==undefined&&ta.value!==ta.dataset.orig;
+  let html='';
+  if(edited){ html=mdrxTextToHtml(ta.value); }
+  else {
+    const {data}=await sbClient.from('mdrx_outbox').select('body_html,body_text').eq('id',id).maybeSingle();
+    html=(data&&data.body_html)?data.body_html:mdrxTextToHtml((data&&data.body_text)||'');
+  }
+  const note=edited?'<div style="background:#3a2d10;color:#e6c76b;font-size:11.5px;padding:6px 10px;">Showing your edit, rendered the way it will send.</div>':'';
+  const fr=document.createElement('iframe');
+  fr.setAttribute('sandbox','');            // preview only: no scripts, no navigation out of the box
+  fr.style.cssText='width:100%;border:0;background:#F6F9FD;height:520px;display:block;';
+  fr.srcdoc=html;
+  box.innerHTML=note; box.appendChild(fr); box.style.display='block';
+}
 async function mdrxSendOutbox(ids){
   if(!ids||!ids.length)return;
   if(!confirm('Send '+ids.length+' email'+(ids.length>1?'s':'')+' from eric@mdconcierge.net now?'))return;
@@ -1551,7 +1605,10 @@ async function mdrxSkipOutbox(id){
 }
 async function mdrxResumeSending(){
   if(!confirm('Resume sending? Only do this after you have addressed whatever caused the pause.'))return;
-  await sbClient.from('outreach_config').update({sending_paused:false,pause_reason:null}).eq('id',1);
+  // Resuming has to stick. The watchdog re-checks every three hours and the only thing that lowers
+  // a bounce rate is sending, so without an override a paused campaign can never clear itself.
+  const until=new Date(Date.now()+24*3600*1000).toISOString();
+  await sbClient.from('outreach_config').update({sending_paused:false,pause_reason:null,pause_snooze_until:until}).eq('id',1);
   showToast('Sending resumed'); loadCockpit();
 }
 // ---- Pipeline board (Task 7) ----------------------------------------------
