@@ -31,6 +31,13 @@
   table.lt{font-size:12px;}
 }
 @media(max-width:480px){ .kpi-row{grid-template-columns:1fr;} }
+  .biz-switch{ display:flex; gap:6px; padding:0 12px 12px; }
+  .bizb{ flex:1; padding:8px 6px; border:1px solid rgba(255,255,255,.16); border-radius:9px;
+    background:transparent; color:rgba(255,255,255,.62); font:inherit; font-size:11.5px; font-weight:700;
+    cursor:pointer; line-height:1.25; }
+  .bizb:hover{ color:#fff; border-color:rgba(255,255,255,.34); }
+  .bizb.on{ background:rgba(255,255,255,.14); color:#fff; border-color:rgba(255,255,255,.42); }
+  .bizb:focus-visible{ outline:2px solid #6B9FD4; outline-offset:2px; }
 </style>
 <style>
 :root{
@@ -264,30 +271,34 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <div id="nav-backdrop" onclick="document.body.classList.remove('nav-open')"></div>
 <nav class="sidebar">
   <div class="sb-logo"><img src="assets/brand/logo-white.png" alt="MDconcierge" style="height:40px;display:block;"/><div class="tag" style="margin-top:8px;">Admin Portal</div></div>
+  <div class="biz-switch">
+    <button id="biz-ml" class="bizb" onclick="setBiz('ml')" title="Referrals, provider network, attorney CRM">&#9878;&#65039; Medical&nbsp;Legal</button>
+    <button id="biz-rx" class="bizb" onclick="setBiz('rx')" title="MDRx pharmacy: outreach, pipeline, deals">&#128138; MDRx&nbsp;Pharmacy</button>
+  </div>
   <div class="sb-nav">
-    <button class="ni" onclick="showView('cockpit',this)"><span class="ni-ic">🎛️</span> Daily Cockpit <span class="nb" id="cockpit-approvals" style="display:none;">0</span></button>
-    <button class="ni active" onclick="showView('leads',this)"><span class="ni-ic">📋</span> Lead Queue <span class="nb" id="new-count">6</span></button>
-    <button class="ni" onclick="showView('network',this)"><span class="ni-ic">🏥</span> Provider Network</button>
-    <button class="ni" onclick="showView('portal',this)"><span class="ni-ic">🔐</span> Portal Accounts <span class="nb" id="hold-count" style="display:none;">0</span></button>
-    <button class="ni" onclick="showView('signups',this)"><span class="ni-ic">📝</span> Sign-ups <span class="nb" id="signup-count" style="display:none;">0</span></button>
-    <button class="ni" onclick="showView('crm',this)"><span class="ni-ic">⚖️</span> Attorney CRM <span class="nb" id="crm-count" style="display:none;">0</span></button>
-    <button class="ni" onclick="showView('mdrx',this)"><span class="ni-ic">💊</span> MDRx Pharmacy CRM <span class="nb" id="mdrx-due" style="display:none;">0</span></button>
-    <button class="ni" onclick="showView('funnel',this)"><span class="ni-ic">🎯</span> Funnel Engagement <span class="nb" id="funnel-hot" style="display:none;">0</span></button>
-    <button class="ni" onclick="showView('deals',this)"><span class="ni-ic">🎯</span> Deals</button>
-    <button class="ni" onclick="showView('linkedin',this)"><span class="ni-ic">🤝</span> LinkedIn queue</button>
-    <button class="ni" onclick="openPresenter()" title="Opens the dispensing model in a clean tab. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary</button>
-    <button class="ni" onclick="showView('booking',this)"><span class="ni-ic">📅</span> Booking &amp; Availability <span class="nb" id="booking-pending" style="display:none;">0</span></button>
-    <button class="ni" onclick="showView('pipeline',this)"><span class="ni-ic">📊</span> Pipeline <span class="nb" id="pipe-due" style="display:none;">0</span></button>
-    <button class="ni" onclick="showView('replies',this)"><span class="ni-ic">📨</span> Replies <span class="nb" id="replies-pending" style="display:none;">0</span></button>
+    <button class="ni" data-biz="rx" onclick="showView('cockpit',this)"><span class="ni-ic">🎛️</span> Daily Cockpit <span class="nb" id="cockpit-approvals" style="display:none;">0</span></button>
+    <button class="ni active" data-biz="ml" onclick="showView('leads',this)"><span class="ni-ic">📋</span> Lead Queue <span class="nb" id="new-count">6</span></button>
+    <button class="ni" data-biz="ml" onclick="showView('network',this)"><span class="ni-ic">🏥</span> Provider Network</button>
+    <button class="ni" data-biz="ml" onclick="showView('portal',this)"><span class="ni-ic">🔐</span> Portal Accounts <span class="nb" id="hold-count" style="display:none;">0</span></button>
+    <button class="ni" data-biz="ml" onclick="showView('signups',this)"><span class="ni-ic">📝</span> Sign-ups <span class="nb" id="signup-count" style="display:none;">0</span></button>
+    <button class="ni" data-biz="ml" onclick="showView('crm',this)"><span class="ni-ic">⚖️</span> Attorney CRM <span class="nb" id="crm-count" style="display:none;">0</span></button>
+    <button class="ni" data-biz="rx" onclick="showView('mdrx',this)"><span class="ni-ic">💊</span> MDRx Pharmacy CRM <span class="nb" id="mdrx-due" style="display:none;">0</span></button>
+    <button class="ni" data-biz="rx" onclick="showView('funnel',this)"><span class="ni-ic">🎯</span> Funnel Engagement <span class="nb" id="funnel-hot" style="display:none;">0</span></button>
+    <button class="ni" data-biz="rx" onclick="showView('deals',this)"><span class="ni-ic">🎯</span> Deals</button>
+    <button class="ni" data-biz="rx" onclick="showView('linkedin',this)"><span class="ni-ic">🤝</span> LinkedIn queue</button>
+    <button class="ni" data-biz="rx" onclick="openPresenter()" title="Opens the dispensing model in a clean tab. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary</button>
+    <button class="ni" data-biz="rx" onclick="showView('booking',this)"><span class="ni-ic">📅</span> Booking &amp; Availability <span class="nb" id="booking-pending" style="display:none;">0</span></button>
+    <button class="ni" data-biz="rx" onclick="showView('pipeline',this)"><span class="ni-ic">📊</span> Pipeline <span class="nb" id="pipe-due" style="display:none;">0</span></button>
+    <button class="ni" data-biz="rx" onclick="showView('replies',this)"><span class="ni-ic">📨</span> Replies <span class="nb" id="replies-pending" style="display:none;">0</span></button>
     <div class="ns">Analytics</div>
-    <button class="ni" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
-    <button class="ni" onclick="showView('analytics',this)"><span class="ni-ic">📊</span> Analytics</button>
-    <button class="ni" onclick="showView('access',this)"><span class="ni-ic">🛡️</span> Access Log</button>
+    <button class="ni" data-biz="ml" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
+    <button class="ni" data-biz="ml" onclick="showView('analytics',this)"><span class="ni-ic">📊</span> Analytics</button>
+    <button class="ni" data-biz="both" onclick="showView('access',this)"><span class="ni-ic">🛡️</span> Access Log</button>
     <div class="ns">Resources</div>
-    <a class="ni" href="overview.html" target="_blank" rel="noopener" style="text-decoration:none;"><span class="ni-ic">📊</span> Platform Overview</a>
-    <button class="ni" onclick="showView('tools',this)"><span class="ni-ic">🔗</span> Links &amp; Tools</button>
-    <a class="ni" href="demo.html" target="_blank" rel="noopener" style="text-decoration:none;"><span class="ni-ic">🎓</span> Tutorials</a>
-    <button class="ni" onclick="showView('settings',this)"><span class="ni-ic">⚙️</span> Settings</button>
+    <a class="ni" data-biz="both" href="overview.html" target="_blank" rel="noopener" style="text-decoration:none;"><span class="ni-ic">📊</span> Platform Overview</a>
+    <button class="ni" data-biz="both" onclick="showView('tools',this)"><span class="ni-ic">🔗</span> Links &amp; Tools</button>
+    <a class="ni" data-biz="both" href="demo.html" target="_blank" rel="noopener" style="text-decoration:none;"><span class="ni-ic">🎓</span> Tutorials</a>
+    <button class="ni" data-biz="both" onclick="showView('settings',this)"><span class="ni-ic">⚙️</span> Settings</button>
   </div>
   <div class="sb-foot"><div class="u-chip"><div class="u-av">A</div><div><div style="font-size:13px;color:#fff;">Admin</div><div style="font-size:11px;color:rgba(255,255,255,.55);">MDconcierge Owner</div></div></div><button onclick="openPw()" style="margin-top:10px;width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.75);border-radius:8px;font-size:12px;cursor:pointer;">Change password</button><button onclick="doLogout()" style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.75);border-radius:8px;font-size:12px;cursor:pointer;">Sign out</button></div>
 </nav>
@@ -2602,6 +2613,42 @@ async function mdrxSendAgreements(){
   const body='Hi Dr. '+(p.last_name||'')+',\n\nThank you for your interest in the '+prog+'. As promised, attached are the agreements and our compliance opinion from Alice G. Gosfield and Associates for your review. I have also copied my partner, '+(ph.cc_partner_name||'my partner')+', so we are all connected.\n\nOnce you have had a chance to look, I am glad to walk through anything and answer any questions, whatever works best for your schedule.\n\nBest,\nEric';
   mdrxEmailPanel({title:'Send agreements to '+mdrxProvName(p),to:p.email,subject:'Agreements for the '+prog,body:body,kind:'agreements',attachments:atts});
 }
+// ---- Business switch ---------------------------------------------------------------------------
+// Two businesses share this portal: the medical legal referral side and the MDRx pharmacy side.
+// Running them in one nav meant Eric read past ten irrelevant tabs to reach the one he wanted, and
+// it will get worse when the attorney build restarts. Each nav item is tagged with the business it
+// belongs to; shared admin (tools, access log, settings) shows in both. The choice sticks per
+// device, and switching lands you on that business's home view rather than an empty screen.
+const BIZ_HOME = { ml: 'leads', rx: 'cockpit' };
+function setBiz(b, keepView){
+  try{ localStorage.setItem('mdc:biz', b); }catch(e){}
+  document.querySelectorAll('.bizb').forEach(x=>x.classList.remove('on'));
+  const btn=document.getElementById('biz-'+b); if(btn) btn.classList.add('on');
+  document.querySelectorAll('.ni[data-biz]').forEach(el=>{
+    const t=el.getAttribute('data-biz');
+    el.style.display = (t===b || t==='both') ? '' : 'none';
+  });
+  document.title = (b==='rx' ? 'MDRx Pharmacy' : 'Medical Legal') + ' · MDconcierge Admin';
+  // If the open view belongs to the other business, go to this one's home instead of stranding him.
+  if(!keepView){
+    const active=document.querySelector('.view.active');
+    const cur=active ? active.id.replace('view-','') : '';
+    const curBtn=[...document.querySelectorAll('.ni[data-biz]')].find(x=>(x.getAttribute('onclick')||'').includes("'"+cur+"'"));
+    const curBiz=curBtn ? curBtn.getAttribute('data-biz') : null;
+    if(curBiz && curBiz!==b && curBiz!=='both'){
+      const home=BIZ_HOME[b];
+      const homeBtn=[...document.querySelectorAll('.ni[data-biz]')].find(x=>(x.getAttribute('onclick')||'').includes("'"+home+"'"));
+      showView(home, homeBtn);
+    }
+  }
+}
+(function initBiz(){
+  let b='ml';
+  try{ b=localStorage.getItem('mdc:biz')||'ml'; }catch(e){}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setBiz(b,true));
+  else setBiz(b,true);
+})();
+
 // ---- Deal room ---------------------------------------------------------------------------------
 // The cadence machinery serves the 276 people who are not in a deal. This serves the handful who
 // are. It answers the three questions a rep has before any deal conversation: who decides and who
