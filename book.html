@@ -90,8 +90,15 @@ async function loadSlots(){
   const box = document.getElementById("slots");
   box.innerHTML = '<p class="muted">Loading available times&hellip;</p>';
   try {
-    const r = await fetch(`${FN}/booking-slots?type=${TYPE}`);
+    const r = await fetch(`${FN}/booking-slots?type=${TYPE}${TOKEN?("&p="+encodeURIComponent(TOKEN)):""}`);
     const j = await r.json();
+    // We already know who this is from the link he clicked. Asking him to retype it is the kind of
+    // small friction that loses a booking after he has already decided to make one.
+    if (j.who){
+      const n=document.getElementById("f-name"), e=document.getElementById("f-email");
+      if (n && !n.value && j.who.name) n.value = j.who.name;
+      if (e && !e.value && j.who.email) e.value = j.who.email;
+    }
     const days = j.days || {};
     const keys = Object.keys(days).sort();
     if (!keys.length){ box.innerHTML = '<p class="muted">No open times in the next couple of weeks. Email <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a> and we\'ll find one.</p>'; return; }
@@ -109,7 +116,11 @@ function pick(startISO, el){
   el.classList.add("sel");
   document.getElementById("form").style.display = "block";
   syncBtn();
-  document.getElementById("f-name").focus();
+  // If his details are already filled, put him on the button rather than back in the first field.
+  const nameEl = document.getElementById("f-name");
+  const btn = document.getElementById("confirmBtn");
+  if (nameEl.value.trim() && document.getElementById("f-email").value.trim() && btn) btn.focus();
+  else nameEl.focus();
 }
 function syncBtn(){
   const ok = SELECTED && document.getElementById("f-name").value.trim() && document.getElementById("f-email").value.trim();
