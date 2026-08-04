@@ -25,11 +25,37 @@ const box = document.getElementById("status");
 
 function render(html){ box.innerHTML = html; }
 
+// Confirming a demo means Phil is hosting it, so this is the one moment we can collect his link
+// without chasing him for it. A standing room link is deliberately not an option: two demos in a
+// day would share a URL and one physician could walk into another's meeting.
+function askForLink(){
+  return new Promise(function(resolve){
+    render('<div class="eyebrow">One thing first</div><h1>Your Zoom link for this demonstration</h1>'
+      + '<p class="lead">Paste the meeting link you want the physician to join. It goes straight into their confirmation and onto both calendars.</p>'
+      + '<input id="zl" placeholder="https://us02web.zoom.us/j/..." style="width:100%;font-size:15px;padding:12px 14px;border:1px solid #CFE0F0;border-radius:10px;box-sizing:border-box;"/>'
+      + '<p id="zerr" style="color:#c0392b;font-size:13.5px;min-height:18px;margin:6px 0 0;"></p>'
+      + '<p style="margin:14px 0 0;"><button id="zgo" style="background:#1e9e6a;color:#fff;padding:12px 24px;border:0;border-radius:9px;font-weight:700;font-size:15px;cursor:pointer;">Confirm the demonstration</button></p>'
+      + '<p style="color:#5C6B85;font-size:13px;margin-top:14px;">Prefer to send it yourself later? <a href="#" id="zskip">Confirm without a link</a> and the physician is told it follows.</p>');
+    const go=document.getElementById('zgo'), inp=document.getElementById('zl'), err=document.getElementById('zerr');
+    inp.focus();
+    go.onclick=function(){
+      const v=inp.value.trim();
+      if (v && !/^https?:\/\/\S+$/i.test(v)){ err.textContent='That does not look like a link. Paste the full https:// address.'; return; }
+      if (!v){ err.textContent='Paste the link, or use the option below to confirm without one.'; return; }
+      resolve(v);
+    };
+    inp.addEventListener('keydown',function(e){ if(e.key==='Enter') go.click(); });
+    document.getElementById('zskip').onclick=function(e){ e.preventDefault(); resolve(''); };
+  });
+}
+
 (async function(){
   if (!t){ render('<h1>Link expired</h1><p class="lead">This confirmation link is missing its code. Please use the buttons in the email.</p>'); return; }
+  let joinUrl = '';
+  if (d === "yes") joinUrl = await askForLink();
   render('<p class="lead">' + (d==="yes" ? "Confirming the demonstration&hellip;" : "Noting that you can\'t make it&hellip;") + '</p>');
   try {
-    const r = await fetch(`${FN}/booking-approve`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ t, d }) });
+    const r = await fetch(`${FN}/booking-approve`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ t, d, join_url: joinUrl }) });
     const j = await r.json();
     if (j.already){
       const s = j.status;
