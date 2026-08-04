@@ -50,7 +50,16 @@
     <div id="form" style="display:none;margin-top:18px;">
       <input class="fld" id="f-name" placeholder="Your name" autocomplete="name"/>
       <input class="fld" id="f-email" placeholder="Email" type="email" autocomplete="email"/>
-      <input class="fld" id="f-phone" placeholder="Phone (optional)" autocomplete="tel"/>
+      <div style="display:flex;gap:10px;margin:2px 0 10px;">
+        <label style="flex:1;display:flex;align-items:center;gap:8px;border:1px solid #CFE0F0;border-radius:10px;padding:11px 13px;cursor:pointer;font-size:14.5px;" id="lab-video">
+          <input type="radio" name="mode" value="video" checked onchange="setMode()"/> Video call
+        </label>
+        <label style="flex:1;display:flex;align-items:center;gap:8px;border:1px solid #CFE0F0;border-radius:10px;padding:11px 13px;cursor:pointer;font-size:14.5px;" id="lab-phone">
+          <input type="radio" name="mode" value="phone" onchange="setMode()"/> Phone call
+        </label>
+      </div>
+      <p class="fine" id="modeNote" style="margin:-4px 0 10px;">Join from your browser. Nothing to download.</p>
+      <input class="fld" id="f-phone" placeholder="Phone (optional)" autocomplete="tel" inputmode="tel"/>
       <input class="fld" id="f-note" placeholder="Anything I should know before we talk? (optional)"/>
       <button class="cta full" id="confirmBtn" data-cta="confirm-time" onclick="submitBooking()" disabled>Confirm my time</button>
       <p class="fine">You'll get a confirmation from eric@mdconcierge.net with a one-tap reschedule link.</p>
@@ -122,8 +131,24 @@ function pick(startISO, el){
   if (nameEl.value.trim() && document.getElementById("f-email").value.trim() && btn) btn.focus();
   else nameEl.focus();
 }
+function mode(){ const r=document.querySelector('input[name="mode"]:checked'); return r?r.value:"video"; }
+// On a phone call Eric is the one dialling, so the number stops being optional - without it the
+// booking is a promise nobody can keep.
+function setMode(){
+  const phone = mode()==="phone";
+  const f=document.getElementById("f-phone"), note=document.getElementById("modeNote");
+  f.placeholder = phone ? "Best number to reach you (required)" : "Phone (optional)";
+  note.textContent = phone ? "I'll call you at the number you give me." : "Join from your browser. Nothing to download.";
+  document.getElementById("lab-video").style.borderColor = phone ? "#CFE0F0" : "#2F5EA8";
+  document.getElementById("lab-phone").style.borderColor = phone ? "#2F5EA8" : "#CFE0F0";
+  if (phone) f.focus();
+  syncBtn();
+}
+document.addEventListener("input", (e)=>{ if(e.target && e.target.id==="f-phone") syncBtn(); });
 function syncBtn(){
-  const ok = SELECTED && document.getElementById("f-name").value.trim() && document.getElementById("f-email").value.trim();
+  const digits = document.getElementById("f-phone").value.replace(/\D/g,"").length;
+  const phoneOk = mode()!=="phone" || digits >= 10;
+  const ok = SELECTED && phoneOk && document.getElementById("f-name").value.trim() && document.getElementById("f-email").value.trim();
   document.getElementById("confirmBtn").disabled = !ok;
 }
 ["f-name","f-email"].forEach(id=>document.getElementById(id).addEventListener("input",syncBtn));
@@ -135,6 +160,7 @@ async function submitBooking(){
     name: document.getElementById("f-name").value.trim(),
     email: document.getElementById("f-email").value.trim(),
     phone: document.getElementById("f-phone").value.trim(),
+    mode: mode(),
     note: document.getElementById("f-note").value.trim() };
   try {
     const r = await fetch(`${FN}/booking-create`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
