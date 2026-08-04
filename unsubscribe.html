@@ -21,14 +21,33 @@
 const FN = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/unsubscribe";
 const p = new URLSearchParams(location.search).get("p") || "";
 const box = document.getElementById("box");
-(async function(){
-  if(!p){ box.innerHTML = '<h1>Link not recognized</h1><p class="lead">This unsubscribe link is missing its code. Reply to any email and we\'ll remove you right away.</p>'; return; }
+// This page used to unsubscribe on load. Corporate mail security opens every link in an email to
+// check it is safe, and we know these scanners execute JavaScript on our pages, so a physician
+// could be removed from the list by his own IT department without ever seeing the message. One
+// deliberate click fixes it: scanners follow links, they do not press buttons. Still one click for
+// a real person, and every genuine opt-out is still honored immediately.
+function done(html){ box.innerHTML = html; }
+function ask(){
+  done('<h1>Unsubscribe?</h1>'
+    + '<p class="lead">Confirm and you will not hear from MDconcierge again.</p>'
+    + '<p><button id="yes" style="background:#08214C;color:#fff;border:0;border-radius:9px;'
+    + 'padding:13px 26px;font-weight:700;font-size:15px;cursor:pointer;">Yes, unsubscribe me</button></p>'
+    + '<p class="lead" style="font-size:14px;">Landed here by accident? Just close this page. Nothing has changed.</p>');
+  document.getElementById('yes').onclick = go;
+}
+async function go(){
+  const b = document.getElementById('yes');
+  if (b) { b.disabled = true; b.textContent = 'One moment…'; }
   try {
     const r = await fetch(FN, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ p }) });
     const j = await r.json();
-    if (j.ok){ box.innerHTML = '<h1>You\'re unsubscribed.</h1><p class="lead">You will not receive any further emails from MDconcierge. If this was a mistake, reply to any prior email and we\'ll fix it.</p>'; }
-    else { box.innerHTML = '<h1>Link not recognized</h1><p class="lead">Reply to any email and we\'ll remove you right away.</p>'; }
-  } catch(e){ box.innerHTML = '<h1>Please try again</h1><p class="lead">We could not reach the server. Refresh this page, or reply to any email and we\'ll remove you.</p>'; }
+    if (j.ok){ done('<h1>You\'re unsubscribed.</h1><p class="lead">You will not receive any further emails from MDconcierge. If this was a mistake, reply to any prior email and we\'ll fix it.</p>'); }
+    else { done('<h1>Link not recognized</h1><p class="lead">Reply to any email and we\'ll remove you right away.</p>'); }
+  } catch(e){ done('<h1>Please try again</h1><p class="lead">We could not reach the server. Refresh this page, or reply to any email and we\'ll remove you.</p>'); }
+}
+(function(){
+  if(!p){ done('<h1>Link not recognized</h1><p class="lead">This unsubscribe link is missing its code. Reply to any email and we\'ll remove you right away.</p>'); return; }
+  ask();
 })();
 </script>
 </body>
