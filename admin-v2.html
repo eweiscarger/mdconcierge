@@ -1530,6 +1530,61 @@ async function mdrxRejectContent(id){
   await sbClient.from('mdrx_content_queue').update({status:'rejected',reviewed_at:new Date().toISOString()}).eq('id',id);
   showToast('Rejected'); loadCockpit();
 }
+// Log what was said on a call and get the follow-up drafted from it. No bot, no transcript, no
+// recording: Pennsylvania is an all-party consent state and an automated listener is the exact
+// thing that statute is about. Eric's own account of the call is also better raw material, because
+// what he thought mattered is a stronger signal than a verbatim record.
+function mdrxLogCall(){
+  const panel=document.getElementById('mdrx-action-panel');
+  if(!panel) return;
+  const fld='width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;';
+  panel.innerHTML=`<div class="panel" style="border:2px solid #2D6A4F;">
+    <div class="ph"><div class="pt">🗒️ Log a call</div><div class="ps">A few lines is plenty. The follow-up is drafted from this and waits in the queue for you.</div></div>
+    <div style="padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+      <textarea id="cn-notes" placeholder="What was actually said? Dictate it on your phone and paste if that's quicker." style="${fld}min-height:110px;line-height:1.5;"></textarea>
+      <input id="cn-concern" placeholder="What were they most concerned about?" style="${fld}"/>
+      <input id="cn-next" placeholder="What did you commit to doing next?" style="${fld}"/>
+      <div style="display:flex;gap:8px;">
+        <input id="cn-volume" placeholder="Their work-comp volume (optional)" style="${fld}flex:1;"/>
+        <select id="cn-outcome" style="${fld}flex:1;">
+          <option value="">How did it go?</option>
+          <option>Went well, they are interested</option>
+          <option>Interested but needs to think</option>
+          <option>Needs someone else to weigh in</option>
+          <option>Not a fit right now</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:2px;">
+        <button id="cn-go" onclick="mdrxDraftFromCall()" style="padding:9px 18px;background:#1e9e6a;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">Draft the follow-up</button>
+        <button class="ib" onclick="document.getElementById('mdrx-action-panel').innerHTML='';">Cancel</button>
+      </div>
+      <p style="font-size:11.5px;color:var(--muted);margin:2px 0 0;">Nothing is sent. The draft lands in Ready to send for you to read first.</p>
+    </div></div>`;
+  document.getElementById('cn-notes').focus();
+}
+async function mdrxDraftFromCall(){
+  const btn=document.getElementById('cn-go');
+  const notes=document.getElementById('cn-notes').value.trim();
+  if(!notes){ showToast('Write a line or two about the call first'); return; }
+  btn.disabled=true; btn.textContent='Drafting…';
+  const {data,error}=await sbClient.functions.invoke('call-followup',{body:{
+    provider_id: mdrxOpenId,
+    notes,
+    main_concern: document.getElementById('cn-concern').value.trim(),
+    next_step: document.getElementById('cn-next').value.trim(),
+    their_volume: document.getElementById('cn-volume').value.trim(),
+    outcome: document.getElementById('cn-outcome').value,
+  }});
+  if(error||!data||!data.ok){ showToast('Draft failed: '+((error&&error.message)||(data&&data.error)||'unknown')); btn.disabled=false; btn.textContent='Draft the follow-up'; return; }
+  document.getElementById('mdrx-action-panel').innerHTML=`<div class="panel" style="border:2px solid #2D6A4F;">
+    <div class="ph"><div class="pt">Drafted from your notes</div><div class="ps">Waiting in Ready to send. Edit it there if you want to change anything.</div></div>
+    <div style="padding:12px 14px;">
+      <div style="font-weight:700;font-size:13.5px;margin-bottom:8px;">${ehtml(data.subject||'')}</div>
+      <div style="white-space:pre-wrap;font-size:13px;line-height:1.6;color:var(--text);">${ehtml(data.body||'')}</div>
+    </div></div>`;
+  showToast('Call logged, follow-up drafted');
+}
+
 // The edit box shows the plain-text alternative, where a link is a raw URL. That is not what the
 // physician receives, and reading the queue that way makes every email look unfinished. Preview
 // renders the actual HTML - and when the text has been edited, renders it the same way the send
@@ -2258,6 +2313,7 @@ function mdrxDetailHtml(id){
     <button class="ib" onclick="mdrxDocusign()">📄 Request DocuSign contract</button>
     <button class="ib" onclick="mdrxQuote()">🧮 Generate quote</button>
     <button class="ib" onclick="mdrxSendModel()">📊 Send dispensing model</button>
+    <button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;" onclick="mdrxLogCall()">🗒️ Log a call</button>
   </div><div id="mdrx-action-panel" style="margin:0 0 6px;"></div>`;
   const timeline=isNew?'':`<div class="panel" style="margin-top:14px;"><div class="ph" style="display:flex;align-items:center;justify-content:space-between;gap:8px;"><div class="pt">Activity timeline</div><button class="ib" onclick="mdrxBrief(${id})">🧾 Pre-call brief</button></div><div id="mdrx-compose"></div><div id="mdrx-timeline" style="padding:6px 14px 14px;">Loading…</div></div>`;
   const importBar=`<div style="background:rgba(107,149,212,.08);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
