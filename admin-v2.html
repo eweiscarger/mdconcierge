@@ -1440,7 +1440,8 @@ async function loadCockpit(){
   const obHtml=outboxList.map(o=>{const op=P.find(x=>x.id===o.provider_id);return `<div style="border-bottom:1px solid var(--border2);padding:10px 0;">
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;"><b style="font-size:13.5px;">${ehtml(op?ckName(op):('#'+o.provider_id))}</b><span style="font-size:11.5px;color:var(--muted);">${ehtml(o.to_email||'')}</span>${op&&op.practice_name?'<span style="font-size:11.5px;color:var(--muted);">'+ehtml(op.practice_name)+'</span>':''}<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);margin-left:auto;">Touch ${o.touch_no}</span></div>
     <div style="font-size:12.5px;font-weight:700;margin:4px 0;">${ehtml(o.subject||'')}</div>
-    <textarea id="ob-${o.id}" data-orig="${ehtml(o.body_text||'')}" style="width:100%;min-height:120px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(o.body_text||'')}</textarea>
+    <textarea id="ob-${o.id}" data-orig="${ehtml(o.body_text||'')}" oninput="mdrxEditQueued(${o.id})" style="width:100%;min-height:120px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(o.body_text||'')}</textarea>
+    <div id="obsave-${o.id}" style="font-size:11px;color:var(--muted);min-height:14px;margin-top:2px;"></div>
     <div style="margin-top:4px;font-size:11px;color:var(--muted);">The box above is the plain-text version, so links show as raw URLs. Preview to see what the physician actually gets.</div>
     <div id="obpv-${o.id}" style="display:none;margin-top:8px;border:1px solid var(--border2);border-radius:10px;overflow:hidden;background:#F6F9FD;"></div>
     <div style="margin-top:6px;display:flex;gap:6px;"><button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;" onclick="mdrxSendOutbox([${o.id}])">Send this one</button><button class="ib" onclick="mdrxPreview(${o.id})" id="obpvb-${o.id}">👁 Preview</button><button class="ib" onclick="mdrxSkipOutbox(${o.id})">Skip</button></div>
@@ -1530,6 +1531,26 @@ async function mdrxRejectContent(id){
   await sbClient.from('mdrx_content_queue').update({status:'rejected',reviewed_at:new Date().toISOString()}).eq('id',id);
   showToast('Rejected'); loadCockpit();
 }
+// Edits to a queued email used to live only in the browser: nothing read the box until Eric
+// pressed Send, so editing and then reloading silently threw the changes away. Once sending became
+// automatic there was no path that saved them at all. Now typing saves itself.
+const MDRX_EDIT_TIMERS = {};
+function mdrxEditQueued(id){
+  const ta = document.getElementById('ob-'+id), tag = document.getElementById('obsave-'+id);
+  if(!ta) return;
+  if(tag) tag.textContent = 'Saving…';
+  clearTimeout(MDRX_EDIT_TIMERS[id]);
+  MDRX_EDIT_TIMERS[id] = setTimeout(async ()=>{
+    const val = ta.value;
+    // body_html is cleared deliberately: the stored card is now stale, and the send path rebuilds
+    // a proper designed email from this text, buttons and all.
+    const {error} = await sbClient.from('mdrx_outbox').update({body_text: val, body_html: null}).eq('id', id);
+    if(error){ if(tag){ tag.textContent = 'Not saved: '+error.message; tag.style.color = '#ff9b9b'; } return; }
+    ta.dataset.orig = val;
+    if(tag){ tag.textContent = 'Saved'; tag.style.color = 'var(--muted)'; setTimeout(()=>{ if(tag.textContent==='Saved') tag.textContent=''; }, 2500); }
+  }, 700);
+}
+
 // Log what was said on a call and get the follow-up drafted from it. No bot, no transcript, no
 // recording: Pennsylvania is an all-party consent state and an automated listener is the exact
 // thing that statute is about. Eric's own account of the call is also better raw material, because
