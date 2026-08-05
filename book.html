@@ -65,6 +65,21 @@
       <p class="fine">You'll get a confirmation from eric@mdconcierge.net with a one-tap reschedule link.</p>
     </div>
 
+    <!-- The email tells him he can propose a time, so the page has to be able to take one. -->
+    <p style="margin:14px 0 0;text-align:center;">
+      <a href="#" id="proposeLink" data-cta="propose-time" onclick="showPropose(event)" style="color:#2F5EA8;font-size:14.5px;font-weight:600;">None of these times work for me</a>
+    </p>
+
+    <div id="propose" style="display:none;margin-top:16px;">
+      <p class="muted" style="margin:0 0 10px;">Tell me when suits you and I'll work around it. A couple of options is plenty.</p>
+      <input class="fld" id="p-name" placeholder="Your name" autocomplete="name"/>
+      <input class="fld" id="p-email" placeholder="Email" type="email" autocomplete="email"/>
+      <input class="fld" id="p-phone" placeholder="Phone (optional)" autocomplete="tel" inputmode="tel"/>
+      <textarea class="fld" id="p-times" rows="3" placeholder="For example: Tuesday after 4pm, or any morning before clinic" style="resize:vertical;font-family:inherit;"></textarea>
+      <button class="cta full" id="proposeBtn" data-cta="send-proposed-times" onclick="submitPropose()">Send these times</button>
+      <p class="fine">This goes straight to Eric. No calendar invitation until he confirms one of them with you.</p>
+    </div>
+
     <div class="result" id="result"></div>
 
   </div></div>
@@ -171,6 +186,57 @@ async function submitBooking(){
     // intro booked -> go to the nurture page
     location.href = j.redirect || ("confirmed.html" + (TOKEN?("?p="+encodeURIComponent(TOKEN)):""));
   } catch(e){ res.className="result err"; res.textContent = "Network hiccup. Please try again."; btn.disabled=false; btn.textContent = TYPE==="demo"?"Request this time":"Confirm my time"; }
+}
+
+// Proposing a time is the fallback the email promises. It books nothing and sends the physician
+// no mail: it puts his times in front of Eric, who replies himself.
+function showPropose(ev){
+  ev.preventDefault();
+  const box = document.getElementById("propose");
+  box.style.display = "block";
+  document.getElementById("proposeLink").style.display = "none";
+  // Carry over anything already typed above so he isn't asked twice.
+  ["name","email","phone"].forEach(k=>{
+    const from = document.getElementById("f-"+k), to = document.getElementById("p-"+k);
+    if (from && to && from.value.trim() && !to.value.trim()) to.value = from.value.trim();
+  });
+  const n = document.getElementById("p-name");
+  (n.value.trim() ? document.getElementById("p-times") : n).focus();
+  box.scrollIntoView({behavior:"smooth", block:"center"});
+}
+
+async function submitPropose(){
+  const btn = document.getElementById("proposeBtn");
+  const res = document.getElementById("result"); res.className="result"; res.style.display="none";
+  const name = document.getElementById("p-name").value.trim();
+  const email = document.getElementById("p-email").value.trim();
+  const times = document.getElementById("p-times").value.trim();
+  if (!name || !email || !times){
+    res.className="result err"; res.style.display="block";
+    res.textContent = "Your name, email, and a couple of times that suit you.";
+    return;
+  }
+  btn.disabled = true; btn.textContent = "Sending…";
+  try {
+    const r = await fetch(`${FN}/booking-create`, { method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ propose:true, token:TOKEN, type:TYPE, name, email, times,
+        phone: document.getElementById("p-phone").value.trim() }) });
+    const j = await r.json();
+    if (!j.ok){
+      res.className="result err"; res.style.display="block";
+      res.textContent = j.error || "Something went wrong. Please email eric@mdconcierge.net.";
+      btn.disabled=false; btn.textContent="Send these times"; return;
+    }
+    document.getElementById("propose").style.display="none";
+    document.getElementById("slots").style.display="none";
+    document.getElementById("form").style.display="none";
+    res.className="result ok"; res.style.display="block";
+    res.textContent = j.message || "Thank you. Eric will come back to you to confirm one of those times.";
+  } catch(e){
+    res.className="result err"; res.style.display="block";
+    res.textContent = "Network hiccup. Please try again, or email eric@mdconcierge.net.";
+    btn.disabled=false; btn.textContent="Send these times";
+  }
 }
 
 setType(TYPE);
