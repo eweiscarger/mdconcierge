@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>MDconcierge — Start the Process</title>
+<link rel="icon" href="assets/brand/favicon-32.png"/>
+<link rel="stylesheet" href="funnel-assets/funnel.css"/>
+<style>
+  .fld{width:100%;padding:12px 13px;border:1px solid #D7DDE6;border-radius:9px;font-size:15px;font-family:inherit;margin:7px 0;color:#14213D;}
+  .result{margin-top:14px;padding:14px 16px;border-radius:10px;font-size:14.5px;display:none;}
+  .result.ok{background:#EAF7F0;border:1px solid #BEE7D2;color:#1e6e4a;display:block;}
+  .result.err{background:#FDEEEE;border:1px solid #F3C9C9;color:#a03434;display:block;}
+  .muted{color:#5C6B85;font-size:13.5px;}
+  .steps{margin:14px 0 4px;padding:0;list-style:none;}
+  .steps li{position:relative;padding:0 0 12px 26px;font-size:14.5px;line-height:1.55;color:#33404f;}
+  .steps li:before{content:"";position:absolute;left:6px;top:7px;width:8px;height:8px;border-radius:50%;background:#2F5EA8;}
+  .fine{font-size:12.5px;color:#5C6B85;line-height:1.55;}
+</style>
+</head>
+<body data-funnel-page="start">
+<div class="wrap">
+  <div class="topbar"><img src="assets/brand/logo.png" alt="MDconcierge"/></div>
+  <div class="card"><div class="body">
+
+    <div class="eyebrow">Workers' Compensation Pharmacy Platform &middot; MDconcierge</div>
+    <h1>Start the process without a sales call.</h1>
+    <p class="muted" style="margin-top:6px;">Five details is all we need to set up your in-service. No obligation, and nothing is signed at this stage.</p>
+
+    <h2 style="font-size:16px;margin:22px 0 2px;">What happens in the in-service</h2>
+    <ul class="steps">
+      <li>We walk through the program end to end, including the formulary.</li>
+      <li>We learn how your practice runs and what your workers' compensation volume looks like.</li>
+      <li>We collect what we need to prepare the legal opinion and the contracts.</li>
+      <li>You review those documents on your own time, with your own counsel if you want.</li>
+    </ul>
+
+    <div id="form" style="margin-top:18px;">
+      <input class="fld" id="s-name" placeholder="Your name" autocomplete="name"/>
+      <input class="fld" id="s-practice" placeholder="Practice name" autocomplete="organization"/>
+      <input class="fld" id="s-npi" placeholder="NPI" inputmode="numeric" autocomplete="off"/>
+      <input class="fld" id="s-email" placeholder="Email" type="email" autocomplete="email"/>
+      <input class="fld" id="s-phone" placeholder="Phone" autocomplete="tel" inputmode="tel"/>
+      <button class="cta full" id="startBtn" data-cta="start-program" onclick="submitStart()">Send this and set up the in-service</button>
+      <p class="fine">Your LLC details come later, in the in-service. We don't need them now.</p>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <p class="muted" style="margin-top:18px;">Would rather talk first? <a href="book.html" data-keep data-cta="book-from-start">See Eric's calendar</a>.</p>
+
+  </div></div>
+  <div class="foot">
+    MDconcierge &middot; Pennsylvania &middot; <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a><br>
+    Independent licensed pharmacy. Workers-comp claims only. Not legal advice.
+  </div>
+</div>
+
+<script>
+const FN = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1";
+const TOKEN = new URLSearchParams(location.search).get("p") || "";
+
+async function submitStart(){
+  const btn = document.getElementById("startBtn");
+  const res = document.getElementById("result");
+  res.className = "result"; res.style.display = "none";
+  const payload = {
+    token: TOKEN,
+    name: document.getElementById("s-name").value.trim(),
+    practice: document.getElementById("s-practice").value.trim(),
+    npi: document.getElementById("s-npi").value.trim(),
+    email: document.getElementById("s-email").value.trim(),
+    phone: document.getElementById("s-phone").value.trim()
+  };
+  const missing = ["name","practice","npi","email","phone"].filter(k => !payload[k]);
+  if (missing.length){
+    res.className="result err"; res.style.display="block";
+    res.textContent = "Still needed: " + missing.join(", ") + ".";
+    return;
+  }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payload.email)){
+    res.className="result err"; res.style.display="block";
+    res.textContent = "That email doesn't look right.";
+    return;
+  }
+  if (payload.npi.replace(/\D/g,"").length !== 10){
+    res.className="result err"; res.style.display="block";
+    res.textContent = "An NPI is ten digits.";
+    return;
+  }
+  btn.disabled = true; btn.textContent = "Sending…";
+  try {
+    const r = await fetch(`${FN}/program-start`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload) });
+    const j = await r.json();
+    if (!j.ok){
+      res.className="result err"; res.style.display="block";
+      res.textContent = j.error || "Something went wrong. Please email eric@mdconcierge.net.";
+      btn.disabled=false; btn.textContent="Send this and set up the in-service"; return;
+    }
+    document.getElementById("form").style.display="none";
+    res.className="result ok"; res.style.display="block";
+    res.textContent = j.message || "Thank you. Eric will be in touch to set up the in-service.";
+  } catch(e){
+    res.className="result err"; res.style.display="block";
+    res.textContent = "Network hiccup. Please try again, or email eric@mdconcierge.net.";
+    btn.disabled=false; btn.textContent="Send this and set up the in-service";
+  }
+}
+</script>
+<script src="funnel-assets/track.js"></script>
+</body>
+</html>
