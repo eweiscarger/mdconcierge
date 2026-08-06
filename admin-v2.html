@@ -1375,7 +1375,7 @@ async function loadCockpit(){
   const box=document.getElementById('cockpit-body');
   box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
   const today=new Date().toISOString().slice(0,10);
-  const [pr,bk,rep,ql,mdrxd,enr,nm,ob,cf,cq]=await Promise.all([
+  const [pr,bk,rep,ql,mdrxd,enr,nm,ob,ct,cf,cq]=await Promise.all([
     sbClient.from('mdrx_providers').select('id,first_name,last_name,practice_name,funnel_stage,contact_home,next_step,funnel_next_date,intent_score,funnel_score,intent_tier,email,target_specialty,region,needs_attention,funnel_last_seen_at,last_touch_at,touch_count'),
     sbClient.from('bookings').select('*').gte('slot_start',today+'T00:00:00').lte('slot_start',today+'T23:59:59'),
     sbClient.from('funnel_replies').select('id,status').eq('status','pending'),
@@ -1384,6 +1384,7 @@ async function loadCockpit(){
     sbClient.from('enrichment_suggestions').select('*').eq('status','pending').order('confidence'),
     sbClient.from('mdrx_next_moves').select('*').eq('status','pending').order('recommended_date'),
     sbClient.from('mdrx_outbox').select('*').eq('status','pending').order('id'),
+    sbClient.from('mdrx_contacts').select('id,name,title,role,practice_id'),
     sbClient.from('outreach_config').select('sending_paused,pause_reason').eq('id',1).maybeSingle(),
     sbClient.from('mdrx_content_queue').select('*').in('status',['pending','approved']).order('created_at',{ascending:false})
   ]);
@@ -1448,8 +1449,27 @@ async function loadCockpit(){
     const ago=days===0?'today':days===1?'yesterday':days+' days ago';
     return {txt:'Last emailed '+ago+' ('+when+')'+(n?' · '+n+' so far':''),warn:days<=2};
   };
-  const obHtml=outboxList.map(o=>{const op=P.find(x=>x.id===o.provider_id);const lt=lastTouch(op);return `<div style="border-bottom:1px solid var(--border2);padding:10px 0;">
-    <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;"><b style="font-size:13.5px;">${ehtml(op?ckName(op):('#'+o.provider_id))}</b><span style="font-size:11.5px;color:var(--muted);">${ehtml(o.to_email||'')}</span>${op&&op.practice_name?'<span style="font-size:11.5px;color:var(--muted);">'+ehtml(op.practice_name)+'</span>':''}<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);margin-left:auto;">Touch ${o.touch_no}</span></div>
+  const contactsAll=(ct&&!ct.error&&ct.data)?ct.data:[];
+  // What kind of email this is, in words. "Touch 0" meant nothing to anyone.
+  const kindLabel=(o)=>{
+    const k=String(o.template_key||'');
+    if(!k||k.startsWith('cold_')) return 'Touch '+(o.touch_no||1);
+    if(k==='process') return 'How this goes';
+    if(k==='contact_intro') return 'Intro to contact';
+    if(k==='next_move') return 'Follow-up';
+    if(k.startsWith('warm_')) return 'Warm '+k.slice(5);
+    if(k.startsWith('hot_')) return 'Hot '+k.slice(4);
+    return k.replace(/_/g,' ');
+  };
+  const obHtml=outboxList.map(o=>{
+    const op=P.find(x=>x.id===o.provider_id);
+    const oc=o.contact_id?contactsAll.find(x=>x.id===o.contact_id):null;
+    const lt=lastTouch(op);
+    // A row can be addressed to a practice contact rather than a physician.
+    const who=op?ckName(op):(oc?oc.name:('#'+(o.provider_id||o.contact_id||'?')));
+    const sub=op?(op.practice_name||''):(oc?[oc.title||oc.role,'contact'].filter(Boolean).join(' · '):'');
+    return `<div style="border-bottom:1px solid var(--border2);padding:10px 0;">
+    <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;"><b style="font-size:13.5px;">${ehtml(who)}</b><span style="font-size:11.5px;color:var(--muted);">${ehtml(o.to_email||'')}</span>${sub?'<span style="font-size:11.5px;color:var(--muted);">'+ehtml(sub)+'</span>':''}<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);margin-left:auto;">${ehtml(kindLabel(o))}</span></div>
     <div style="font-size:11.5px;margin:2px 0 0;color:${lt.warn?'#e8b64c':'var(--muted)'};">${lt.warn?'⚠ ':''}${ehtml(lt.txt)}</div>
     <div style="font-size:12.5px;font-weight:700;margin:4px 0;">${ehtml(o.subject||'')}</div>
     <textarea id="ob-${o.id}" data-orig="${ehtml(o.body_text||'')}" oninput="mdrxEditQueued(${o.id})" style="width:100%;min-height:120px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(o.body_text||'')}</textarea>
