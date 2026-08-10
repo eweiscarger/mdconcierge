@@ -80,6 +80,10 @@ const params = new URLSearchParams(location.search);
 const TOKEN = params.get("p") || "";
 let TYPE = (params.get("type") || "intro").toLowerCase() === "demo" ? "demo" : "intro";
 let SELECTED = null;
+// A physician arriving from a time in his email has already chosen. Show him that one time and a
+// single button, not a calendar to solve again. The confirm is a click he makes, never a link a
+// mail scanner can follow, which is why the email links here rather than booking directly.
+const PRESET = params.get("t") || "";
 
 function setType(t){
   TYPE = t; SELECTED = null;
@@ -173,7 +177,33 @@ async function submitBooking(){
   } catch(e){ res.className="result err"; res.textContent = "Network hiccup. Please try again."; btn.disabled=false; btn.textContent = TYPE==="demo"?"Request this time":"Confirm my time"; }
 }
 
-setType(TYPE);
+// Arriving on a specific time from the email: confirm that one, and let him open the full
+// calendar only if he wants a different slot.
+function showPreset(){
+  const when = new Date(PRESET);
+  if (isNaN(when)) { setType(TYPE); return; }
+  const label = when.toLocaleString('en-US',{weekday:'long',month:'long',day:'numeric',hour:'numeric',minute:'2-digit'});
+  document.getElementById('headline').textContent = 'Confirm ' + label + '?';
+  document.getElementById('eyebrow').innerHTML = '15 minutes with Eric &middot; MDconcierge';
+  document.getElementById('demoNote').style.display = 'none';
+  const seg = document.querySelector('.seg'); if (seg) seg.style.display = 'none';
+  document.getElementById('slots').innerHTML =
+    '<p class="muted" style="margin:6px 0 0;">One click and it is in both calendars. '
+    + '<a href="#" onclick="openFullCalendar(event)">Pick a different time instead</a>.</p>';
+  SELECTED = when.toISOString();
+  document.getElementById('form').style.display = 'block';
+  document.getElementById('confirmBtn').textContent = 'Confirm this time';
+  syncBtn();
+}
+function openFullCalendar(e){
+  if (e) e.preventDefault();
+  const seg = document.querySelector('.seg'); if (seg) seg.style.display = '';
+  SELECTED = null;
+  setType(TYPE);
+  return false;
+}
+
+if (PRESET) showPreset(); else setType(TYPE);
 </script>
 <script src="funnel-assets/track.js"></script>
 </body>
