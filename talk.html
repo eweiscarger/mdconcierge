@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>MDconcierge — The best way to reach you</title>
+<link rel="icon" href="assets/brand/favicon-32.png"/>
+<link rel="stylesheet" href="funnel-assets/funnel.css"/>
+<style>
+  .fld{width:100%;box-sizing:border-box;padding:13px 14px;border:1px solid #D7DDE6;border-radius:10px;font-size:16px;font-family:inherit;margin:0 0 10px;color:#14213D;background:#fff;}
+  .fld:focus{outline:none;border-color:#2F5EA8;}
+  .lab{font-size:12.5px;font-weight:700;color:#5C6B85;margin:0 0 4px;}
+  .result{margin-top:14px;padding:14px 16px;border-radius:10px;font-size:15px;display:none;}
+  .result.ok{background:#EAF7F0;border:1px solid #BEE7D2;color:#1e6e4a;display:block;}
+  .result.err{background:#FDEEEE;border:1px solid #F3C9C9;color:#a03434;display:block;}
+  .muted{color:#5C6B85;font-size:13.5px;}
+  .steps{margin:14px 0 4px;padding:0;list-style:none;}
+  .steps li{position:relative;padding:0 0 11px 26px;font-size:14.5px;line-height:1.55;color:#33404f;}
+  .steps li:before{content:"";position:absolute;left:6px;top:7px;width:8px;height:8px;border-radius:50%;background:#2F5EA8;}
+</style>
+</head>
+<body data-funnel-page="talk">
+<div class="wrap">
+  <div class="topbar"><img src="assets/brand/logo.png" alt="MDconcierge"/></div>
+  <div class="card"><div class="body">
+
+    <div class="eyebrow">Workers' Compensation Pharmacy Platform &middot; MDconcierge</div>
+    <h1>Tell me the best way to reach you.</h1>
+    <p class="lead">No call to schedule and nothing to sit through. Say when suits you and I will work around it.</p>
+
+    <div id="form" style="margin-top:20px;">
+      <div class="lab">Your name</div>
+      <input class="fld" id="f-name" autocomplete="name"/>
+      <div class="lab">Practice</div>
+      <input class="fld" id="f-practice" autocomplete="organization"/>
+      <div class="lab">Best number to reach you</div>
+      <input class="fld" id="f-phone" autocomplete="tel" inputmode="tel" placeholder="Cell is usually easiest"/>
+      <div class="lab">When is a good time?</div>
+      <input class="fld" id="f-when" placeholder="For example: mornings before clinic, or Tuesday afternoon"/>
+      <div class="lab">Email, if you would like the details in writing too</div>
+      <input class="fld" id="f-email" type="email" autocomplete="email"/>
+      <button class="cta full" id="sendBtn" data-cta="request-contact" onclick="submitTalk()">Send this to Eric</button>
+      <p class="fine">Nothing is scheduled and nobody is added to a mailing list.</p>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <h2 style="font-size:16px;margin:26px 0 2px;">What happens next</h2>
+    <ul class="steps">
+      <li><b>A call.</b> We walk through the program and the formulary and answer your questions.</li>
+      <li><b>You evaluate.</b> We send the agreements for review, plus a tool where you enter your own medications and see how it looks for your practice.</li>
+      <li><b>You decide.</b> If you move forward, the agreements go out for signature, we run a short in-service with your staff, and you are set.</li>
+    </ul>
+
+    <p class="muted" style="margin-top:18px;">Would rather pick a time yourself? <a href="book.html" data-keep data-cta="book-from-talk">See Eric's calendar</a>.</p>
+
+  </div></div>
+  <div class="foot">
+    MDconcierge &middot; Pennsylvania &middot; <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a><br>
+    Independent licensed pharmacy. Workers-comp claims only. Not legal advice.
+  </div>
+</div>
+
+<script>
+const FN = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1";
+const TOKEN = new URLSearchParams(location.search).get("p") || "";
+
+// Prefill from the link's token so a physician is not asked to type back what we already know.
+(async function prefill(){
+  if(!TOKEN) return;
+  try{
+    const r = await fetch(`${FN}/booking-slots?type=intro&p=${encodeURIComponent(TOKEN)}`);
+    const j = await r.json();
+    if(j && j.who){
+      if(j.who.name) document.getElementById('f-name').value = j.who.name;
+      if(j.who.email) document.getElementById('f-email').value = j.who.email;
+    }
+  }catch(e){}
+})();
+
+async function submitTalk(){
+  const v = id => (document.getElementById(id).value || '').trim();
+  const btn = document.getElementById('sendBtn'), msg = document.getElementById('result');
+  const payload = { token: TOKEN, name: v('f-name'), practice: v('f-practice'),
+                    phone: v('f-phone'), best_time: v('f-when'), email: v('f-email'), source: 'talk page' };
+  const missing = [];
+  if(!payload.name) missing.push('your name');
+  if(!payload.phone) missing.push('a number');
+  if(!payload.best_time) missing.push('when suits you');
+  if(missing.length){ msg.className='result err'; msg.textContent = 'Still needed: ' + missing.join(', ') + '.'; return; }
+  if(payload.phone.replace(/\D/g,'').length < 10){ msg.className='result err'; msg.textContent='That number looks short.'; return; }
+  if(payload.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payload.email)){ msg.className='result err'; msg.textContent='That email does not look right.'; return; }
+  btn.disabled = true; btn.textContent = 'Sending…'; msg.className='result'; msg.style.display='none';
+  try{
+    const r = await fetch(`${FN}/request-contact`, { method:'POST', headers:{'Content-Type':'application/json'}, mode:'cors', body: JSON.stringify(payload) });
+    const j = await r.json();
+    if(!j.ok){ msg.className='result err'; msg.textContent = j.error || 'Something went wrong. Please email eric@mdconcierge.net.'; btn.disabled=false; btn.textContent='Send this to Eric'; return; }
+    document.getElementById('form').style.display='none';
+    msg.className='result ok'; msg.textContent = j.message || 'Thank you. Eric will be in touch at the time you gave.';
+  }catch(e){
+    msg.className='result err'; msg.textContent='Network hiccup. Please try again, or email eric@mdconcierge.net.';
+    btn.disabled=false; btn.textContent='Send this to Eric';
+  }
+}
+</script>
+<script src="funnel-assets/track.js"></script>
+</body>
+</html>
