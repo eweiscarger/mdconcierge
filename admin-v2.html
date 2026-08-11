@@ -1642,15 +1642,32 @@ async function mdrxDraftFromCall(){
 // physician receives, and reading the queue that way makes every email look unfinished. Preview
 // renders the actual HTML - and when the text has been edited, renders it the same way the send
 // path will, so the preview is never a flattering lie.
+// Every destination the cadence actually uses needs a name here. A missing one used to fall through
+// to "See the details", which is how a physician ended up being asked to click a button that said
+// nothing. There is no generic fallback any more: an unknown destination is loud, not bland.
 function mdrxPvLabel(url){
   var to=((String(url).match(/[?&]to=([a-z_]+)/i)||['',''])[1]||'').toLowerCase();
   if(/unsubscribe/i.test(url))return 'click here';
+  if(to==='talk')return 'Have someone reach out';
   if(to==='book')return 'See my calendar';
+  if(to==='jortho')return 'Read the study';
   if(to==='execbrief')return 'Read the brief';
   if(to==='model')return 'Open the model';
   if(to==='program'||to==='brief'||to==='overview')return 'See how it works';
-  return 'See the details';
+  return to?('UNKNOWN LINK: '+to):'See how it works';
 }
+// The real signature, so the preview shows the finished email instead of a note promising one.
+var MDRX_SIG='<table cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:6px;"><tbody><tr>'
++'<td style="padding-right:14px;vertical-align:middle;"><img alt="MDconcierge" width="54" height="54" style="width:54px;height:54px;border-radius:8px;display:block;" src="https://mdconcierge.net/logo.jpg"></td>'
++'<td style="border-left:3px solid rgb(200,146,42);padding-left:14px;vertical-align:middle;">'
++'<div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;color:rgb(15,30,61);"><b>Eric Weiscarger</b></div>'
++'<div style="letter-spacing:1px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:rgb(107,159,212);"><b>FOUNDER &middot; MDCONCIERGE</b></div>'
++'<div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:rgb(90,102,117);margin-top:3px;">Referral Management <span style="color:rgb(200,146,42);">&bull;</span> Work Comp Pharmacy <span style="color:rgb(200,146,42);">&bull;</span> Ancillary Coordination</div>'
++'<div style="line-height:1.7;margin-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;">'
++'<span style="color:rgb(15,30,61);">(570) 817-7569</span><br>'
++'<a href="mailto:eric@mdconcierge.net" style="color:rgb(15,30,61);text-decoration:none;">eric@mdconcierge.net</a><br>'
++'<a href="https://mdconcierge.net/" style="color:rgb(200,146,42);text-decoration:none;"><b>mdconcierge.net</b></a>'
++'</div></td></tr></tbody></table>';
 function mdrxTextToHtml(t){
   var body=String(t||'').replace(/\r\n/g,'\n').trim();
   var om=body.match(/If you aren't interested[\s\S]*$/);
@@ -1664,7 +1681,7 @@ function mdrxTextToHtml(t){
     return '<p style="font-size:15px;line-height:1.65;color:#1a2233;margin:0 0 14px;">'
       +ehtml(line).replace(/(https?:\/\/[^\s<>"')]+)/g,function(u){return '<a href="'+u+'" style="color:#2F5EA8;font-weight:600;">'+mdrxPvLabel(u)+'</a>';})+'</p>';
   }).filter(Boolean).join('');
-  out+='<p style="font-size:12px;color:#8a93a1;border-top:1px dashed #c9d6e6;padding-top:10px;margin-top:18px;">[ your signature attaches here on send ]</p>';
+  out+='<p style="font-size:15px;line-height:1.65;color:#1a2233;margin:18px 0 4px;">Best,</p>'+MDRX_SIG;
   if(optout){
     var u=(optout.match(/https?:\/\/[^\s]+/)||[''])[0];
     out+='<p style="font-size:11px;line-height:1.5;color:#9aa3af;margin:14px 0 0;">If you aren\'t interested, or don\'t wish to hear from me anymore, <a href="'+u+'" style="color:#9aa3af;">click here</a> and I won\'t write again.</p>';
