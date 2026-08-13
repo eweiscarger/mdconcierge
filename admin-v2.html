@@ -1501,6 +1501,9 @@ async function loadCockpit(){
       <button class="cktab-btn" id="ckt-content" onclick="showCkTab('content')">🧠 Content${cqList.length?'<span class="cb">'+cqList.length+'</span>':''}</button>
     </div>
     <div class="cktab-pane" id="ckpane-today">
+      ${paused
+        ? `<div class="panel" style="margin-bottom:16px;border:2px solid #c0392b;background:#4a1414;"><div style="padding:12px 14px;color:#ff9b9b;font-size:14px;">⛔ <b>Outreach is PAUSED</b> — ${ehtml((cf.data&&cf.data.pause_reason)||'deliverability guard')}. Nothing will send.<button class="ib" onclick="mdrxResumeSending()" style="margin-left:10px;">Resume sending</button></div></div>`
+        : `<div class="panel" style="margin-bottom:16px;"><div style="padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span style="font-size:13px;color:var(--muted);">Outreach is running normally.</span><button onclick="mdrxPauseSending()" style="padding:8px 16px;background:#7a1f1f;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">⛔ Stop all outreach</button></div></div>`}
       ${obPanel}
       <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">📅 Today's meetings</div></div><div class="grp" style="margin:0;border:none;">${meetHtml}</div></div>
       <div class="panel" style="margin-bottom:0;"><div class="ph"><div class="pt">⏰ Due today (${due.length})</div><div class="ps">Every contact with an action due. Nothing sits idle.</div></div><div class="grp" style="margin:0;border:none;">${dueHtml}</div></div>
@@ -1727,6 +1730,15 @@ async function mdrxSendOutbox(ids){
 async function mdrxSkipOutbox(id){
   await sbClient.from('mdrx_outbox').update({status:'skipped'}).eq('id',id);
   showToast('Skipped'); loadCockpit();
+}
+// The stop button. Sending could only ever be paused automatically, by the bounce guard, so if Eric
+// wanted outreach to stop while he was away from his desk there was nothing he could press. This
+// sets the same flag the guard uses, and send-outreach refuses every row while it is set.
+async function mdrxPauseSending(){
+  if(!confirm('Pause all outreach now? Nothing will send until you resume it. Replies you send by hand are unaffected.'))return;
+  const {error}=await sbClient.from('outreach_config').update({sending_paused:true,pause_reason:'Paused by Eric',pause_snooze_until:null}).eq('id',1);
+  if(error){showToast('Could not pause: '+error.message);return;}
+  showToast('Outreach paused. Nothing will send.'); loadCockpit();
 }
 async function mdrxResumeSending(){
   if(!confirm('Resume sending? Only do this after you have addressed whatever caused the pause.'))return;
