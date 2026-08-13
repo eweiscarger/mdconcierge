@@ -38,7 +38,7 @@
     </div>
 
     <div class="fit">
-      <b>This call is for you if:</b> you're a PA private practice that treats workers-comp patients and writes the scripts today, and you want your patients to actually get their medication while sharing in the economics you already generate.
+      <b>This call is for you if:</b> you're a private practice that treats workers-comp patients and writes the scripts today, and you want your patients to actually get their medication while sharing in the economics you already generate.
       <br><br>
       <b>It's probably not a fit if:</b> you don't see work-comp patients, you're looking for anything involving Medicare, Medicaid, or federal claims, or you want to dispense in-house. We only do workers-comp, and only the compliant claims-purchasing model.
     </div>
@@ -84,6 +84,17 @@ let SELECTED = null;
 // single button, not a calendar to solve again. The confirm is a click he makes, never a link a
 // mail scanner can follow, which is why the email links here rather than booking directly.
 const PRESET = params.get("t") || "";
+// Where the reader is, relative to Eric. Saves a physician doing the arithmetic, or writing to ask.
+const TZLABEL = (function(){
+  try {
+    var now = new Date();
+    var et = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
+    var mine = new Date(now.toLocaleString("en-US"));
+    var diff = Math.round((mine - et) / 3600000);
+    if (!diff) return "same as yours";
+    return "you look to be " + Math.abs(diff) + " hour" + (Math.abs(diff) === 1 ? "" : "s") + (diff < 0 ? " behind" : " ahead");
+  } catch (e) { return "US Eastern"; }
+})();
 
 function setType(t){
   TYPE = t; SELECTED = null;
@@ -115,7 +126,10 @@ async function loadSlots(){
     const days = j.days || {};
     const keys = Object.keys(days).sort();
     if (!keys.length){ box.innerHTML = '<p class="muted">No open times in the next couple of weeks. Email <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a> and we\'ll find one.</p>'; return; }
-    box.innerHTML = keys.map(k => {
+    // Every time on this page is Eric's. A physician in Boise had to write and ask which zone these
+    // were in, which means everyone who did not ask was guessing.
+    const zone = `<p class="muted" style="margin:0 0 10px;">All times shown in Eastern time (${TZLABEL}).</p>`;
+    box.innerHTML = zone + keys.map(k => {
       const dlabel = new Date(k+"T12:00:00").toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
       const btns = days[k].map(s => `<button onclick='pick(${JSON.stringify(s.start)}, this)'>${s.label.replace(/^[A-Za-z]{3,} /, "").replace(/^[A-Za-z]{3,}, /, "")}</button>`).join("");
       return `<div class="day"><h3>${dlabel}</h3><div class="times">${btns}</div></div>`;
