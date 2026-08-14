@@ -36,6 +36,8 @@
   #ftable tbody tr{ cursor:pointer; }
   #ftable tbody tr:hover{ background:#f6f9fd; }
   #ftable tbody tr.selrow{ background:#eef6ff; }
+  #ftable tbody tr.catrow td{ background:#f0f4fa; font-weight:800; font-size:11.5px; letter-spacing:.6px;
+    text-transform:uppercase; color:var(--navy); cursor:default; }
   .mixrow{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
   .mixrow select{ flex:1; min-width:180px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; background:#fff; }
   .mixrow input{ width:76px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; }
@@ -517,6 +519,9 @@ function applyForm(){
     const vb = k==='reimb'?reimbOf(b):(k==='awp'||k==='cost'?Number(b[k])||0:String(b[k]||'').toLowerCase());
     return va<vb ? -d : va>vb ? d : 0;
   });
+  // Then gather into category sections. Sort is stable, so whatever the physician sorted by still
+  // holds inside each section rather than being thrown away.
+  if(k!=='category') rows.sort((a,b)=> String(a.category||'~').toLowerCase().localeCompare(String(b.category||'~').toLowerCase()));
   renderFormHead();
   fillFormTable(rows);
   const cnt=document.getElementById('fcount');
@@ -528,12 +533,23 @@ function clearForm(){
 }
 function fillFormTable(rows){
   const b=document.getElementById('fbody'); if(!b) return;
-  // Reimbursement is derived from the live multiplier, not the stored PA figure, so the column
-  // always agrees with the state selected above.
-  b.innerHTML = rows.map(f=>`<tr class="${FSEL.has(String(f.id))?'selrow':''}" onclick="toggleSel('${f.id}')">
+  // Sections. A flat list of eighty products asks a physician to hold the whole formulary in his
+  // head; grouped under NSAIDs, Pain, Muscle Relaxants and the rest he can find his own prescribing
+  // in it. The filters above still work, and the chosen sort still applies inside each section.
+  let lastCat = null;
+  const cols = HIDE_COST ? 6 : 7;
+  b.innerHTML = rows.map(f=>{
+    let head = '';
+    const c = String(f.category||'Other');
+    if(c !== lastCat){
+      lastCat = c;
+      head = `<tr class="catrow"><td colspan="${cols}">${esc(c)}</td></tr>`;
+    }
+    return head + `<tr class="${FSEL.has(String(f.id))?'selrow':''}" onclick="toggleSel('${f.id}')">
     <td class="noprint" style="text-align:center;"><input type="checkbox" ${FSEL.has(String(f.id))?'checked':''} onclick="event.stopPropagation();toggleSel('${f.id}')"></td>
     <td>${esc(f.product)}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
-    <td class="num">${money(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money(f.cost)}</td>`}<td class="num">${money(reimbOf(f))}</td></tr>`).join('');
+    <td class="num">${money(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money(f.cost)}</td>`}<td class="num">${money(reimbOf(f))}</td></tr>`;
+  }).join('');
 }
 function toggleSel(id){
   id=String(id);
