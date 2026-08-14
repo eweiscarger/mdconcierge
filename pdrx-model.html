@@ -74,6 +74,7 @@
 
 <script>
 const FN = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/formulary-access";
+const PROGRAM = 'pdrx';
 const app = document.getElementById('app');
 const money = n => '$' + Math.round(n||0).toLocaleString('en-US');
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -84,6 +85,9 @@ let HIDE_COST = false;
 function tokenFromUrl(){
   const u = new URL(location.href);
   return u.searchParams.get('t') || u.searchParams.get('token') || '';
+}
+function trackingFromUrl(){
+  return new URL(location.href).searchParams.get('p') || '';
 }
 
 function watermark(name, email){
@@ -156,7 +160,8 @@ function identifyScreen(recipientName, practice, mode){
 }
 
 async function unlock(token, viewer){
-  const body = viewer ? { token, viewer } : { token };
+  const body = { token, p: trackingFromUrl(), program: PROGRAM };
+  if (viewer) body.viewer = viewer;
   let data;
   try{
     const r = await fetch(FN, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
@@ -202,7 +207,7 @@ window.addEventListener('pagehide', reportDwell);
 
 async function boot(){
   const token = tokenFromUrl();
-  if(!token){ return errScreen('missing'); }
+  if(!token && !trackingFromUrl()){ return errScreen('missing'); }
   let remembered = null;
   try{ remembered = JSON.parse(localStorage.getItem(whoKey(token)) || 'null'); }catch(e){}
   unlock(token, remembered);
