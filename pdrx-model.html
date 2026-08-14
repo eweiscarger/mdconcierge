@@ -71,7 +71,7 @@
 
   <div class="card">
     <h2>2. What you would prescribe in a month</h2>
-    <p class="hint">Add the medications you actually write for injured workers, and how many scripts a month. Nothing here is a commitment.</p>
+    <p class="hint">Add the medications you actually write for injured workers, and how many scripts a month. Nothing here is a commitment. Injection kits are listed further down for reference and are not part of this estimate.</p>
     <div id="mix"></div>
     <button class="addbtn" onclick="addMix()">+ Add a medication</button>
   </div>
@@ -206,6 +206,7 @@ const label = d => d.name + (d.str?' '+d.str:'') + (d.size?' · '+d.size:'');
 function mixOptions(){
   let html='', cat=null;
   FORM.forEach((d,i)=>{
+    if(d.kit) return;                      // reference only, never selectable
     if(d.cat!==cat){ if(cat!==null) html+='</optgroup>'; html+='<optgroup label="'+esc(d.cat)+'">'; cat=d.cat; }
     html+='<option value="'+i+'">'+esc(label(d))+'</option>';
   });
@@ -237,24 +238,35 @@ function applyForm(){
   let cat=null;
   const share=(parseFloat(document.getElementById('a-sh').value)||0)/100;
   FORM.forEach(d=>{
-    if(d.cat!==cat){ html+='<tr class="cat"><td colspan="8">'+esc(d.cat)+'</td></tr>'; cat=d.cat; }
+    if(d.cat!==cat){
+      html+='<tr class="cat"><td colspan="8">'+esc(d.cat)
+        + (d.kit ? ' &middot; <span style="text-transform:none;letter-spacing:0;font-weight:600;">reference only, modelled at '+Math.round(kitRate*100)+'% of the schedule amount and not included in the estimate above</span>' : '')
+        + '</td></tr>';
+      cat=d.cat;
+    }
     const e=lineEconomics(d,mult,disp,ship,kitRate);
-    html+='<tr><td>'+esc(d.name+(d.str?' '+d.str:''))+'</td><td class="n">'+esc(d.size)+'</td><td class="n">'+(d.cost?money2(d.cost):'<span style="color:#b34700;">not supplied</span>')+'</td><td class="n">'+money2(d.awp)+'</td><td class="n">'+money2(e.collects)+'</td><td class="n">'+money2(e.purchase)+'</td><td class="n">'+money2(e.net)+'</td><td class="n"><b>'+money2(e.net*share)+'</b></td></tr>';
+    // Kits show what the schedule pays and nothing more. Acquisition cost is not published on the
+    // EnovaRX sheets, so a net or a practice share for them would be arithmetic on a missing number.
+    if(d.kit){
+      html+='<tr><td>'+esc(d.name+(d.str?' '+d.str:''))+'</td><td class="n" style="color:var(--muted);font-size:12px;">'+esc(d.size)+'</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n">'+money2(d.awp)+'</td><td class="n">'+money2(e.collects)+'</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n" style="color:var(--muted);">&mdash;</td></tr>';
+    } else {
+      html+='<tr><td>'+esc(d.name+(d.str?' '+d.str:''))+'</td><td class="n">'+esc(d.size)+'</td><td class="n">'+money2(d.cost)+'</td><td class="n">'+money2(d.awp)+'</td><td class="n">'+money2(e.collects)+'</td><td class="n">'+money2(e.purchase)+'</td><td class="n">'+money2(e.net)+'</td><td class="n"><b>'+money2(e.net*share)+'</b></td></tr>';
+    }
   });
   document.getElementById('formtable').innerHTML=html+'</tbody></table>';
   document.getElementById('form-hint').textContent =
-    FORM.length+' products · '+ST.n+' reimbursement = '+mult+' × AWP · claim purchase fee = wholesale cost + '+money2(disp)+' dispense + '+money2(ship)+' shipping';
+    FORM.filter(d=>!d.kit).length+' medications priced, plus '+FORM.filter(d=>d.kit).length+' injection kits shown for reference · '+ST.n+' reimbursement = '+mult+' × AWP · claim purchase fee = wholesale cost + '+money2(disp)+' dispense + '+money2(ship)+' shipping';
 }
 function compute(){
   const num = id => { const e=document.getElementById(id); return e?(parseFloat(e.value)||0):0; };
   const mult=num('a-mult'), disp=num('a-disp'), ship=num('a-ship'), share=num('a-sh')/100, kitRate=num('a-kit')/100;
-  let gross=0, purchase=0, scripts=0, lines=0, noCost=0;
+  let gross=0, purchase=0, scripts=0, lines=0;
   document.querySelectorAll('#mix .mixrow').forEach(row=>{
     const d=FORM[+row.querySelector('select').value];
     const units=parseFloat(row.querySelector('input').value)||0;
     if(!d||!units) return;
     const e=lineEconomics(d,mult,disp,ship,kitRate);
-    gross+=e.collects*units; purchase+=e.purchase*units; scripts+=units; lines++; if(d.kit&&!d.cost) noCost++;
+    gross+=e.collects*units; purchase+=e.purchase*units; scripts+=units; lines++;
   });
   const net=gross-purchase, mgmt=net*(1-share), practice=net*share;
   document.getElementById('result').innerHTML =
@@ -268,8 +280,7 @@ function compute(){
     +   '<div class="step"><span>Less management fee &middot; '+Math.round((1-share)*100)+'% of net</span><b>-'+money2(mgmt)+'</b></div>'
     +   '<div class="step tot"><span><b>The practice keeps</b></span><b>'+money2(practice)+' / month</b></div>'
     + '</div>'
-    + (noCost? '<div class="note" style="text-align:left;border-color:#e0a03f;background:#fdf6e9;"><b>'+noCost+' injection kit'+(noCost===1?'':'s')+' in this basket has no acquisition cost on file.</b> The EnovaRX sheets publish AWP only, so the claims purchase fee for those lines counts the dispense and shipping charges but not the product. Net is overstated until the cost is entered.</div>' : '')
-    + '<div class="disc">'+(lines?lines+' medication'+(lines===1?'':'s')+' modelled. ':'Add a medication above to see the figures. ')
+    + + '<div class="disc">'+(lines?lines+' medication'+(lines===1?'':'s')+' modelled. ':'Add a medication above to see the figures. ')
     + 'Collections average about 60 days. '+esc(ST.n)+' basis'+(ST.basis==='other'?', modelled at flat AWP as an assumption':'')+'.</div>';
 }
 (function init(){
