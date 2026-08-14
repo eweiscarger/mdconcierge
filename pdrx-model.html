@@ -399,6 +399,7 @@ function render(expires){
         <select id="froute" onchange="applyForm()"><option value="">All routes</option><option value="Oral">Oral</option><option value="Topical">Topical</option></select>
         <button class="btn" onclick="clearForm()">Clear</button>
       </div>
+      <div id="kits"></div>
       <div class="tablewrap">
         <table id="ftable">
           <thead id="fhead"></thead>
@@ -480,6 +481,19 @@ let FSORT = { key:'product', dir:1 };
 const FSEL = new Set();
 const curMult = () => { const el=document.getElementById('a-mult'); return el ? (parseFloat(el.value)||0) : 1.1; };
 const reimbOf = f => (Number(f.awp)||0) * curMult();
+const KITS = [{"p":"Accucaine","ndc":"76420-0715-01","str":"","awp":254.35},{"p":"Betaloan SUIK","ndc":"76420-0240-01","str":"6mg/mL 5mL","awp":515.35},{"p":"DMT SUIK","ndc":"76420-0270-01","str":"10mg/mL 1mL","awp":216.75},{"p":"DoubleDex","ndc":"76420-0766-01","str":"(2) 10mg/mL 1mL","awp":598},{"p":"Marvona SUIK","ndc":"76420-0230-01","str":"0.5% 10mL","awp":290.75},{"p":"Medroloan SUIK","ndc":"76420-0260-01","str":"40mg 1mL","awp":314.75},{"p":"Medroloan II SUIK","ndc":"76420-0262-01","str":"(2) 40mg 1mL","awp":573},{"p":"Toronova SUIK","ndc":"76420-0250-01","str":"30mg/mL 1mL","awp":325.25},{"p":"Toronova II SUIK","ndc":"76420-0252-01","str":"(2) 30mg/mL 1mL","awp":418.5},{"p":"Triloan SUIK","ndc":"76420-0220-01","str":"40mg 1mL","awp":461},{"p":"Triloan II SUIK","ndc":"76420-0222-01","str":"(2) 40mg 1mL","awp":575}];
+// Reference only: no cost is published for these, so they carry no net, no share, and no tick box.
+function renderKits(){
+  const el = document.getElementById('kits'); if(!el) return;
+  const m = curMult();
+  el.innerHTML = '<h2 style="margin:22px 0 4px;">Injection kits</h2>'
+    + '<p class="hint" style="margin:0 0 8px;">Single use injection kits, shown for reference. Estimated reimbursement is AWP at the '
+    + esc(ST ? ST.n : 'selected state') + ' rate. These are not part of the estimate above.</p>'
+    + '<div class="tablewrap"><table><thead><tr><th>Kit</th><th>NDC</th><th class="num">MFG AWP</th><th class="num">Est. reimbursement</th></tr></thead><tbody>'
+    + KITS.map(k => '<tr><td>' + esc(k.p + (k.str ? ' ' + k.str : '')) + '</td><td style="color:var(--muted);">' + esc(k.ndc)
+        + '</td><td class="num">' + money(k.awp) + '</td><td class="num">' + money(k.awp * m) + '</td></tr>').join('')
+    + '</tbody></table></div>';
+}
 
 function formCols(){
   return [
@@ -525,6 +539,7 @@ function applyForm(){
   if(k!=='category') rows.sort((a,b)=> String(a.category||'~').toLowerCase().localeCompare(String(b.category||'~').toLowerCase()));
   renderFormHead();
   fillFormTable(rows);
+  renderKits();
   const cnt=document.getElementById('fcount');
   if(cnt) cnt.textContent = rows.length===FORM.length ? '' : (rows.length+' of '+FORM.length+' shown');
 }
