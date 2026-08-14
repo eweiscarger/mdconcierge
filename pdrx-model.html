@@ -71,9 +71,8 @@
 
   <div class="card">
     <h2>2. What you would prescribe in a month</h2>
-    <p class="hint">Add the medications you actually write for injured workers, and how many scripts a month. Nothing here is a commitment. Injection kits are listed further down for reference and are not part of this estimate.</p>
+    <p class="hint">Tick anything in the formulary below, as many as you like, and it lands here. Then set how many scripts a month. Nothing here is a commitment. Injection kits are shown for reference and cannot be added.</p>
     <div id="mix"></div>
-    <button class="addbtn" onclick="addMix()">+ Add a medication</button>
   </div>
 
   <div class="card">
@@ -203,23 +202,35 @@ function fsKeyHtml(){
     + '<p class="disc">Pharmacy fee schedule rates as of '+FS_ASOF+'. Sources: Optum Workers\' Compensation Pharmacy Resource Guide, MyMatrixx regulatory updates. Verify before relying on it.</p>';
 }
 const label = d => d.name + (d.str?' '+d.str:'') + (d.size?' · '+d.size:'');
-function mixOptions(){
-  let html='', cat=null;
-  FORM.forEach((d,i)=>{
-    if(d.kit) return;                      // reference only, never selectable
-    if(d.cat!==cat){ if(cat!==null) html+='</optgroup>'; html+='<optgroup label="'+esc(d.cat)+'">'; cat=d.cat; }
-    html+='<option value="'+i+'">'+esc(label(d))+'</option>';
-  });
-  return html+'</optgroup>';
+// The basket is chosen by ticking rows in the formulary itself, so a physician picks from what he
+// can see priced rather than hunting the same product inside a dropdown. Index to scripts a month.
+const SEL = new Map();
+function toggleSel(i){
+  const d=FORM[i]; if(!d || d.kit) return;   // kits are reference only and cannot be added
+  if(SEL.has(i)) SEL.delete(i); else SEL.set(i, 10);
+  renderBasket(); applyForm(); compute();
 }
-function addMix(idx, units){
-  const div=document.createElement('div'); div.className='mixrow';
-  div.innerHTML='<select onchange="compute()">'+mixOptions()+'</select>'
-    +'<input type="number" min="0" step="1" value="'+(units==null?10:units)+'" oninput="compute()" title="scripts per month">'
-    +'<button title="remove" onclick="this.parentNode.remove();compute();">&times;</button>';
-  document.getElementById('mix').appendChild(div);
-  if(idx!=null) div.querySelector('select').value=idx;
+function setQty(i, v){
+  const n=parseFloat(v);
+  SEL.set(i, Number.isFinite(n)&&n>=0 ? n : 0);
   compute();
+}
+function clearBasket(){ SEL.clear(); renderBasket(); applyForm(); compute(); }
+function renderBasket(){
+  const box=document.getElementById('mix');
+  if(!SEL.size){
+    box.innerHTML='<p class="hint" style="margin:0;">Nothing chosen yet. Tick anything in the formulary below and it appears here, as many as you like.</p>';
+    return;
+  }
+  let html='';
+  for(const [i,units] of SEL){
+    const d=FORM[i];
+    html+='<div class="mixrow"><span style="flex:3;font-size:14px;">'+esc(label(d))+'</span>'
+      + '<input type="number" min="0" step="1" value="'+units+'" oninput="setQty('+i+',this.value)" title="scripts per month">'
+      + '<button title="remove" onclick="toggleSel('+i+')">&times;</button></div>';
+  }
+  html+='<button class="linkish" style="margin-top:6px;" onclick="clearBasket()">Clear all</button>';
+  box.innerHTML=html;
 }
 // One line of the model, so the table and the totals can never disagree about the arithmetic.
 function lineEconomics(d, mult, disp, ship, kitRate){
@@ -234,12 +245,12 @@ function applyForm(){
   const kitRate=(parseFloat(document.getElementById('a-kit').value)||0)/100;
   const disp=parseFloat(document.getElementById('a-disp').value)||0;
   const ship=parseFloat(document.getElementById('a-ship').value)||0;
-  let html='<table><thead><tr><th>Medication</th><th class="n">Qty</th><th class="n">Cost</th><th class="n">AWP</th><th class="n">Collects ('+esc(ST.c)+')</th><th class="n">Claim purchase fee</th><th class="n">Net</th><th class="n">Practice 50%</th></tr></thead><tbody>';
+  let html='<table><thead><tr><th style="width:34px;"></th><th>Medication</th><th class="n">Qty</th><th class="n">Cost</th><th class="n">AWP</th><th class="n">Collects ('+esc(ST.c)+')</th><th class="n">Claim purchase fee</th><th class="n">Net</th><th class="n">Practice 50%</th></tr></thead><tbody>';
   let cat=null;
   const share=(parseFloat(document.getElementById('a-sh').value)||0)/100;
-  FORM.forEach(d=>{
+  FORM.forEach((d,i)=>{
     if(d.cat!==cat){
-      html+='<tr class="cat"><td colspan="8">'+esc(d.cat)
+      html+='<tr class="cat"><td colspan="9">'+esc(d.cat)
         + (d.kit ? ' &middot; <span style="text-transform:none;letter-spacing:0;font-weight:600;">reference only, modelled at '+Math.round(kitRate*100)+'% of the schedule amount and not included in the estimate above</span>' : '')
         + '</td></tr>';
       cat=d.cat;
@@ -248,9 +259,9 @@ function applyForm(){
     // Kits show what the schedule pays and nothing more. Acquisition cost is not published on the
     // EnovaRX sheets, so a net or a practice share for them would be arithmetic on a missing number.
     if(d.kit){
-      html+='<tr><td>'+esc(d.name+(d.str?' '+d.str:''))+'</td><td class="n" style="color:var(--muted);font-size:12px;">'+esc(d.size)+'</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n">'+money2(d.awp)+'</td><td class="n">'+money2(e.collects)+'</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n" style="color:var(--muted);">&mdash;</td></tr>';
+      html+='<tr><td></td><td>'+esc(d.name+(d.str?' '+d.str:''))+'</td><td class="n" style="color:var(--muted);font-size:12px;">'+esc(d.size)+'</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n">'+money2(d.awp)+'</td><td class="n">'+money2(e.collects)+'</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n" style="color:var(--muted);">&mdash;</td></tr>';
     } else {
-      html+='<tr><td>'+esc(d.name+(d.str?' '+d.str:''))+'</td><td class="n">'+esc(d.size)+'</td><td class="n">'+money2(d.cost)+'</td><td class="n">'+money2(d.awp)+'</td><td class="n">'+money2(e.collects)+'</td><td class="n">'+money2(e.purchase)+'</td><td class="n">'+money2(e.net)+'</td><td class="n"><b>'+money2(e.net*share)+'</b></td></tr>';
+      html+='<tr'+(SEL.has(i)?' style="background:#f2fbf6;"':'')+'><td style="text-align:center;"><input type="checkbox" style="width:16px;height:16px;cursor:pointer;" '+(SEL.has(i)?'checked':'')+' onchange="toggleSel('+i+')"></td><td>'+esc(d.name+(d.str?' '+d.str:''))+'</td><td class="n">'+esc(d.size)+'</td><td class="n">'+money2(d.cost)+'</td><td class="n">'+money2(d.awp)+'</td><td class="n">'+money2(e.collects)+'</td><td class="n">'+money2(e.purchase)+'</td><td class="n">'+money2(e.net)+'</td><td class="n"><b>'+money2(e.net*share)+'</b></td></tr>';
     }
   });
   document.getElementById('formtable').innerHTML=html+'</tbody></table>';
@@ -261,13 +272,12 @@ function compute(){
   const num = id => { const e=document.getElementById(id); return e?(parseFloat(e.value)||0):0; };
   const mult=num('a-mult'), disp=num('a-disp'), ship=num('a-ship'), share=num('a-sh')/100, kitRate=num('a-kit')/100;
   let gross=0, purchase=0, scripts=0, lines=0;
-  document.querySelectorAll('#mix .mixrow').forEach(row=>{
-    const d=FORM[+row.querySelector('select').value];
-    const units=parseFloat(row.querySelector('input').value)||0;
-    if(!d||!units) return;
+  for(const [i,units] of SEL){
+    const d=FORM[i];
+    if(!d||!units) continue;
     const e=lineEconomics(d,mult,disp,ship,kitRate);
     gross+=e.collects*units; purchase+=e.purchase*units; scripts+=units; lines++;
-  });
+  }
   const net=gross-purchase, mgmt=net*(1-share), practice=net*share;
   document.getElementById('result').innerHTML =
     '<div class="lbl">Estimated practice share, PDRx program</div>'
@@ -292,7 +302,7 @@ function compute(){
   });
   document.getElementById('fs-key').innerHTML = fsKeyHtml();
   applyState('PA');
-  addMix(0, 10);
+  renderBasket();
 })();
 </script>
 </body>
