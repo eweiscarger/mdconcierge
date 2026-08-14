@@ -166,6 +166,7 @@ async function unlock(token, viewer){
   if(data && data.ok){
     if(viewer){ try{ localStorage.setItem(whoKey(token), JSON.stringify(viewer)); }catch(e){} }
     FORM = data.formulary || []; REC = data.recipient || {};
+    VIEW_ID = data.view_id || null; VIEW_T0 = Date.now();
     const V = data.viewer || REC;
     HIDE_COST = !!V.hide_cost;
     watermark(V.name || REC.name, V.email || REC.email);
@@ -182,6 +183,22 @@ function reIdentify(){
   try{ localStorage.removeItem(whoKey(t)); }catch(e){}
   identifyScreen(REC.name, REC.practice, 'guest');
 }
+
+// How long they stayed. That someone opened the model says little; that he sat with it for eleven
+// minutes says he is doing his own arithmetic. Reported every half minute and again on the way out,
+// and the server keeps the highest figure, so a tab left open and returned to never reports less.
+let VIEW_ID = null, VIEW_T0 = Date.now();
+function reportDwell(){
+  if(!VIEW_ID) return;
+  const body = JSON.stringify({ token: tokenFromUrl(), view_id: VIEW_ID, dwell: Math.round((Date.now()-VIEW_T0)/1000) });
+  try{
+    if(navigator.sendBeacon){ navigator.sendBeacon(FN, new Blob([body], {type:'application/json'})); }
+    else { fetch(FN, {method:'POST', headers:{'Content-Type':'application/json'}, body, keepalive:true}).catch(function(){}); }
+  }catch(e){}
+}
+setInterval(reportDwell, 30000);
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') reportDwell(); });
+window.addEventListener('pagehide', reportDwell);
 
 async function boot(){
   const token = tokenFromUrl();
