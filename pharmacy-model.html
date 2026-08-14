@@ -276,7 +276,7 @@ const DRUGTYPE = 'gr';
 function stateByCode(c){ return STATES.find(s=>s.c===String(c||'').toUpperCase()); }
 // States with no published AWP schedule (usual and customary, "reasonable", prevailing community
 // rate) fall back to flat AWP as the working assumption rather than leaving the doctor with a
-// blank. It is still labelled as an assumption, because it is one.
+// blank. It is still labeled as an assumption, because it is one.
 function stMult(s,t){ return s ? (s.basis==='other' ? 1 : (t==='br'?s.br:s.gr)) : null; }
 function basisLabel(){ return ST ? (ST.n + ' basis') : 'custom basis'; }
 
@@ -295,7 +295,7 @@ function applyState(code, keepMult){
   const note = document.getElementById('fs-note');
   if(note){
     if(s.basis==='other'){
-      note.innerHTML = '<b>'+esc(s.n)+':</b> '+esc(s.r)+'. With no published AWP schedule to follow, this is modelled at <b>flat AWP</b> as a working assumption. Change it to whatever you actually collect.';
+      note.innerHTML = '<b>'+esc(s.n)+':</b> '+esc(s.r)+'. With no published AWP schedule to follow, this is modeled at <b>flat AWP</b> as a working assumption. Change it to whatever you actually collect.';
       note.style.color = '';
     } else {
       const gr = s.gr.toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
