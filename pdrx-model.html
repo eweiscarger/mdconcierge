@@ -4,104 +4,203 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>PDRx Mail Order Pharmacy Analysis · MDconcierge</title>
+<title>Workers' Compensation Medication Dispensing Analysis · MDconcierge · PDRx Mail Order Pharmacy</title>
 <style>
-  :root{ --navy:#08214C; --steel:#3f6ea5; --green:#1e7a4d; --ink:#1a2233; --muted:#5b6675; --line:#e2e7ef; --bg:#f4f6fa; --pdrx:#5b2d8e; }
+  :root{ --navy:#08214C; --steel:#3f6ea5; --green:#1e7a4d; --ink:#1a2233; --muted:#5b6675; --line:#e2e7ef; --bg:#f4f6fa; }
   *{ box-sizing:border-box; }
   body{ margin:0; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg); line-height:1.5; }
   .wrap{ max-width:940px; margin:0 auto; padding:0 18px 60px; }
-  #conf{ background:var(--pdrx); color:#f1e9fb; font-size:12.5px; text-align:center; padding:8px 14px; letter-spacing:.2px; }
+  /* watermark */
+  #wm{ position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  #wm div{ position:absolute; white-space:nowrap; transform:rotate(-30deg); color:rgba(8,33,76,.055); font-weight:700; font-size:20px; letter-spacing:1px; }
+  .above{ position:relative; z-index:1; }
+  /* banner */
+  #conf{ background:#08214C; color:#eaf1fb; font-size:12.5px; text-align:center; padding:8px 14px; letter-spacing:.2px; }
   #conf b{ color:#fff; }
   header.h{ text-align:center; padding:26px 0 10px; }
-  .pill{ display:inline-block; background:var(--pdrx); color:#fff; font-size:11px; font-weight:800; letter-spacing:1.2px; padding:5px 12px; border-radius:999px; text-transform:uppercase; }
-  h1{ font-size:26px; margin:14px 0 6px; }
-  .sub{ color:var(--muted); font-size:15px; margin:0 0 6px; }
-  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin:16px 0; }
-  .card h2{ font-size:16px; margin:0 0 4px; }
-  .card .hint{ color:var(--muted); font-size:13px; margin:0 0 14px; }
-  label{ display:block; font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
-  input,select{ width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:9px; font-size:15px; font-family:inherit; color:var(--ink); background:#fff; }
-  .row{ display:flex; gap:14px; flex-wrap:wrap; }
-  .row > div{ flex:1 1 150px; }
-  .mixrow{ display:flex; gap:10px; align-items:center; margin-bottom:8px; }
-  .mixrow select{ flex:3; } .mixrow input{ flex:1; max-width:110px; }
-  .mixrow button{ background:none; border:none; color:#b34700; font-size:18px; cursor:pointer; padding:0 6px; }
-  .addbtn{ background:#eef3fa; border:1px solid var(--line); border-radius:9px; padding:8px 14px; font-size:13.5px; font-weight:700; color:var(--navy); cursor:pointer; }
-  .res{ background:linear-gradient(180deg,#f7f3fd,#fff); border:2px solid var(--pdrx); border-radius:14px; padding:20px; text-align:center; }
-  .lbl{ font-size:12px; font-weight:800; letter-spacing:1px; color:var(--pdrx); text-transform:uppercase; }
-  .big{ font-size:40px; font-weight:800; color:var(--navy); margin:6px 0 0; }
-  .yr{ font-size:16px; color:var(--muted); margin-bottom:12px; }
-  .brk{ font-size:13px; color:var(--muted); border-top:1px solid var(--line); padding-top:12px; }
-  .disc{ font-size:11.5px; color:var(--muted); margin-top:10px; }
-  .stepwrap{ text-align:left; border-top:1px solid var(--line); margin-top:14px; padding-top:12px; }
-  .step{ display:flex; justify-content:space-between; font-size:13.5px; padding:5px 0; border-bottom:1px dashed var(--line); }
-  .step b{ font-weight:700; }
-  .step.tot{ border-bottom:none; font-size:15px; color:var(--navy); padding-top:9px; }
-  .tablewrap{ overflow-x:auto; }
-  table{ width:100%; border-collapse:collapse; font-size:13px; }
-  th,td{ text-align:left; padding:7px 9px; border-bottom:1px solid var(--line); white-space:nowrap; }
-  th{ font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); }
-  td.n{ text-align:right; font-variant-numeric:tabular-nums; }
-  .cat td{ background:#f7f3fd; font-weight:800; color:var(--pdrx); font-size:12px; text-transform:uppercase; letter-spacing:.5px; }
-  .note{ background:#f7f3fd; border:1px solid #e0d3f2; border-radius:10px; padding:11px 13px; font-size:13px; margin:12px 0; }
-  .foot{ text-align:center; color:var(--muted); font-size:12px; padding:20px 0 0; }
-  .linkish{ background:none; border:none; color:var(--steel); font-size:13px; cursor:pointer; padding:0; text-decoration:underline; }
+  .kicker{ text-transform:uppercase; letter-spacing:2px; font-size:11px; color:var(--steel); font-weight:700; }
+  h1{ font-family:Georgia,'Times New Roman',serif; color:var(--navy); font-size:26px; margin:6px 0 2px; }
+  .sub{ color:var(--muted); font-size:14px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin:16px 0; box-shadow:0 1px 3px rgba(16,33,66,.05); }
+  .card h2{ font-size:14px; text-transform:uppercase; letter-spacing:1px; color:var(--navy); margin:0 0 4px; }
+  .hint{ font-size:12px; color:var(--muted); margin:0 0 12px; }
+  .assume{ display:flex; flex-wrap:wrap; gap:14px; }
+  .assume label{ font-size:11px; color:var(--muted); font-weight:600; }
+  .assume input{ display:block; margin-top:4px; width:92px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); }
+  .assume select{ display:block; margin-top:4px; width:150px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); background:#fff; }
+  .fctl{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; align-items:center; }
+  .fctl input, .fctl select{ padding:9px 11px; border:1px solid var(--line); border-radius:8px; font-size:14px; color:var(--ink); background:#fff; }
+  .fctl input{ flex:1; min-width:200px; }
+  th.sortable{ cursor:pointer; user-select:none; white-space:nowrap; }
+  th.sortable:hover{ color:var(--navy); }
+  #ftable tbody tr{ cursor:pointer; }
+  #ftable tbody tr:hover{ background:#f6f9fd; }
+  #ftable tbody tr.selrow{ background:#eef6ff; }
+  .mixrow{ display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+  .mixrow select{ flex:1; min-width:180px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; background:#fff; }
+  .mixrow input{ width:76px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; }
+  .btn{ border:1px solid var(--steel); background:#fff; color:var(--navy); border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer; }
+  .btn:hover{ background:#eef3fb; }
+  .btn.solid{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .result{ background:linear-gradient(180deg,#f0f8f3,#eaf6ef); border:1px solid #bfe0cd; border-radius:14px; padding:20px; text-align:center; }
+  .result .lbl{ text-transform:uppercase; letter-spacing:1px; font-size:11px; color:#3d7d5c; font-weight:700; }
+  .result .big{ font-size:40px; font-weight:800; color:var(--green); line-height:1.1; margin:2px 0; }
+  .result .yr{ font-size:20px; font-weight:700; color:var(--green); }
+  .result .brk{ font-size:12.5px; color:#547; margin-top:10px; }
+  .result .disc{ font-size:11px; color:#7a8596; font-style:italic; margin-top:8px; }
+  table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  th,td{ text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); }
+  th{ color:var(--navy); font-size:11px; text-transform:uppercase; letter-spacing:.5px; position:sticky; top:0; background:#fff; }
+  td.num,th.num{ text-align:right; font-variant-numeric:tabular-nums; }
+  .tablewrap{ max-height:420px; overflow:auto; border:1px solid var(--line); border-radius:10px; }
+  #fsearch{ width:100%; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px; margin-bottom:10px; }
+  .foot{ text-align:center; color:var(--muted); font-size:12px; margin-top:22px; }
+  .state{ text-align:center; padding:70px 20px; }
+  .state h1{ font-size:22px; }
+  .pill{ display:inline-block; background:#eef3fb; color:var(--steel); font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; }
+  @media print{
+    body{ background:#fff; } #conf{ background:#08214C !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .noprint{ display:none !important; } .tablewrap{ max-height:none; } #wm div{ color:rgba(8,33,76,.07); }
+  }
 </style>
 </head>
 <body>
-<div id="conf">Prepared by <b>MDconcierge</b> &middot; <b>PDRx</b> mail order pharmacy program &middot; confidential, for the addressed practice only</div>
-<div class="wrap">
-  <header class="h">
-    <span class="pill">PDRx Mail Order Pharmacy</span>
-    <h1>What the PDRx program is worth to your practice</h1>
-    <p class="sub">Workers' compensation medication, mailed to the patient, billed on your state's pharmacy fee schedule.</p>
-  </header>
-
-  <div class="card">
-    <h2>1. Your state</h2>
-    <p class="hint">Every state sets its own workers' comp pharmacy reimbursement, as a multiple of AWP. Pennsylvania pays AWP + 10%. Pick yours.</p>
-    <div class="row">
-      <div><label for="a-state">State</label><select id="a-state"></select></div>
-      <div><label for="a-mult">AWP multiplier</label><input id="a-mult" type="number" step="0.001" value="1.10"></div>
-    </div>
-    <div class="note" id="fs-note"></div>
-    <button class="linkish" id="fs-key-btn" onclick="toggleKey()">Show every state</button>
-    <div id="fs-key" style="display:none;margin-top:10px;"></div>
-  </div>
-
-  <div class="card">
-    <h2>2. What you would prescribe in a month</h2>
-    <p class="hint">Tick anything in the formulary below, as many as you like, and it lands here. Then set how many scripts a month. Nothing here is a commitment. Injection kits are shown for reference and cannot be added.</p>
-    <div id="mix"></div>
-  </div>
-
-  <div class="card">
-    <h2>3. The agreement</h2>
-    <p class="hint">These are the PDRx terms. They are shown so the arithmetic is yours to check, not something you have to take on trust.</p>
-    <div class="row">
-      <div><label for="a-disp">Pharmacy dispense fee</label><input id="a-disp" type="number" step="0.01" value="5.00"></div>
-      <div><label for="a-ship">Shipping per script</label><input id="a-ship" type="number" step="0.01" value="8.50"></div>
-      <div><label for="a-sh">Practice share of net</label><input id="a-sh" type="number" step="1" value="50"></div><div><label for="a-kit">Injection kit collection rate %</label><input id="a-kit" type="number" step="1" value="70"></div>
-    </div>
-    <div class="note">
-      <b>Claims purchase fee</b>, deducted from collections: actual wholesale cost of the medication, plus the $5.00 pharmacy dispense fee, plus actual shipping, which runs $7.00 to $10.00 and is modelled here at $8.50.<br>
-      <b>Management fee:</b> 50% of net income, where net income is gross collections less claims purchase fees. The practice keeps the other 50%.<br>
-      <b>Timing:</b> collections average about 60 days.
-    </div>
-  </div>
-
-  <div class="res" id="result"></div>
-
-  <div class="card">
-    <h2>The formulary, priced for your state</h2>
-    <p class="hint" id="form-hint"></p>
-    <div id="formtable" class="tablewrap"></div>
-  </div>
-
-  <p class="foot">Eric Weiscarger &middot; MDconcierge &middot; (570) 817-7569 &middot; eric@mdconcierge.net<br>
-  Good-faith estimate. Actual collections vary by utilization, payer mix and jurisdiction. Not legal or billing advice.</p>
+<div id="wm"></div>
+<div id="app" class="above">
+  <div class="state"><h1>Loading your analysis…</h1><p class="sub">One moment.</p></div>
 </div>
+
 <script>
+const FN = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/formulary-access";
+const app = document.getElementById('app');
+const money = n => '$' + Math.round(n||0).toLocaleString('en-US');
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let FORM = [{"id":1,"product":"Celecoxib 100mg","strength":"100mg","size":"30","route":"Oral","cost":4.5,"awp":138.5,"cat":"NSAIDS"},{"id":2,"product":"Celecoxib 100mg","strength":"100mg","size":"60","route":"Oral","cost":9,"awp":276.99,"cat":"NSAIDS"},{"id":3,"product":"Celecoxib 200mg","strength":"200mg","size":"30","route":"Oral","cost":4.8,"awp":227.17,"cat":"NSAIDS"},{"id":4,"product":"Celecoxib 200mg","strength":"200mg","size":"60","route":"Oral","cost":9.6,"awp":454.35,"cat":"NSAIDS"},{"id":5,"product":"Meloxicam 7.5mg","strength":"7.5mg","size":"30","route":"Oral","cost":0.51,"awp":95.06,"cat":"NSAIDS"},{"id":6,"product":"Meloxicam 7.5mg","strength":"7.5mg","size":"60","route":"Oral","cost":1.02,"awp":190.12,"cat":"NSAIDS"},{"id":7,"product":"Meloxicam 15mg","strength":"15mg","size":"30","route":"Oral","cost":0.57,"awp":145.34,"cat":"NSAIDS"},{"id":8,"product":"Ibuprofen/Famotidine 800mg/26.6mg","strength":"800mg/26.6mg","size":"90","route":"Oral","cost":153,"awp":998,"cat":"NSAIDS"},{"id":9,"product":"Tramadol 50mg","strength":"50mg","size":"60","route":"Oral","cost":0.9,"awp":47.76,"cat":"Pain"},{"id":10,"product":"Tramadol 50mg","strength":"50mg","size":"90","route":"Oral","cost":1.35,"awp":71.65,"cat":"Pain"},{"id":11,"product":"Tramadol ER 100mg","strength":"100mg","size":"30","route":"Oral","cost":11.7,"awp":109.16,"cat":"Pain"},{"id":12,"product":"Tramadol ER 200mg","strength":"200mg","size":"30","route":"Oral","cost":19.5,"awp":180.53,"cat":"Pain"},{"id":13,"product":"Tramadol ER 300mg","strength":"300mg","size":"30","route":"Oral","cost":28.8,"awp":304.23,"cat":"Pain"},{"id":14,"product":"Docusate 100mg","strength":"100mg","size":"60","route":"Oral","cost":0.96,"awp":1.25,"cat":"Stool Softeners"},{"id":15,"product":"Laxacin (docusate/senna) 50mg/8.6mg","strength":"50mg/8.6mg","size":"60","route":"Oral","cost":10.5,"awp":118.2,"cat":"Stool Softeners"},{"id":16,"product":"Narcosoft","strength":"","size":"60","route":"Oral","cost":27.72,"awp":242.05,"cat":"Stool Softeners"},{"id":17,"product":"Baclofen 10mg","strength":"10mg","size":"60","route":"Oral","cost":6.6,"awp":148.26,"cat":"Muscle Relaxants"},{"id":18,"product":"Baclofen 10mg","strength":"10mg","size":"90","route":"Oral","cost":9.9,"awp":222.39,"cat":"Muscle Relaxants"},{"id":19,"product":"Baclofen 20mg","strength":"20mg","size":"60","route":"Oral","cost":8.7,"awp":307.81,"cat":"Muscle Relaxants"},{"id":20,"product":"Baclofen 20mg","strength":"20mg","size":"90","route":"Oral","cost":13.05,"awp":461.72,"cat":"Muscle Relaxants"},{"id":21,"product":"Cyclobenzaprine 10mg","strength":"10mg","size":"60","route":"Oral","cost":1.5,"awp":69.45,"cat":"Muscle Relaxants"},{"id":22,"product":"Cyclobenzaprine 10mg","strength":"10mg","size":"90","route":"Oral","cost":2.25,"awp":104.17,"cat":"Muscle Relaxants"},{"id":23,"product":"Cyclobenzaprine 7.5mg","strength":"7.5mg","size":"30","route":"Oral","cost":21,"awp":188.33,"cat":"Muscle Relaxants"},{"id":24,"product":"Cyclobenzaprine 7.5mg","strength":"7.5mg","size":"60","route":"Oral","cost":42,"awp":376.66,"cat":"Muscle Relaxants"},{"id":25,"product":"Cyclobenzaprine 7.5mg","strength":"7.5mg","size":"90","route":"Oral","cost":63,"awp":564.99,"cat":"Muscle Relaxants"},{"id":26,"product":"Tizanidine tab 4mg","strength":"4mg","size":"60","route":"Oral","cost":3.6,"awp":87.91,"cat":"Muscle Relaxants"},{"id":27,"product":"Tizanidine tab 4mg","strength":"4mg","size":"90","route":"Oral","cost":5.4,"awp":131.86,"cat":"Muscle Relaxants"},{"id":28,"product":"Tizanidine cap 4mg","strength":"4mg","size":"60","route":"Oral","cost":16.2,"awp":206.19,"cat":"Muscle Relaxants"},{"id":29,"product":"Tizanidine cap 4mg","strength":"4mg","size":"90","route":"Oral","cost":24.3,"awp":309.29,"cat":"Muscle Relaxants"},{"id":30,"product":"Tizanidine cap 6mg","strength":"6mg","size":"60","route":"Oral","cost":15.6,"awp":309.29,"cat":"Muscle Relaxants"},{"id":31,"product":"Tizanidine cap 6mg","strength":"6mg","size":"90","route":"Oral","cost":23.4,"awp":463.94,"cat":"Muscle Relaxants"},{"id":32,"product":"Metaxaolone 800mg","strength":"800mg","size":"90","route":"Oral","cost":100.8,"awp":902.96,"cat":"Muscle Relaxants"},{"id":33,"product":"Methocarbamol 500 Mg","strength":"500 Mg","size":"120","route":"Oral","cost":8.51,"awp":60.95,"cat":"Muscle Relaxants"},{"id":34,"product":"Methocarbamol 750 Mg","strength":"750 Mg","size":"90","route":"Oral","cost":7.2,"awp":65.34,"cat":"Muscle Relaxants"},{"id":35,"product":"Duloxetine 30mg","strength":"30mg","size":"30","route":"Oral","cost":4.8,"awp":235.25,"cat":"Neuropathic Agents"},{"id":36,"product":"Duloxetine 30mg","strength":"30mg","size":"60","route":"Oral","cost":11.58,"awp":470.5,"cat":"Neuropathic Agents"},{"id":37,"product":"Duloxetine 60mg","strength":"60mg","size":"30","route":"Oral","cost":5.7,"awp":235.25,"cat":"Neuropathic Agents"},{"id":38,"product":"Duloxetine 60mg","strength":"60mg","size":"60","route":"Oral","cost":11.58,"awp":470.5,"cat":"Neuropathic Agents"},{"id":39,"product":"Gabapentin 100mg","strength":"100mg","size":"90","route":"Oral","cost":3.87,"awp":47.65,"cat":"Neuropathic Agents"},{"id":40,"product":"Gabapentin 300mg","strength":"300mg","size":"60","route":"Oral","cost":3.6,"awp":80.51,"cat":"Neuropathic Agents"},{"id":41,"product":"Gabapentin 300 mg","strength":"300 mg","size":"90","route":"Oral","cost":5.4,"awp":120.76,"cat":"Neuropathic Agents"},{"id":42,"product":"Gabapentin 400mg","strength":"400mg","size":"90","route":"Oral","cost":7.2,"awp":143.74,"cat":"Neuropathic Agents"},{"id":43,"product":"Gabapentin 600mg","strength":"600mg","size":"90","route":"Oral","cost":10.8,"awp":227.35,"cat":"Neuropathic Agents"},{"id":44,"product":"Pregabalin 75mg","strength":"75mg","size":"30","route":"Oral","cost":5.94,"awp":252.82,"cat":"Neuropathic Agents"},{"id":45,"product":"Pregabalin 75mg","strength":"75mg","size":"60","route":"Oral","cost":11.88,"awp":505.64,"cat":"Neuropathic Agents"},{"id":46,"product":"Pregabalin 75mg","strength":"75mg","size":"90","route":"Oral","cost":17.82,"awp":758.46,"cat":"Neuropathic Agents"},{"id":47,"product":"Zolpidem 5mg","strength":"5mg","size":"30","route":"Oral","cost":0.87,"awp":138.76,"cat":"Sleep"},{"id":48,"product":"Zolpidem 5mg","strength":"5mg","size":"60","route":"Oral","cost":1.74,"awp":277.52,"cat":"Sleep"},{"id":49,"product":"Zolpidem 10mg","strength":"10mg","size":"30","route":"Oral","cost":0.9,"awp":138.76,"cat":"Sleep"},{"id":50,"product":"Eszopiclone 2mg","strength":"2mg","size":"30","route":"Oral","cost":3.15,"awp":364.43,"cat":"Sleep"},{"id":51,"product":"Eszopiclone 3mg","strength":"3mg","size":"30","route":"Oral","cost":3.6,"awp":364.43,"cat":"Sleep"},{"id":52,"product":"Omeprazole 20mg","strength":"20mg","size":"30","route":"Oral","cost":2.4,"awp":129.01,"cat":"PPI Protectants"},{"id":53,"product":"Omeprazole 20mg","strength":"20mg","size":"60","route":"Oral","cost":4.8,"awp":285.02,"cat":"PPI Protectants"},{"id":54,"product":"Esomeprazole 20mg","strength":"20mg","size":"30","route":"Oral","cost":12.6,"awp":270.72,"cat":"PPI Protectants"},{"id":55,"product":"Esomeprazole 40mg","strength":"40mg","size":"30","route":"Oral","cost":12.6,"awp":270.72,"cat":"PPI Protectants"},{"id":56,"product":"Rabeprazole 20mg","strength":"20mg","size":"30","route":"Oral","cost":19.5,"awp":343.43,"cat":"PPI Protectants"},{"id":57,"product":"Ondansetron 4mg","strength":"4mg","size":"30","route":"Oral","cost":2.1,"awp":743.35,"cat":"Anti Nausea"},{"id":58,"product":"Methylprednisolone DP 4MG","strength":"4MG","size":"21","route":"Oral","cost":8.61,"awp":34.64,"cat":"Corticosteroid"},{"id":59,"product":"Zylotrol Patch 4% Lido / 1% Menthol","strength":"4% Lido / 1% Menthol","size":"30","route":"Topical","cost":119.9,"awp":1570.5,"cat":"Topicals"},{"id":60,"product":"Zylotrol Gel 4% Lido / 1% Menthol","strength":"4% Lido / 1% Menthol","size":"118.3ml","route":"Topical","cost":32.88,"awp":496,"cat":"Topicals"},{"id":61,"product":"Zylotrol Gel 4% Lido / 1% Menthol","strength":"4% Lido / 1% Menthol","size":"236.6ml","route":"Topical","cost":65.76,"awp":992,"cat":"Topicals"},{"id":62,"product":"Lidocaine oint 5%","strength":"5%","size":"50gm","route":"Topical","cost":14,"awp":380.93,"cat":"Topicals"},{"id":63,"product":"Lidocaine oint 5%","strength":"5%","size":"100gm","route":"Topical","cost":28,"awp":761.86,"cat":"Topicals"},{"id":64,"product":"Lidocaine patch 5%","strength":"5%","size":"30","route":"Topical","cost":90,"awp":280.81,"cat":"Topicals"},{"id":65,"product":"Diclofenac Gel 1%","strength":"1%","size":"100 gm","route":"Topical","cost":5.8,"awp":58.35,"cat":"Topicals"},{"id":66,"product":"Diclofenac Gel 1%","strength":"1%","size":"300 gm","route":"Topical","cost":17.4,"awp":175.05,"cat":"Topicals"},{"id":67,"product":"Diclofenac Gel 3%","strength":"3%","size":"100gm","route":"Topical","cost":109,"awp":1179.46,"cat":"Topicals"},{"id":68,"product":"Diclofenac pump 2%","strength":"2%","size":"112gm","route":"Topical","cost":200.48,"awp":2686.38,"cat":"Topicals"},{"id":69,"product":"Diclofenac soln 1.5%","strength":"1.5%","size":"150ml","route":"Topical","cost":72,"awp":689.77,"cat":"Topicals"},{"id":70,"product":"Diclonagel 4.5%Lidocaine/1%Diclofenac","strength":"4.5%Lidocaine/1%Diclofenac","size":"99gm","route":"Topical","cost":35.15,"awp":1173.33,"cat":"Topicals"},{"id":71,"product":"Hibiclens","strength":"","size":"236ml","route":"Topical","cost":5.42,"awp":5.54,"cat":"Pre/Post surgical combo"},{"id":72,"product":"Skarjel","strength":"","size":"50ml","route":"Topical","cost":49.65,"awp":240.56,"cat":"Pre/Post surgical combo"},{"id":73,"product":"Narcosoft","strength":"","size":"30","route":"Oral","cost":13.86,"awp":121.02,"cat":"Pre/Post surgical combo"},{"id":74,"product":"Ondansetron 4mg","strength":"4mg","size":"30","route":"Oral","cost":2.1,"awp":743.35,"cat":"Pre/Post surgical combo"},{"id":75,"product":"Mupirocin cream 2%","strength":"2%","size":"30gm","route":"Topical","cost":34.79,"awp":415.56,"cat":"Pre/Post surgical combo"}], REC = {};
+// Someone who skipped the sign-in gets the tool and the estimate, but not the price book.
+let HIDE_COST = false;
+
+function tokenFromUrl(){
+  const u = new URL(location.href);
+  return u.searchParams.get('t') || u.searchParams.get('token') || '';
+}
+
+function watermark(name, email){
+  const wm = document.getElementById('wm'); wm.innerHTML='';
+  const txt = (name||'Confidential') + '  ·  ' + (email||'') ;
+  for(let r=0;r<14;r++){ for(let c=0;c<4;c++){ const d=document.createElement('div'); d.textContent=txt; d.style.top=(r*130-60)+'px'; d.style.left=(c*360-120)+'px'; wm.appendChild(d); } }
+}
+
+function errScreen(reason, expires){
+  const map = {
+    expired: ["This link has expired","For an updated analysis, just reply to the email this link came from and I'll send a fresh one."],
+    revoked: ["This link is no longer active","Please reach out to Eric for an updated link."],
+    invalid: ["This link isn't valid","Double-check the link from your email, or reply and I'll resend it."],
+    missing: ["No access token","Open the link exactly as it appears in your email."],
+    error:   ["Something went wrong loading this","Please try again in a moment, or reply to the email for help."]
+  };
+  const m = map[reason] || map.error;
+  const exp = expires ? '<p class="sub">Expired '+new Date(expires).toLocaleDateString()+'.</p>' : '';
+  app.innerHTML = '<div class="state"><span class="pill">MDconcierge · PDRx Mail Order Pharmacy</span><h1>'+m[0]+'</h1>'+exp+'<p class="sub">'+m[1]+'</p><p class="foot">Eric Weiscarger · MDconcierge · eric@mdconcierge.net</p></div>';
+}
+
+// The link is meant to be shareable: a doctor will send it to a partner or his administrator and
+// they should get straight in. Everyone signs the guest book on the way, which costs the doctor
+// one click and a guest one line, and means every copy of this page carries the name of whoever
+// is looking at it. Remembered per device, so nobody is asked twice.
+const whoKey = t => 'pm:who:' + t;
+
+function identifyScreen(recipientName, practice, mode){
+  const who = esc(recipientName || 'you');
+  const guestForm = `
+    <div style="margin:18px auto 0;max-width:340px;text-align:left;">
+      <label style="display:block;font-size:12px;color:#5b6675;margin-bottom:4px;">Your name</label>
+      <input id="who-name" placeholder="Jane Miller" style="width:100%;padding:11px 12px;border:1px solid #cfd8e3;border-radius:9px;font-size:15px;box-sizing:border-box;margin-bottom:10px;">
+      <label style="display:block;font-size:12px;color:#5b6675;margin-bottom:4px;">Your email</label>
+      <input id="who-email" type="email" autocomplete="email" placeholder="you@practice.com" style="width:100%;padding:11px 12px;border:1px solid #cfd8e3;border-radius:9px;font-size:15px;box-sizing:border-box;">
+      <div id="who-msg" style="font-size:12px;color:#b4472f;min-height:16px;margin-top:6px;"></div>
+      <button id="who-go" style="width:100%;background:#08214C;color:#fff;border:none;border-radius:9px;padding:12px;font-weight:700;font-size:15px;cursor:pointer;">Open the analysis</button>
+      <div style="text-align:center;margin-top:10px;"><a href="#" id="who-skip" style="font-size:12.5px;color:#5b6675;">Skip and just open it</a></div>
+    </div>`;
+  const chooser = `
+    <div style="margin:18px auto 0;max-width:340px;">
+      <button id="who-me" style="width:100%;background:#08214C;color:#fff;border:none;border-radius:9px;padding:12px;font-weight:700;font-size:15px;cursor:pointer;">Continue as ${who}</button>
+      <button id="who-other" style="width:100%;margin-top:8px;background:#fff;color:#08214C;border:1px solid #6B9FD4;border-radius:9px;padding:11px;font-weight:600;font-size:14px;cursor:pointer;">I'm someone else</button>
+    </div>`;
+  app.innerHTML = '<div class="state"><span class="pill">MDconcierge · PDRx Mail Order Pharmacy</span>'
+    + '<h1>Workers\' compensation dispensing analysis</h1>'
+    + '<p class="sub">Prepared for <b>' + who + '</b>' + (practice ? ' · ' + esc(practice) : '') + '.</p>'
+    + (mode === 'guest'
+        ? '<p class="sub">Tell us who you are and it opens. This is shared with colleagues all the time, we just like to know who we are helping.</p>'
+        : '<p class="sub">Confidential and prepared for one practice. Feel free to share it with your partners or your staff, we just ask each person to say who they are.</p>')
+    + (mode === 'guest' ? guestForm : chooser)
+    + '<p class="foot">Eric Weiscarger · MDconcierge · eric@mdconcierge.net</p></div>';
+
+  if(mode === 'guest'){
+    const n = document.getElementById('who-name'), e2 = document.getElementById('who-email'), go = document.getElementById('who-go');
+    const submit = () => {
+      const nm=(n.value||'').trim(), em=(e2.value||'').trim();
+      if(!nm || !em || em.indexOf('@')<1){ document.getElementById('who-msg').textContent='Name and email, then you are in.'; return; }
+      go.disabled = true; go.textContent = 'Opening…';
+      unlock(tokenFromUrl(), {name:nm, email:em});
+    };
+    go.onclick = submit;
+    document.getElementById('who-skip').onclick = ev => { ev.preventDefault(); unlock(tokenFromUrl(), {anon:true}); };
+    [n,e2].forEach(el=>el.onkeydown = ev => { if(ev.key==='Enter') submit(); });
+    n.focus();
+  } else {
+    document.getElementById('who-me').onclick = () => unlock(tokenFromUrl(), {name:recipientName, self:true});
+    document.getElementById('who-other').onclick = () => identifyScreen(recipientName, practice, 'guest');
+  }
+}
+
+async function unlock(token, viewer){
+  const body = viewer ? { token, viewer } : { token };
+  let data;
+  try{
+    const r = await fetch(FN, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    data = await r.json();
+  }catch(e){ return errScreen('error'); }
+
+  if(data && data.ok){
+    if(viewer){ try{ localStorage.setItem(whoKey(token), JSON.stringify(viewer)); }catch(e){} }
+    FORM = data.formulary || []; REC = data.recipient || {};
+    const V = data.viewer || REC;
+    HIDE_COST = !!V.hide_cost;
+    watermark(V.name || REC.name, V.email || REC.email);
+    return render(data.expires_at);
+  }
+  const reason = (data && data.reason) || 'error';
+  if(reason === 'identify'){ return identifyScreen(data.recipient_name, data.practice, 'choose'); }
+  return errScreen(reason, data && data.expires_at);
+}
+
+// Lets a skipper change their mind and sign in without hunting for the original email.
+function reIdentify(){
+  const t = tokenFromUrl();
+  try{ localStorage.removeItem(whoKey(t)); }catch(e){}
+  identifyScreen(REC.name, REC.practice, 'guest');
+}
+
+async function boot(){
+  REC = { practice: 'your practice' };
+  watermark('PDRx mail order pharmacy', '');
+  render(null);
+}
+
+// ---- State workers' comp pharmacy fee schedules ------------------------------------------------
+// Every state sets its own WC pharmacy reimbursement. Most are a percentage of AWP, which is the
+// multiplier this model runs on: PA pays AWP + 10% (1.10), New York pays AWP - 12% (0.88).
+// These are the PHARMACY fee schedule rates, which is what this program bills under: the script
+// is filled and shipped by the mail-order pharmacy, not handed to the patient in the office. Some
+// states publish a separate, higher rate for a physician who dispenses in office (Florida pays a
+// dispensing practitioner AWP +12.5%); that rate does not apply here and is not used.
+// br/gr are the brand and generic multipliers; dfb/dfg are the per-script dispensing fees the
+// schedule pays out, shown but deliberately NOT added to the estimate, so it never overstates.
+// basis 'other' means the state does not price off AWP at all (usual and customary, "reasonable",
+// Medi-Cal, WAC). Those cannot honestly be reduced to a multiplier, so they say so instead.
+// Sources: Optum Workers' Comp Pharmacy Resource Guide, March 2026 and 2025 editions; MyMatrixx
+// regulatory rundowns 2026 for the CT, MS and AL changes. Verify before relying on it.
+const FS_ASOF = 'July 2026';
 const STATES = [
   {c:'AL',n:'Alabama',br:1.05,gr:1.05,dfb:11.71,dfg:15.22,r:'AWP + 5%'},
   {c:'AK',n:'Alaska',br:1.00,gr:1.00,dfb:5.00,dfg:10.00,r:'AWP (no percentage adjustment)'},
@@ -157,153 +256,318 @@ const STATES = [
   {c:'WI',n:'Wisconsin',br:1.00,gr:1.00,dfb:3.00,dfg:3.00,r:'AWP (no percentage adjustment)'},
   {c:'WY',n:'Wyoming',br:0.90,gr:0.90,dfb:5.00,dfg:5.00,r:'AWP - 10%'}
 ];
-const FS_ASOF = 'July 2026';
-const FORM = [{"cat":"NSAIDS","name":"Celecoxib","str":"100mg","size":"30","cost":4.5,"awp":138.5,"disp":5,"ship":7},{"cat":"NSAIDS","name":"Celecoxib","str":"100mg","size":"60","cost":9,"awp":276.99,"disp":5,"ship":7},{"cat":"NSAIDS","name":"Celecoxib","str":"200mg","size":"30","cost":4.8,"awp":227.17,"disp":5,"ship":7},{"cat":"NSAIDS","name":"Celecoxib","str":"200mg","size":"60","cost":9.6,"awp":454.35,"disp":5,"ship":7},{"cat":"NSAIDS","name":"Meloxicam","str":"7.5mg","size":"30","cost":0.51,"awp":95.06,"disp":5,"ship":7},{"cat":"NSAIDS","name":"Meloxicam","str":"7.5mg","size":"60","cost":1.02,"awp":190.12,"disp":5,"ship":7},{"cat":"NSAIDS","name":"Meloxicam","str":"15mg","size":"30","cost":0.57,"awp":145.34,"disp":5,"ship":7},{"cat":"NSAIDS","name":"Ibuprofen/Famotidine","str":"800mg/26.6mg","size":"90","cost":153,"awp":998,"disp":5,"ship":7},{"cat":"Pain","name":"Tramadol","str":"50mg","size":"60","cost":0.9,"awp":47.76,"disp":5,"ship":7},{"cat":"Pain","name":"Tramadol","str":"50mg","size":"90","cost":1.35,"awp":71.65,"disp":5,"ship":7},{"cat":"Pain","name":"Tramadol ER","str":"100mg","size":"30","cost":11.7,"awp":109.16,"disp":5,"ship":7},{"cat":"Pain","name":"Tramadol ER","str":"200mg","size":"30","cost":19.5,"awp":180.53,"disp":5,"ship":7},{"cat":"Pain","name":"Tramadol ER","str":"300mg","size":"30","cost":28.8,"awp":304.23,"disp":5,"ship":7},{"cat":"Stool Softeners","name":"Docusate","str":"100mg","size":"60","cost":0.96,"awp":1.25,"disp":5,"ship":7},{"cat":"Stool Softeners","name":"Laxacin (docusate/senna)","str":"50mg/8.6mg","size":"60","cost":10.5,"awp":118.2,"disp":5,"ship":7},{"cat":"Stool Softeners","name":"Narcosoft","str":"","size":"60","cost":27.72,"awp":242.05,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Baclofen","str":"10mg","size":"60","cost":6.6,"awp":148.26,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Baclofen","str":"10mg","size":"90","cost":9.9,"awp":222.39,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Baclofen","str":"20mg","size":"60","cost":8.7,"awp":307.81,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Baclofen","str":"20mg","size":"90","cost":13.05,"awp":461.72,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Cyclobenzaprine","str":"10mg","size":"60","cost":1.5,"awp":69.45,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Cyclobenzaprine","str":"10mg","size":"90","cost":2.25,"awp":104.17,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Cyclobenzaprine","str":"7.5mg","size":"30","cost":21,"awp":188.33,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Cyclobenzaprine","str":"7.5mg","size":"60","cost":42,"awp":376.66,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Cyclobenzaprine","str":"7.5mg","size":"90","cost":63,"awp":564.99,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Tizanidine tab","str":"4mg","size":"60","cost":3.6,"awp":87.91,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Tizanidine tab","str":"4mg","size":"90","cost":5.4,"awp":131.86,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Tizanidine cap","str":"4mg","size":"60","cost":16.2,"awp":206.19,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Tizanidine cap","str":"4mg","size":"90","cost":24.3,"awp":309.29,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Tizanidine cap","str":"6mg","size":"60","cost":15.6,"awp":309.29,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Tizanidine cap","str":"6mg","size":"90","cost":23.4,"awp":463.94,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Metaxaolone","str":"800mg","size":"90","cost":100.8,"awp":902.96,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Methocarbamol","str":"500 Mg","size":"120","cost":8.51,"awp":60.95,"disp":5,"ship":7},{"cat":"Muscle Relaxants","name":"Methocarbamol","str":"750 Mg","size":"90","cost":7.2,"awp":65.34,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Duloxetine","str":"30mg","size":"30","cost":4.8,"awp":235.25,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Duloxetine","str":"30mg","size":"60","cost":11.58,"awp":470.5,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Duloxetine","str":"60mg","size":"30","cost":5.7,"awp":235.25,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Duloxetine","str":"60mg","size":"60","cost":11.58,"awp":470.5,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Gabapentin","str":"100mg","size":"90","cost":3.87,"awp":47.65,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Gabapentin","str":"300mg","size":"60","cost":3.6,"awp":80.51,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Gabapentin","str":"300 mg","size":"90","cost":5.4,"awp":120.76,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Gabapentin","str":"400mg","size":"90","cost":7.2,"awp":143.74,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Gabapentin","str":"600mg","size":"90","cost":10.8,"awp":227.35,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Pregabalin","str":"75mg","size":"30","cost":5.94,"awp":252.82,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Pregabalin","str":"75mg","size":"60","cost":11.88,"awp":505.64,"disp":5,"ship":7},{"cat":"Neuropathic Agents","name":"Pregabalin","str":"75mg","size":"90","cost":17.82,"awp":758.46,"disp":5,"ship":7},{"cat":"Sleep","name":"Zolpidem","str":"5mg","size":"30","cost":0.87,"awp":138.76,"disp":5,"ship":7},{"cat":"Sleep","name":"Zolpidem","str":"5mg","size":"60","cost":1.74,"awp":277.52,"disp":5,"ship":7},{"cat":"Sleep","name":"Zolpidem","str":"10mg","size":"30","cost":0.9,"awp":138.76,"disp":5,"ship":7},{"cat":"Sleep","name":"Eszopiclone","str":"2mg","size":"30","cost":3.15,"awp":364.43,"disp":5,"ship":7},{"cat":"Sleep","name":"Eszopiclone","str":"3mg","size":"30","cost":3.6,"awp":364.43,"disp":5,"ship":7},{"cat":"PPI Protectants","name":"Omeprazole","str":"20mg","size":"30","cost":2.4,"awp":129.01,"disp":5,"ship":7},{"cat":"PPI Protectants","name":"Omeprazole","str":"20mg","size":"60","cost":4.8,"awp":285.02,"disp":5,"ship":7},{"cat":"PPI Protectants","name":"Esomeprazole","str":"20mg","size":"30","cost":12.6,"awp":270.72,"disp":5,"ship":7},{"cat":"PPI Protectants","name":"Esomeprazole","str":"40mg","size":"30","cost":12.6,"awp":270.72,"disp":5,"ship":7},{"cat":"PPI Protectants","name":"Rabeprazole","str":"20mg","size":"30","cost":19.5,"awp":343.43,"disp":5,"ship":7},{"cat":"Anti Nausea","name":"Ondansetron","str":"4mg","size":"30","cost":2.1,"awp":743.35,"disp":5,"ship":7},{"cat":"Corticosteroid","name":"Methylprednisolone DP","str":"4MG","size":"21","cost":8.61,"awp":34.64,"disp":5,"ship":7},{"cat":"Topicals","name":"Zylotrol Patch","str":"4% Lido / 1% Menthol","size":"30","cost":119.9,"awp":1570.5,"disp":5,"ship":7},{"cat":"Topicals","name":"Zylotrol Gel","str":"4% Lido / 1% Menthol","size":"118.3ml","cost":32.88,"awp":496,"disp":5,"ship":7},{"cat":"Topicals","name":"Zylotrol Gel","str":"4% Lido / 1% Menthol","size":"236.6ml","cost":65.76,"awp":992,"disp":5,"ship":7},{"cat":"Topicals","name":"Lidocaine oint","str":"5%","size":"50gm","cost":14,"awp":380.93,"disp":5,"ship":7},{"cat":"Topicals","name":"Lidocaine oint","str":"5%","size":"100gm","cost":28,"awp":761.86,"disp":5,"ship":7},{"cat":"Topicals","name":"Lidocaine patch","str":"5%","size":"30","cost":90,"awp":280.81,"disp":5,"ship":7},{"cat":"Topicals","name":"Diclofenac Gel","str":"1%","size":"100 gm","cost":5.8,"awp":58.35,"disp":5,"ship":7},{"cat":"Topicals","name":"Diclofenac Gel","str":"1%","size":"300 gm","cost":17.4,"awp":175.05,"disp":5,"ship":7},{"cat":"Topicals","name":"Diclofenac Gel","str":"3%","size":"100gm","cost":109,"awp":1179.46,"disp":5,"ship":7},{"cat":"Topicals","name":"Diclofenac pump","str":"2%","size":"112gm","cost":200.48,"awp":2686.38,"disp":5,"ship":7},{"cat":"Topicals","name":"Diclofenac soln","str":"1.5%","size":"150ml","cost":72,"awp":689.77,"disp":5,"ship":7},{"cat":"Topicals","name":"Diclonagel","str":"4.5%Lidocaine/1%Diclofenac","size":"99gm","cost":35.15,"awp":1173.33,"disp":5,"ship":7},{"cat":"Pre/Post surgical combo","name":"Hibiclens","str":"","size":"236ml","cost":5.42,"awp":5.54,"disp":5,"ship":7},{"cat":"Pre/Post surgical combo","name":"Skarjel","str":"","size":"50ml","cost":49.65,"awp":240.56,"disp":5,"ship":7},{"cat":"Pre/Post surgical combo","name":"Narcosoft","str":"","size":"30","cost":13.86,"awp":121.02,"disp":5,"ship":7},{"cat":"Pre/Post surgical combo","name":"Ondansetron","str":"4mg","size":"30","cost":2.1,"awp":743.35,"disp":5,"ship":7},{"cat":"Pre/Post surgical combo","name":"Mupirocin cream","str":"2%","size":"30gm","cost":34.79,"awp":415.56,"disp":5,"ship":7},{"cat":"Injection Kits","name":"Accucaine","str":"","size":"76420-0715-01","cost":0,"awp":254.35,"disp":5,"ship":7,"kit":true},{"cat":"Injection Kits","name":"Betaloan SUIK","str":"6mg/mL 5mL","size":"76420-0240-01","cost":0,"awp":515.35,"disp":5,"ship":7,"kit":true},{"cat":"Injection Kits","name":"DMT SUIK","str":"10mg/mL 1mL","size":"76420-0270-01","cost":0,"awp":216.75,"disp":5,"ship":7,"kit":true},{"cat":"Injection Kits","name":"DoubleDex","str":"(2) 10mg/mL 1mL","size":"76420-0766-01","cost":0,"awp":598,"disp":5,"ship":7,"kit":true},{"cat":"Injection Kits","name":"Marvona SUIK","str":"0.5% 10mL","size":"76420-0230-01","cost":0,"awp":290.75,"disp":5,"ship":7,"kit":true},{"cat":"Injection Kits","name":"Medroloan SUIK","str":"40mg 1mL","size":"76420-0260-01","cost":0,"awp":314.75,"disp":5,"ship":7,"kit":true},{"cat":"Injection Kits","name":"Medroloan II SUIK","str":"(2) 40mg 1mL","size":"76420-0262-01","cost":0,"awp":573,"disp":5,"ship":7,"kit":true},{"cat":"Injection Kits","name":"Toronova SUIK","str":"30mg/mL 1mL","size":"76420-0250-01","cost":0,"awp":325.25,"disp":5,"ship":7,"kit":true},{"cat":"Injection Kits","name":"Toronova II SUIK","str":"(2) 30mg/mL 1mL","size":"76420-0252-01","cost":0,"awp":418.5,"disp":5,"ship":7,"kit":true},{"cat":"Injection Kits","name":"Triloan SUIK","str":"40mg 1mL","size":"76420-0220-01","cost":0,"awp":461,"disp":5,"ship":7,"kit":true},{"cat":"Injection Kits","name":"Triloan II SUIK","str":"(2) 40mg 1mL","size":"76420-0222-01","cost":0,"awp":575,"disp":5,"ship":7,"kit":true}];
-// PDRx is licensed in every state, so the whole table is selectable rather than a served subset.
-const SERVED = STATES;
+// The states the pharmacy is actually licensed in. The full table above is kept intact so adding
+// a state later is one edit here, not a re-research job.
+// PDRx is licensed in every state, so the whole schedule table is selectable.
+const ACTIVE = STATES.map(s => s.c);
+const SERVED = STATES.filter(s => ACTIVE.includes(s.c));
+
 let ST = STATES.find(s=>s.c==='PA');
-// Every line in this formulary is dispensed as a generic, so the generic multiplier is the one
-// that applies. Offering a brand/generic switch would let someone price a generic basket at a
-// brand rate and overstate the result.
+// Every product in this formulary dispenses as a generic: the brand names in the product column
+// are the AWP reference label, and acquisition cost sits at a median 5% of AWP, which no brand
+// does. So the generic rate always applies and there is no basis to ask the doctor to choose.
+// Offering the choice let someone apply a brand rate to a generic basket and understate himself
+// by 20-25% in Louisiana or Texas.
 const DRUGTYPE = 'gr';
 
-const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const money = n => (n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
-const money2 = n => '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-const stateByCode = c => STATES.find(s=>s.c===String(c||'').toUpperCase());
-// A state with no published AWP schedule is modelled at flat AWP and labelled as an assumption,
-// rather than left blank or quietly invented.
-const stMult = s => s ? (s.basis==='other' ? 1 : s[DRUGTYPE]) : 1;
+function stateByCode(c){ return STATES.find(s=>s.c===String(c||'').toUpperCase()); }
+// States with no published AWP schedule (usual and customary, "reasonable", prevailing community
+// rate) fall back to flat AWP as the working assumption rather than leaving the doctor with a
+// blank. It is still labelled as an assumption, because it is one.
+function stMult(s,t){ return s ? (s.basis==='other' ? 1 : (t==='br'?s.br:s.gr)) : null; }
+function basisLabel(){ return ST ? (ST.n + ' basis') : 'custom basis'; }
 
+// Switching state rewrites the multiplier and every label that names a state, so the page can
+// never show Pennsylvania wording while running New York math.
 function applyState(code, keepMult){
   const s = stateByCode(code); if(!s) return;
   ST = s;
-  if(!keepMult) document.getElementById('a-mult').value = stMult(s);
+  const m = stMult(s, DRUGTYPE);
+  const inp = document.getElementById('a-mult');
+  if(inp && !keepMult && m != null) inp.value = m;
+  // The state's own dispensing fee is extra REIMBURSEMENT the schedule pays out, which is a
+  // different thing from the per-script fee the practice pays under the program. It stays
+  // informational and out of the math, which keeps the estimate conservative.
+  const df = DRUGTYPE==='br' ? s.dfb : s.dfg;
   const note = document.getElementById('fs-note');
-  const df = s.dfg;
-  if(s.basis==='other'){
-    note.innerHTML = '<b>'+esc(s.n)+':</b> '+esc(s.r)+'. With no published AWP schedule to follow, this is modelled at <b>flat AWP</b> as a working assumption. Change the multiplier to whatever you actually collect.';
-  } else {
-    note.innerHTML = '<b>'+esc(s.n)+':</b> '+esc(s.r)
-      + (df ? ' &middot; the schedule also pays a '+money2(df)+' dispensing fee per script, deliberately left out of the estimate below' : '')
-      + ' &middot; generic rate '+stMult(s)+'&times; applied';
+  if(note){
+    if(s.basis==='other'){
+      note.innerHTML = '<b>'+esc(s.n)+':</b> '+esc(s.r)+'. With no published AWP schedule to follow, this is modelled at <b>flat AWP</b> as a working assumption. Change it to whatever you actually collect.';
+      note.style.color = '';
+    } else {
+      const gr = s.gr.toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
+      const br = s.br.toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
+      note.innerHTML = '<b>'+esc(s.n)+':</b> '+esc(s.r)
+        + (df ? ' &middot; the schedule also pays a $'+df.toFixed(2)+' dispensing fee per script, left out of the estimate below' : '')
+        + ' &middot; generic rate '+gr+'&times; applied'
+        + (s.br!==s.gr ? ' (its brand rate is '+br+'&times;, which does not apply here)' : '');
+      note.style.color = '';
+    }
   }
+  ['basis-sub','basis-foot','basis-disc'].forEach(id=>{ const e=document.getElementById(id); if(e) e.textContent = basisLabel(); });
+  const fh=document.getElementById('basis-form');
+  if(fh) fh.textContent = FORM.length+' products · '+s.c+' reimbursement = '+m+' × MFG AWP'+(s.basis==='other'?' (assumed)':'');
+  // The reimbursement column header carries the state code, and it is rebuilt from ST inside
+  // renderFormHead, so refreshing the table is enough to relabel it.
   applyForm(); compute();
 }
+function fsKeyHtml(){
+  const rows = SERVED.map(s=>{
+    const m = stMult(s,'gr');
+    const mult = s.basis==='other' ? '1 <span style="color:var(--muted);">(assumed)</span>'
+      : (s.br===s.gr ? String(s.br) : (s.br+' / '+s.gr));
+    return '<tr><td>'+esc(s.n)+'</td><td>'+mult+'</td><td style="color:var(--muted);">'+esc(s.r)+'</td></tr>';
+  }).join('');
+  return '<div class="tablewrap"><table><thead><tr><th>State</th><th>Multiplier (brand / generic)</th><th>Fee schedule rule</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
 function toggleKey(){
-  const b=document.getElementById('fs-key'), t=document.getElementById('fs-key-btn');
+  const b=document.getElementById('fs-key'); if(!b) return;
   const open = b.style.display !== 'none';
   b.style.display = open ? 'none' : 'block';
-  t.textContent = open ? 'Show every state' : 'Hide the state key';
+  const t=document.getElementById('fs-key-btn'); if(t) t.textContent = open ? 'Show all states' : 'Hide state key';
 }
-function fsKeyHtml(){
-  const rows = SERVED.map(s=>'<tr><td>'+esc(s.n)+'</td><td class="n">'+(s.basis==='other'?'1 (assumed)':s.gr)+'</td><td style="color:var(--muted);white-space:normal;">'+esc(s.r)+'</td></tr>').join('');
-  return '<div class="tablewrap"><table><thead><tr><th>State</th><th class="n">Multiplier</th><th>Fee schedule rule</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
-    + '<p class="disc">Pharmacy fee schedule rates as of '+FS_ASOF+'. Sources: Optum Workers\' Compensation Pharmacy Resource Guide, MyMatrixx regulatory updates. Verify before relying on it.</p>';
+
+function render(expires){
+  const forName = REC.practice ? (REC.practice) : (REC.name||'your practice');
+  const expTxt = expires ? new Date(expires).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '';
+  const oral = FORM.filter(f=>f.route==='Oral');
+  const top  = FORM.filter(f=>f.route!=='Oral');
+  const opts = '<option value="">Select a medication</option>'
+    + '<optgroup label="Oral">'    + oral.map(f=>`<option value="${f.id}">${esc(f.product)}</option>`).join('') + '</optgroup>'
+    + '<optgroup label="Topical">' + top.map(f=>`<option value="${f.id}">${esc(f.product)}</option>`).join('')  + '</optgroup>';
+  window._OPTS = opts;
+
+  app.innerHTML = `
+  <div id="conf">🔒 <b>CONFIDENTIAL</b> · Prepared exclusively for <b>${esc(REC.name||'')}</b>${REC.practice?' · '+esc(REC.practice):''}. Not for distribution.${expTxt?' This private link expires <b>'+expTxt+'</b>.':''}</div>
+  <div class="wrap">
+    <header class="h">
+      <div class="kicker">MDconcierge · PDRx Mail Order Pharmacy</div>
+      <h1>Workers' Compensation Medication Dispensing Analysis</h1>
+      <div class="sub">Prepared for <b>${esc(forName)}</b> · <span id="basis-sub">Pennsylvania basis</span></div>
+    </header>
+
+    <div class="card">
+      <h2>How to use this</h2>
+      <p class="hint" style="margin-bottom:0;">Build your own medication mix below and the estimated practice revenue updates instantly. Every assumption is editable. The defaults are intentionally conservative (oral scripts modeled at 80% collections, topicals at 70%, and your practice keeping 65% of net). The practice carries the cost of the medication plus a per-Rx dispensing fee and shipping, all deducted before the split. The full formulary, including product cost, is at the bottom.</p>
+    </div>
+
+    <div class="card">
+      <h2>Assumptions</h2>
+      <p class="hint">Editable. Pick your state and the multiplier follows its workers' compensation pharmacy fee schedule, or type your own number over it.</p>
+      <div class="assume">
+        <label>Patients / month<input id="a-pat" type="number" value="100" oninput="compute()"></label>
+        <label>State<select id="a-state" onchange="applyState(this.value)">${SERVED.map(s=>`<option value="${s.c}">${esc(s.n)}</option>`).join('')}</select></label>
+        <label>AWP multiplier<input id="a-mult" type="number" step="0.001" value="1.1" oninput="multChanged()"></label>
+        <label>Dispensing fee / Rx (cost)<input id="a-df" type="number" step="0.01" value="5.00" oninput="compute()"></label>
+        <label>Shipping / Rx (cost)<input id="a-ship" type="number" step="0.01" value="8.50" oninput="compute()"></label>
+        <label>Oral collection %<input id="a-oc" type="number" value="80" oninput="compute()"></label>
+        <label>Topical collection %<input id="a-tc" type="number" value="70" oninput="compute()"></label>
+        <label>Practice share %<input id="a-sh" type="number" value="50" oninput="compute()"></label>
+      </div>
+      <p class="hint" style="margin:8px 0 0;">Every product here dispenses as a <b>generic</b>, so your state's generic rate is applied throughout. Brand names in the formulary are the AWP reference, not what ships.</p>
+      <p class="hint" id="fs-note" style="margin:6px 0 0;"></p>
+      <p class="hint" id="df-note" style="margin:6px 0 0;"></p>
+      <p class="hint noprint" style="margin:8px 0 0;">
+        <button id="fs-key-btn" class="btn" onclick="toggleKey()">Show all states</button>
+        <span style="margin-left:8px;">The ${SERVED.length} states we are licensed in. Pharmacy fee schedule rates as of ${FS_ASOF}; they change, so confirm your state before relying on it.</span>
+      </p>
+      <div id="fs-key" style="display:none;margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Your formulary mix</h2>
+      <p class="hint">Add the medications you'd realistically dispense. "Units per patient" is how many of that item an average patient receives each month.</p>
+      <div id="mix"></div>
+      <button class="btn noprint" onclick="addLine()">+ Add medication</button>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <div style="text-align:center;margin:16px 0;" class="noprint">
+      <button class="btn solid" onclick="window.print()">⬇ Save / print this analysis</button>
+    </div>
+
+    <div class="card">
+      <h2>Full formulary <span id="basis-form" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;">· ${FORM.length} products</span></h2>
+      ${HIDE_COST?`<p class="hint" style="margin:0 0 10px;">Product cost is left out of this copy because the sign-in was skipped. <a href="#" onclick="reIdentify();return false;" style="color:var(--steel);">Add your name and email</a> and it appears.</p>`:''}
+      <p class="hint noprint" style="margin:0 0 8px;">Filter and sort to find what you dispense, tick the ones you want, then add them to your mix in one go. Click any column heading to sort.</p>
+      <div class="fctl noprint">
+        <input id="fsearch" placeholder="Search product, category, or route…" oninput="applyForm()">
+        <select id="fcat" onchange="applyForm()">${['<option value="">All categories</option>'].concat([...new Set(FORM.map(f=>f.category).filter(Boolean))].sort().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`)).join('')}</select>
+        <select id="froute" onchange="applyForm()"><option value="">All routes</option><option value="Oral">Oral</option><option value="Topical">Topical</option></select>
+        <button class="btn" onclick="clearForm()">Clear</button>
+      </div>
+      <div class="tablewrap">
+        <table id="ftable">
+          <thead id="fhead"></thead>
+          <tbody id="fbody"></tbody>
+        </table>
+      </div>
+      <div id="selbar" class="noprint" style="display:none;"></div>
+    </div>
+
+    <p class="foot">Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. <span id="basis-foot">Pennsylvania basis</span>. Fee schedule data as of ${FS_ASOF}.<br>
+    Eric Weiscarger · MDconcierge · <a href="mailto:eric@mdconcierge.net" style="color:var(--steel);">eric@mdconcierge.net</a> · mdconcierge.net</p>
+  </div>`;
+
+  document.getElementById('fs-key').innerHTML = fsKeyHtml();
+  renderFormHead();
+  // Default to the doctor's own state when the CRM knows it, so the numbers are right on arrival.
+  // Only default to their own state if we actually serve it, otherwise PA.
+  const rc = String(REC.state||'').toUpperCase();
+  const home = ACTIVE.includes(rc) ? rc : 'PA';
+  document.getElementById('a-state').value = home;
+  addLine(); addLine();
+  applyState(home);
 }
-const label = d => d.name + (d.str?' '+d.str:'') + (d.size?' · '+d.size:'');
-// The basket is chosen by ticking rows in the formulary itself, so a physician picks from what he
-// can see priced rather than hunting the same product inside a dropdown. Index to scripts a month.
-const SEL = new Map();
-function toggleSel(i){
-  const d=FORM[i]; if(!d || d.kit) return;   // kits are reference only and cannot be added
-  if(SEL.has(i)) SEL.delete(i); else SEL.set(i, 10);
-  renderBasket(); applyForm(); compute();
+
+function addLine(){
+  const box = document.getElementById('mix'); if(!box) return;
+  const d = document.createElement('div'); d.className='mixrow';
+  d.innerHTML = `<select onchange="compute()">${window._OPTS}</select>
+    <input type="number" value="1" min="0" step="0.5" title="units per patient / month" oninput="compute()">
+    <button class="btn noprint" onclick="this.closest('.mixrow').remove();compute()" title="remove">✕</button>`;
+  box.appendChild(d);
 }
-function setQty(i, v){
-  const n=parseFloat(v);
-  SEL.set(i, Number.isFinite(n)&&n>=0 ? n : 0);
-  compute();
-}
-function clearBasket(){ SEL.clear(); renderBasket(); applyForm(); compute(); }
-function renderBasket(){
-  const box=document.getElementById('mix');
-  if(!SEL.size){
-    box.innerHTML='<p class="hint" style="margin:0;">Nothing chosen yet. Tick anything in the formulary below and it appears here, as many as you like.</p>';
-    return;
-  }
-  let html='';
-  for(const [i,units] of SEL){
-    const d=FORM[i];
-    html+='<div class="mixrow"><span style="flex:3;font-size:14px;">'+esc(label(d))+'</span>'
-      + '<input type="number" min="0" step="1" value="'+units+'" oninput="setQty('+i+',this.value)" title="scripts per month">'
-      + '<button title="remove" onclick="toggleSel('+i+')">&times;</button></div>';
-  }
-  html+='<button class="linkish" style="margin-top:6px;" onclick="clearBasket()">Clear all</button>';
-  box.innerHTML=html;
-}
-// One line of the model, so the table and the totals can never disagree about the arithmetic.
-function lineEconomics(d, mult, disp, ship, kitRate){
-  // Injection kits are modelled at a deliberately conservative share of the schedule amount.
-  const collects = (Number(d.awp)||0) * mult * (d.kit ? kitRate : 1);
-  const purchase = (Number(d.cost)||0) + disp + ship;
-  const net = collects - purchase;
-  return { collects, purchase, net };
-}
-function applyForm(){
-  const mult=parseFloat(document.getElementById('a-mult').value)||1;
-  const kitRate=(parseFloat(document.getElementById('a-kit').value)||0)/100;
-  const disp=parseFloat(document.getElementById('a-disp').value)||0;
-  const ship=parseFloat(document.getElementById('a-ship').value)||0;
-  let html='<table><thead><tr><th style="width:34px;"></th><th>Medication</th><th class="n">Qty</th><th class="n">Cost</th><th class="n">AWP</th><th class="n">Collects ('+esc(ST.c)+')</th><th class="n">Claim purchase fee</th><th class="n">Net</th><th class="n">Practice 50%</th></tr></thead><tbody>';
-  let cat=null;
-  const share=(parseFloat(document.getElementById('a-sh').value)||0)/100;
-  FORM.forEach((d,i)=>{
-    if(d.cat!==cat){
-      html+='<tr class="cat"><td colspan="9">'+esc(d.cat)
-        + (d.kit ? ' &middot; <span style="text-transform:none;letter-spacing:0;font-weight:600;">reference only, modelled at '+Math.round(kitRate*100)+'% of the schedule amount and not included in the estimate above</span>' : '')
-        + '</td></tr>';
-      cat=d.cat;
-    }
-    const e=lineEconomics(d,mult,disp,ship,kitRate);
-    // Kits show what the schedule pays and nothing more. Acquisition cost is not published on the
-    // EnovaRX sheets, so a net or a practice share for them would be arithmetic on a missing number.
-    if(d.kit){
-      html+='<tr><td></td><td>'+esc(d.name+(d.str?' '+d.str:''))+'</td><td class="n" style="color:var(--muted);font-size:12px;">'+esc(d.size)+'</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n">'+money2(d.awp)+'</td><td class="n">'+money2(e.collects)+'</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n" style="color:var(--muted);">&mdash;</td><td class="n" style="color:var(--muted);">&mdash;</td></tr>';
-    } else {
-      html+='<tr'+(SEL.has(i)?' style="background:#f2fbf6;"':'')+'><td style="text-align:center;"><input type="checkbox" style="width:16px;height:16px;cursor:pointer;" '+(SEL.has(i)?'checked':'')+' onchange="toggleSel('+i+')"></td><td>'+esc(d.name+(d.str?' '+d.str:''))+'</td><td class="n">'+esc(d.size)+'</td><td class="n">'+money2(d.cost)+'</td><td class="n">'+money2(d.awp)+'</td><td class="n">'+money2(e.collects)+'</td><td class="n">'+money2(e.purchase)+'</td><td class="n">'+money2(e.net)+'</td><td class="n"><b>'+money2(e.net*share)+'</b></td></tr>';
-    }
-  });
-  document.getElementById('formtable').innerHTML=html+'</tbody></table>';
-  document.getElementById('form-hint').textContent =
-    FORM.filter(d=>!d.kit).length+' medications priced, plus '+FORM.filter(d=>d.kit).length+' injection kits shown for reference · '+ST.n+' reimbursement = '+mult+' × AWP · claim purchase fee = wholesale cost + '+money2(disp)+' dispense + '+money2(ship)+' shipping';
-}
+
+function fById(id){ return FORM.find(f=>String(f.id)===String(id)); }
+
+// Typing over the multiplier by hand has to move the formulary column too, not just the headline.
+function multChanged(){ compute(); filterForm(); }
+
 function compute(){
   const num = id => { const e=document.getElementById(id); return e?(parseFloat(e.value)||0):0; };
-  const mult=num('a-mult'), disp=num('a-disp'), ship=num('a-ship'), share=num('a-sh')/100, kitRate=num('a-kit')/100;
-  let gross=0, purchase=0, scripts=0, lines=0;
-  for(const [i,units] of SEL){
-    const d=FORM[i];
-    if(!d||!units) continue;
-    const e=lineEconomics(d,mult,disp,ship,kitRate);
-    gross+=e.collects*units; purchase+=e.purchase*units; scripts+=units; lines++;
-  }
-  const net=gross-purchase, mgmt=net*(1-share), practice=net*share;
-  document.getElementById('result').innerHTML =
-    '<div class="lbl">Estimated practice share, PDRx program</div>'
-    + '<div class="big">'+money(practice)+'<span style="font-size:15px;color:#547;font-weight:400;"> / month</span></div>'
-    + '<div class="yr">'+money(practice*12)+' / year</div>'
-    + '<div class="stepwrap">'
-    +   '<div class="step"><span>Gross collections &middot; '+scripts+' script'+(scripts===1?'':'s')+' at '+ST.c+' rates</span><b>'+money2(gross)+'</b></div>'
-    +   '<div class="step"><span>Less claims purchase fees &middot; wholesale cost, dispense and shipping</span><b>-'+money2(purchase)+'</b></div>'
-    +   '<div class="step"><span>Net income</span><b>'+money2(net)+'</b></div>'
-    +   '<div class="step"><span>Less management fee &middot; '+Math.round((1-share)*100)+'% of net</span><b>-'+money2(mgmt)+'</b></div>'
-    +   '<div class="step tot"><span><b>The practice keeps</b></span><b>'+money2(practice)+' / month</b></div>'
-    + '</div>'
-    + '<div class="disc">'+(lines?lines+' medication'+(lines===1?'':'s')+' modelled. ':'Add a medication above to see the figures. ')
-    + 'Collections average about 60 days. '+esc(ST.n)+' basis'+(ST.basis==='other'?', modelled at flat AWP as an assumption':'')+'.</div>';
-}
-(function init(){
-  const sel=document.getElementById('a-state');
-  sel.innerHTML = STATES.map(s=>'<option value="'+s.c+'"'+(s.c==='PA'?' selected':'')+'>'+esc(s.n)+'</option>').join('');
-  sel.onchange = e => applyState(e.target.value);
-  ['a-mult','a-disp','a-ship','a-sh','a-kit'].forEach(id=>{
-    document.getElementById(id).oninput = () => { applyForm(); compute(); };
+  const patients=num('a-pat'), mult=num('a-mult'), oc=num('a-oc')/100, tc=num('a-tc')/100, share=num('a-sh')/100;
+  const fee=num('a-df'), ship=num('a-ship');
+  let oAwp=0,oCost=0,tAwp=0,tCost=0,oScripts=0,tScripts=0; const lines=[];
+  document.querySelectorAll('#mix .mixrow').forEach(row=>{
+    const id=(row.querySelector('select')||{}).value; const units=parseFloat((row.querySelector('input')||{}).value)||0;
+    const f=fById(id); if(!f||!units) return;
+    const paAwp=(Number(f.awp)||0)*mult, extAwp=units*paAwp, extCost=units*(Number(f.cost)||0);
+    if(f.route==='Oral'){ oAwp+=extAwp; oCost+=extCost; oScripts+=units; } else { tAwp+=extAwp; tCost+=extCost; tScripts+=units; }
+    lines.push(f.product);
   });
-  document.getElementById('fs-key').innerHTML = fsKeyHtml();
-  applyState('PA');
-  renderBasket();
-})();
+  // Dispensing and shipping are charges against the practice, not something it collects, and both
+  // are per Rx order rather than per medication: a patient on five drugs carries one $6 dispensing
+  // fee and one $6 shipping charge, not five of each.
+  const oGross=oAwp*patients*oc, tGross=tAwp*patients*tc;
+  // Under PDRx the dispense fee and shipping are part of the claims purchase fee on every script,
+  // not one charge per patient order, which is how the formulary sheet prices them.
+  const feeCost=(oScripts+tScripts)*patients*(fee+ship);
+  const gross=oGross+tGross, cost=(oCost+tCost)*patients+feeCost, net=gross-cost, practice=net*share;
+  // Say plainly that the fee is the practice's cost and that it is already taken out, rather than
+  // leaving it to be discovered inside a breakdown line.
+  const dfn=document.getElementById('df-note');
+  if(dfn){
+    dfn.innerHTML = (fee||ship)
+      ? '<b>Claims purchase fee, per script:</b> the wholesale cost of the medication plus $'+fee.toFixed(2)+' dispensing and $'+ship.toFixed(2)+' shipping, deducted from collections. Shipping runs $7.00 to $10.00 and is modelled here at $'+ship.toFixed(2)+'. Collections average about 60 days.'
+      : '<b>Dispensing and shipping:</b> none applied. Set them above if your agreement includes them.';
+  }
+  const el=document.getElementById('result'); if(!el) return;
+  el.innerHTML = `
+    <div class="lbl">Estimated practice ancillary revenue</div>
+    <div class="big">${money(practice)}<span style="font-size:15px;color:#547;font-weight:400;"> / month</span></div>
+    <div class="yr">${money(practice*12)} / year</div>
+    <div class="brk">Gross collections ${money(gross)}/mo · Claims purchase fees ${money(cost)}/mo${feeCost?' (includes '+money(feeCost)+'/mo of dispensing and shipping)':''} · Net income ${money(net)}/mo · Management fee ${money(net-practice)}/mo · Practice keeps ${Math.round(share*100)}% of net${lines.length?' · '+lines.length+' medication'+(lines.length>1?'s':''):''}</div>
+    <div class="disc">${(fee||ship)?('Net of the $'+(fee+ship).toFixed(2)+' per Rx the practice pays for dispensing and shipping. '):''}Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. <span id="basis-disc">${esc(basisLabel())}</span>.</div>`;
+}
+
+// Sorting, filtering, and picking straight off the formulary. Ninety products is too many to
+// hunt through in a dropdown, so the table itself is the picker: narrow it down, tick what you
+// dispense, add the lot in one click.
+let FSORT = { key:'product', dir:1 };
+const FSEL = new Set();
+const curMult = () => { const el=document.getElementById('a-mult'); return el ? (parseFloat(el.value)||0) : 1.1; };
+const reimbOf = f => (Number(f.awp)||0) * curMult();
+
+function formCols(){
+  return [
+    {k:'product', label:'Product'},
+    {k:'category',label:'Category'},
+    {k:'route',   label:'Route'},
+    {k:'awp',     label:'MFG AWP', num:true},
+  ].concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}])
+   .concat([{k:'reimb', label:(ST?ST.c:'PA')+' reimb / unit', num:true}]);
+}
+function sortForm(k){
+  FSORT = (FSORT.key===k) ? {key:k, dir:-FSORT.dir} : {key:k, dir: (k==='product'||k==='category'||k==='route') ? 1 : -1};
+  applyForm();
+}
+function renderFormHead(){
+  const h=document.getElementById('fhead'); if(!h) return;
+  h.innerHTML = '<tr><th style="width:34px;"></th>' + formCols().map(c=>{
+    const on = FSORT.key===c.k;
+    const arrow = on ? (FSORT.dir>0?' ▲':' ▼') : '';
+    return `<th class="${c.num?'num ':''}sortable" onclick="sortForm('${c.k}')" title="Sort by ${esc(c.label)}">${esc(c.label)}${arrow}</th>`;
+  }).join('') + '</tr>';
+}
+function applyForm(){
+  const q=((document.getElementById('fsearch')||{}).value||'').toLowerCase();
+  const cat=((document.getElementById('fcat')||{}).value||'');
+  const rt=((document.getElementById('froute')||{}).value||'');
+  let rows = FORM.filter(f=>{
+    if(cat && (f.category||'')!==cat) return false;
+    if(rt){ const isOral=(f.route==='Oral'); if(rt==='Oral'&&!isOral) return false; if(rt==='Topical'&&isOral) return false; }
+    if(q && !((f.product+' '+(f.category||'')+' '+(f.route||'')).toLowerCase().includes(q))) return false;
+    return true;
+  });
+  const k=FSORT.key, d=FSORT.dir;
+  rows.sort((a,b)=>{
+    const va = k==='reimb'?reimbOf(a):(k==='awp'||k==='cost'?Number(a[k])||0:String(a[k]||'').toLowerCase());
+    const vb = k==='reimb'?reimbOf(b):(k==='awp'||k==='cost'?Number(b[k])||0:String(b[k]||'').toLowerCase());
+    return va<vb ? -d : va>vb ? d : 0;
+  });
+  renderFormHead();
+  fillFormTable(rows);
+  const cnt=document.getElementById('fcount');
+  if(cnt) cnt.textContent = rows.length===FORM.length ? '' : (rows.length+' of '+FORM.length+' shown');
+}
+function clearForm(){
+  ['fsearch','fcat','froute'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  applyForm();
+}
+function fillFormTable(rows){
+  const b=document.getElementById('fbody'); if(!b) return;
+  // Reimbursement is derived from the live multiplier, not the stored PA figure, so the column
+  // always agrees with the state selected above.
+  b.innerHTML = rows.map(f=>`<tr class="${FSEL.has(String(f.id))?'selrow':''}" onclick="toggleSel('${f.id}')">
+    <td class="noprint" style="text-align:center;"><input type="checkbox" ${FSEL.has(String(f.id))?'checked':''} onclick="event.stopPropagation();toggleSel('${f.id}')"></td>
+    <td>${esc(f.product)}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
+    <td class="num">${money(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money(f.cost)}</td>`}<td class="num">${money(reimbOf(f))}</td></tr>`).join('');
+}
+function toggleSel(id){
+  id=String(id);
+  if(FSEL.has(id)) FSEL.delete(id); else FSEL.add(id);
+  applyForm(); renderSelBar();
+}
+function renderSelBar(){
+  const bar=document.getElementById('selbar'); if(!bar) return;
+  if(!FSEL.size){ bar.style.display='none'; bar.innerHTML=''; return; }
+  bar.style.display='block';
+  bar.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:11px 14px;background:#eef6ff;border:1px solid var(--steel);border-radius:10px;">
+    <b style="font-size:14px;">${FSEL.size} selected</b>
+    <button class="btn solid" onclick="addSelected()">Add to my mix</button>
+    <button class="btn" onclick="FSEL.clear();applyForm();renderSelBar();">Clear selection</button>
+  </div>`;
+}
+function addSelected(){
+  const ids=[...FSEL];
+  if(!ids.length) return;
+  ids.forEach(id=>{
+    // Re-use an empty row before making a new one, so the mix does not fill up with blanks.
+    let row=[...document.querySelectorAll('#mix .mixrow')].find(r=>!r.querySelector('select').value);
+    if(!row){ addLine(); const all=document.querySelectorAll('#mix .mixrow'); row=all[all.length-1]; }
+    row.querySelector('select').value=String(id);
+    if(!parseFloat(row.querySelector('input').value)) row.querySelector('input').value='1';
+  });
+  FSEL.clear(); applyForm(); renderSelBar(); compute();
+  const mix=document.getElementById('mix');
+  if(mix) mix.scrollIntoView({behavior:'smooth', block:'center'});
+}
+// Kept so the multiplier and state handlers can refresh the table without knowing the details.
+function filterForm(){ applyForm(); }
+
+boot();
 </script>
 </body>
 </html>
