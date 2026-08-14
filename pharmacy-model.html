@@ -488,8 +488,10 @@ function formCols(){
     {k:'category',label:'Category'},
     {k:'route',   label:'Route'},
     {k:'awp',     label:'MFG AWP', num:true},
-  ].concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}])
-   .concat([{k:'reimb', label:(ST?ST.c:'PA')+' reimb / unit', num:true}]);
+  // No per-unit reimbursement column. It reads as a fixed figure sitting next to each product when
+  // it is nothing of the kind: it moves with whichever state is chosen at the top of the page, and
+  // the estimate above already states what the basket collects at that state's rate.
+  ].concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}]);
 }
 function sortForm(k){
   FSORT = (FSORT.key===k) ? {key:k, dir:-FSORT.dir} : {key:k, dir: (k==='product'||k==='category'||k==='route') ? 1 : -1};
@@ -537,7 +539,7 @@ function fillFormTable(rows){
   // head; grouped under NSAIDs, Pain, Muscle Relaxants and the rest he can find his own prescribing
   // in it. The filters above still work, and the chosen sort still applies inside each section.
   let lastCat = null;
-  const cols = HIDE_COST ? 6 : 7;
+  const cols = HIDE_COST ? 5 : 6;
   b.innerHTML = rows.map(f=>{
     let head = '';
     const c = String(f.category||'Other');
@@ -548,7 +550,7 @@ function fillFormTable(rows){
     return head + `<tr class="${FSEL.has(String(f.id))?'selrow':''}" onclick="toggleSel('${f.id}')">
     <td class="noprint" style="text-align:center;"><input type="checkbox" ${FSEL.has(String(f.id))?'checked':''} onclick="event.stopPropagation();toggleSel('${f.id}')"></td>
     <td>${esc(f.product)}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
-    <td class="num">${money(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money(f.cost)}</td>`}<td class="num">${money(reimbOf(f))}</td></tr>`;
+    <td class="num">${money(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money(f.cost)}</td>`}</tr>`;
   }).join('');
 }
 function toggleSel(id){
