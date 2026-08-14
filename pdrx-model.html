@@ -280,7 +280,7 @@ function compute(){
     +   '<div class="step"><span>Less management fee &middot; '+Math.round((1-share)*100)+'% of net</span><b>-'+money2(mgmt)+'</b></div>'
     +   '<div class="step tot"><span><b>The practice keeps</b></span><b>'+money2(practice)+' / month</b></div>'
     + '</div>'
-    + + '<div class="disc">'+(lines?lines+' medication'+(lines===1?'':'s')+' modelled. ':'Add a medication above to see the figures. ')
+    + '<div class="disc">'+(lines?lines+' medication'+(lines===1?'':'s')+' modelled. ':'Add a medication above to see the figures. ')
     + 'Collections average about 60 days. '+esc(ST.n)+' basis'+(ST.basis==='other'?', modelled at flat AWP as an assumption':'')+'.</div>';
 }
 (function init(){
