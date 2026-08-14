@@ -453,16 +453,15 @@ function compute(){
   // are per Rx order rather than per medication: a patient on five drugs carries one $6 dispensing
   // fee and one $6 shipping charge, not five of each.
   const oGross=oAwp*patients*oc, tGross=tAwp*patients*tc;
-  // Under PDRx the dispense fee and shipping are part of the claims purchase fee on every script,
-  // not one charge per patient order, which is how the formulary sheet prices them.
-  const feeCost=(oScripts+tScripts)*patients*(fee+ship);
+  const anyScripts=(oScripts+tScripts)>0;
+  const feeCost=anyScripts ? (fee+ship)*patients : 0;
   const gross=oGross+tGross, cost=(oCost+tCost)*patients+feeCost, net=gross-cost, practice=net*share;
   // Say plainly that the fee is the practice's cost and that it is already taken out, rather than
   // leaving it to be discovered inside a breakdown line.
   const dfn=document.getElementById('df-note');
   if(dfn){
     dfn.innerHTML = (fee||ship)
-      ? '<b>Claims purchase fee, per script:</b> the wholesale cost of the medication plus $'+fee.toFixed(2)+' dispensing and $'+ship.toFixed(2)+' shipping, deducted from collections. Shipping runs $7.00 to $10.00 and is modelled here at $'+ship.toFixed(2)+'. Collections average about 60 days.'
+      ? '<b>Claims purchase fee:</b> the wholesale cost of every medication, plus $'+fee.toFixed(2)+' dispensing and $'+ship.toFixed(2)+' shipping. The dispensing and shipping are charged once per order, so a patient receiving five medications in one shipment carries one of each. All of it is deducted from collections before the split, and collections average about 60 days.'
       : '<b>Dispensing and shipping:</b> none applied. Set them above if your agreement includes them.';
   }
   const el=document.getElementById('result'); if(!el) return;
@@ -488,8 +487,10 @@ function formCols(){
     {k:'category',label:'Category'},
     {k:'route',   label:'Route'},
     {k:'awp',     label:'MFG AWP', num:true},
-  ].concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}])
-   .concat([{k:'reimb', label:(ST?ST.c:'PA')+' reimb / unit', num:true}]);
+  // No per-unit reimbursement column. It reads as a fixed figure sitting next to each product when
+  // it is nothing of the kind: it moves with whichever state is chosen at the top of the page, and
+  // the estimate above already states what the basket collects at that state's rate.
+  ].concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}]);
 }
 function sortForm(k){
   FSORT = (FSORT.key===k) ? {key:k, dir:-FSORT.dir} : {key:k, dir: (k==='product'||k==='category'||k==='route') ? 1 : -1};
@@ -537,7 +538,7 @@ function fillFormTable(rows){
   // head; grouped under NSAIDs, Pain, Muscle Relaxants and the rest he can find his own prescribing
   // in it. The filters above still work, and the chosen sort still applies inside each section.
   let lastCat = null;
-  const cols = HIDE_COST ? 6 : 7;
+  const cols = HIDE_COST ? 5 : 6;
   b.innerHTML = rows.map(f=>{
     let head = '';
     const c = String(f.category||'Other');
@@ -548,7 +549,7 @@ function fillFormTable(rows){
     return head + `<tr class="${FSEL.has(String(f.id))?'selrow':''}" onclick="toggleSel('${f.id}')">
     <td class="noprint" style="text-align:center;"><input type="checkbox" ${FSEL.has(String(f.id))?'checked':''} onclick="event.stopPropagation();toggleSel('${f.id}')"></td>
     <td>${esc(f.product)}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
-    <td class="num">${money(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money(f.cost)}</td>`}<td class="num">${money(reimbOf(f))}</td></tr>`;
+    <td class="num">${money(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money(f.cost)}</td>`}</tr>`;
   }).join('');
 }
 function toggleSel(id){
