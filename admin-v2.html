@@ -1702,12 +1702,14 @@ async function mdrxSendMove(id, providerId, prefix){
   const p=P.find(x=>x.id===providerId);
   if(!p||!p.email){showToast('That contact has no email address');return;}
   if(!confirm('Send this to '+p.email+' now, as a plain email?'))return;
-  // The opt-out belongs on anything that leaves, and the gate at the wire requires it.
-  const stop='https://mdconcierge.net/unsubscribe.html?p='+(p.funnel_token||'');
-  const body=/aren't interested/i.test(text)?text
-    :text+"\n\nIf you aren't interested, or don't wish to hear from me anymore, click here and I won't write again: "+stop;
-  const subject=prompt('Subject line', 'Following up on the work comp pharmacy program');
+  // No opt-out. This is a note to one physician Eric is in conversation with, not a mailshot, and an
+  // unsubscribe line at the bottom announces it as one. The wire used to demand it and no longer does.
+  const body=text;
+  // The old default was "Following up on the work comp pharmacy program", which the gate refuses as a
+  // nag phrase, so pressing send produced a held email and no explanation.
+  const subject=prompt('Subject line', 'A time to talk');
   if(subject===null)return;
+  if(!String(subject).trim()){showToast('It needs a subject line');return;}
   const {data:row,error}=await sbClient.from('mdrx_outbox').insert({
     provider_id:providerId, touch_no:0, to_email:p.email, subject:subject||'',
     body_text:body, body_html:null, status:'pending', scheduled_date:mdrxToday(),
@@ -1719,7 +1721,15 @@ async function mdrxSendMove(id, providerId, prefix){
   const held=(data&&data.failed&&data.failed.length)?data.failed.join('; '):'';
   if(held){showToast('Held back: '+held);return;}
   await sbClient.from('mdrx_next_moves').update({status:'queued',draft:text,resolved_at:new Date().toISOString()}).eq('id',id);
-  showToast('Sent to '+p.email); loadCockpit();
+  // Sending from the profile queued and sent a NEW row while anything already waiting for this lead
+  // stayed pending, so the queue kept a copy of a message that had just gone out and would have sent
+  // it again. Anything still pending for him is stood down, and so are the other recommendations,
+  // which were written against a conversation that has now moved on.
+  await sbClient.from('mdrx_outbox').update({status:'skipped'})
+    .eq('provider_id',providerId).eq('status','pending').neq('id',row.id);
+  await sbClient.from('mdrx_next_moves').update({status:'dismissed',resolved_at:new Date().toISOString()})
+    .eq('provider_id',providerId).eq('status','pending').neq('id',id);
+  showToast('Sent to '+p.email); loadCockpit(); mdrxLoadTimeline(providerId);
 }
 async function mdrxApproveMove(id){
   const ta=document.getElementById('nm-draft-'+id); const text=ta?ta.value.trim():'';
@@ -2740,15 +2750,18 @@ async function mdrxLoadTimeline(id){
   const optHtml=moveOptions.map((n,i)=>{
     const chk=(i===0)?'checked':'';
     const ch={email:'✉️',call:'📞',text:'💬'}[n.channel]||'•';
-    return `<label style="display:block;border:1px solid var(--border2);border-radius:9px;padding:9px 11px;margin-bottom:7px;cursor:pointer;background:rgba(255,255,255,.02);">
-      <div style="display:flex;gap:8px;align-items:baseline;">
+    // A div, not a label. A label hands every click inside it to its own control, so clicking into
+    // the textarea to edit the draft focused the radio button instead and the typing went nowhere.
+    // Only the heading is a label now, which is the part that should select the option.
+    return `<div style="display:block;border:1px solid var(--border2);border-radius:9px;padding:9px 11px;margin-bottom:7px;background:rgba(255,255,255,.02);">
+      <label style="display:flex;gap:8px;align-items:baseline;cursor:pointer;">
         <input type="radio" name="nmpick-${id}" value="${n.id}" ${chk} onchange="mdrxPickMove(${id},${n.id})" style="margin-top:2px;">
         <div style="flex:1;">
           <div style="font-size:12.5px;font-weight:700;">${ch} ${ehtml(statusLabel[n.status]||n.status)}${n.angle?' · '+ehtml(n.angle):''}</div>
           ${n.reason?`<div style="font-size:11.5px;color:var(--muted);margin-top:2px;">${ehtml(n.reason)}</div>`:''}
         </div>
         <span style="font-size:11px;color:var(--muted);">${ehtml(n.recommended_date||'')}</span>
-      </div>
+      </label>
       <textarea id="tl-draft-${n.id}" style="display:${i===0?'block':'none'};width:100%;min-height:130px;margin-top:8px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(n.draft||'')}</textarea>
       <div id="tl-act-${n.id}" style="display:${i===0?'flex':'none'};gap:6px;margin-top:6px;">
         <button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;font-weight:700;" onclick="event.preventDefault();mdrxSendMove(${n.id},${id},'tl-draft-')">Send this one</button>
@@ -2756,7 +2769,7 @@ async function mdrxLoadTimeline(id){
         <button class="ib" onclick="event.preventDefault();mdrxDismissMove(${n.id})">Dismiss</button>
       </div>
       <div id="tl-prev-${n.id}" style="display:none;margin-top:8px;"></div>
-    </label>`;}).join('');
+    </div>`;}).join('');
   const optBlock=moveOptions.length?`<div style="margin-bottom:14px;"><div style="font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px;">DRAFTS TO CHOOSE FROM (${moveOptions.length})</div>${optHtml}</div>`:'';
   const nextBlock=(optBlock||upcoming.length)?`<div style="margin-bottom:12px;"><div style="font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px;">WHAT HAPPENS NEXT</div>${optBlock}${upcoming.map(a=>row(a,'#1e9e6a')).join('')}</div>`:'';
   if(!items.length&&!upcoming.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">No activity yet. Use the buttons above to log a call, meeting, or note.</div>';return;}
