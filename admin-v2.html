@@ -2490,13 +2490,17 @@ async function mdrxDelete(id){
 }
 async function mdrxLoadTimeline(id){
   if(!id)return; const el=document.getElementById('mdrx-timeline'); if(!el)return;
-  const [act,ev,dr,ql,ob,nm]=await Promise.all([
+  const [act,ev,dr,ql,ob,nm,msg]=await Promise.all([
     sbClient.from('mdrx_activity').select('*').eq('provider_id',id),
     sbClient.from('mdrx_funnel_events').select('event,page,link,cta,scroll,seconds,created_at').eq('provider_id',id).order('created_at',{ascending:false}).limit(120),
     sbClient.from('mdrx_inbox_drafts').select('subject,snippet,sentiment,received_at').eq('provider_id',id),
     sbClient.from('quote_links').select('recipient_name,view_count,first_viewed_at,last_viewed_at').eq('provider_id',id),
     sbClient.from('mdrx_outbox').select('touch_no,subject,status,sent_at,scheduled_date,plain_retry').eq('provider_id',id).order('id'),
-    sbClient.from('mdrx_next_moves').select('id,recommended_date,channel,angle,reason,draft,status').eq('provider_id',id).order('recommended_date',{ascending:false}).limit(10)
+    sbClient.from('mdrx_next_moves').select('id,recommended_date,channel,angle,reason,draft,status').eq('provider_id',id).order('recommended_date',{ascending:false}).limit(10),
+    // The actual correspondence, both directions, including everything Eric wrote by hand from his
+    // own mailbox. The timeline knew about clicks and 400-character reply snippets and had never
+    // once shown the emails themselves, which is the only place the real conversation lives.
+    sbClient.from('mdrx_messages').select('direction,from_name,from_addr,subject,body_text,sent_at').eq('provider_id',id).order('sent_at',{ascending:false}).limit(40)
   ]);
   MDRX_ACT=act.data||[];  // manual activity only (used for prior-touch counting)
   const items=[];
@@ -2511,7 +2515,23 @@ async function mdrxLoadTimeline(id){
     else return;
     items.push({when:e.created_at,icon,title,detail:''});
   });
-  (dr.data||[]).forEach(d=>items.push({when:d.received_at,icon:'📨',title:'Replied'+(d.subject?': '+d.subject:''),detail:(d.sentiment?'['+d.sentiment+'] ':'')+(d.snippet||'')}));
+  // The real emails, both directions, including everything Eric wrote from his own mailbox. A reply
+  // snippet is a preview of something we now hold in full, so it is only used where the message
+  // store has nothing for that day.
+  const msgs=(msg&&msg.data)||[];
+  const haveFull=new Set(msgs.map(m=>String(m.sent_at||'').slice(0,10)+'|'+(m.direction||'')));
+  msgs.forEach(m=>{
+    const inbound=m.direction==='in';
+    const who=inbound?(m.from_name||m.from_addr||'them'):'Eric';
+    const body=String(m.body_text||'').replace(/\s+/g,' ').trim();
+    items.push({when:m.sent_at,icon:inbound?'📨':'✍️',
+      title:(inbound?who+' wrote':'Eric wrote, by hand')+(m.subject?': '+m.subject:''),
+      detail:body.slice(0,1200)+(body.length>1200?' ...':'')});
+  });
+  (dr.data||[]).forEach(d=>{
+    if(haveFull.has(String(d.received_at||'').slice(0,10)+'|in')) return;
+    items.push({when:d.received_at,icon:'📨',title:'Replied'+(d.subject?': '+d.subject:''),detail:(d.sentiment?'['+d.sentiment+'] ':'')+(d.snippet||'')});
+  });
   (ql.data||[]).forEach(q=>{ if(q.first_viewed_at)items.push({when:q.first_viewed_at,icon:'📄',title:'Opened the dispensing tool',detail:(q.view_count||0)+' view'+(q.view_count===1?'':'s')+(q.last_viewed_at&&q.last_viewed_at!==q.first_viewed_at?' · last '+String(q.last_viewed_at).slice(0,16).replace('T',' '):'')}); });
   // what WE sent them, so the feed reads as a conversation rather than only their side
   const upcoming=[];
