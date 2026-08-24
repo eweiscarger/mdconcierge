@@ -1395,6 +1395,45 @@ async function loadCalendar(){
     +`<div style="color:var(--muted);font-size:12px;margin-bottom:6px;">Straight from the Zoho calendar. To add, move or cancel anything, do it in Zoho and it shows here.</div>`
     +agenda+`</div>`;
 }
+// What this will actually look like when it lands. Rendered by the sender rather than drawn here:
+// the page could produce its own likeness of an email, but linkLabel has already drifted once from
+// being kept in two places, and a preview that differs from what goes out certifies the wrong
+// thing. So it asks send-outreach to render the edited text and send nothing.
+//
+// A personal note carrying a link goes as a plain letter with proper anchor text, never a naked
+// URL in the middle of a sentence and never the marketing card.
+async function mdrxPreviewMove(moveId){
+  const ta=document.getElementById('tl-draft-'+moveId), box=document.getElementById('tl-prev-'+moveId);
+  if(!ta||!box) return;
+  if(box.style.display==='block'){ box.style.display='none'; return; }
+  box.style.display='block';
+  box.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px;">Rendering…</div>';
+  try{
+    const {data:{session}}=await sbClient.auth.getSession();
+    const r=await fetch(BK_FN+'/send-outreach',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session&&session.access_token)},
+      body:JSON.stringify({preview:{body_text:ta.value,template_key:'personal'}})});
+    const j=await r.json();
+    if(!j.ok) throw new Error(j.error||'could not render');
+    // The gate that would refuse this at the wire runs here too, so a draft that cannot go says so
+    // now rather than after the button is pressed.
+    const faults=(j.faults||[]).length
+      ? `<div style="background:#3a2418;border:1px solid #7a4a2a;color:#f0a868;font-size:12px;padding:8px 10px;border-radius:8px;margin-bottom:8px;">`
+        +`<b>This would be held:</b> ${ehtml(j.faults.join('; '))}</div>`
+      : '';
+    const body=j.html
+      ? `<iframe style="width:100%;height:340px;border:0;background:#fff;border-radius:8px;" sandbox=""></iframe>`
+      : `<pre style="white-space:pre-wrap;font-family:inherit;font-size:12.5px;line-height:1.55;color:#1a2233;background:#fff;padding:14px;border-radius:8px;margin:0;">${ehtml(ta.value)}</pre>`;
+    box.innerHTML=faults
+      +`<div style="font-size:11px;color:var(--muted);margin-bottom:5px;">Goes out as ${ehtml(j.as)}.</div>`
+      +`<div style="border:1px solid var(--border2);border-radius:10px;padding:10px;background:#fff;">${body}</div>`;
+    // Written into the frame rather than inlined, so the email's own styling cannot leak out and
+    // restyle the Cockpit around it. The frame is sandboxed: nothing in it runs.
+    if(j.html){ const f=box.querySelector('iframe'); f.srcdoc=j.html; }
+  }catch(e){
+    box.innerHTML='<div style="color:#e0765a;font-size:12px;padding:8px;">Could not render: '+ehtml(String(e.message||e))+'</div>';
+  }
+}
 async function loadBooking(){
   const box=document.getElementById('booking-body');
   box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
@@ -2713,8 +2752,10 @@ async function mdrxLoadTimeline(id){
       <textarea id="tl-draft-${n.id}" style="display:${i===0?'block':'none'};width:100%;min-height:130px;margin-top:8px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(n.draft||'')}</textarea>
       <div id="tl-act-${n.id}" style="display:${i===0?'flex':'none'};gap:6px;margin-top:6px;">
         <button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;font-weight:700;" onclick="event.preventDefault();mdrxSendMove(${n.id},${id},'tl-draft-')">Send this one</button>
+        <button class="ib" onclick="event.preventDefault();mdrxPreviewMove(${n.id})">Preview</button>
         <button class="ib" onclick="event.preventDefault();mdrxDismissMove(${n.id})">Dismiss</button>
       </div>
+      <div id="tl-prev-${n.id}" style="display:none;margin-top:8px;"></div>
     </label>`;}).join('');
   const optBlock=moveOptions.length?`<div style="margin-bottom:14px;"><div style="font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px;">DRAFTS TO CHOOSE FROM (${moveOptions.length})</div>${optHtml}</div>`:'';
   const nextBlock=(optBlock||upcoming.length)?`<div style="margin-bottom:12px;"><div style="font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px;">WHAT HAPPENS NEXT</div>${optBlock}${upcoming.map(a=>row(a,'#1e9e6a')).join('')}</div>`:'';
