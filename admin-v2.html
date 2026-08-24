@@ -1207,7 +1207,7 @@ function addMember(){
 // So it checks itself. On load it fetches its own source past the cache, reads the build stamp, and
 // replaces itself if the running page is not the current one. Guarded by sessionStorage so a failed
 // check can never become a reload loop.
-const BUILD = "af04125";
+const BUILD = "47ba8c3";
 (async function freshnessCheck(){
   try{
     if(sessionStorage.getItem('reloaded-for')===BUILD) return;
@@ -1769,12 +1769,28 @@ async function mdrxSendMove(id, providerId, prefix){
   // Persist this exact wording before anything else happens, so a failure past this point can
   // never lose it again.
   await sbClient.from('mdrx_next_moves').update({draft:text,subject:subject}).eq('id',id);
-  const {data:row,error}=await sbClient.from('mdrx_outbox').insert({
-    provider_id:providerId, touch_no:0, to_email:p.email, subject:subject||'',
-    body_text:body, body_html:null, status:'pending', scheduled_date:mdrxToday(),
-    objective:'sent by hand from the next move', template_key:'personal', channel:'email'
-  }).select('id').single();
-  if(error){showToast('Could not queue it: '+error.message);return;}
+  // Reuse the row that is already waiting for him rather than making another one. The queue sends
+  // an existing row and works; this inserted a new one and failed, and inserting was also how the
+  // same email ended up queued twice. If nothing is waiting, one is created.
+  let row=null;
+  const {data:waiting}=await sbClient.from('mdrx_outbox')
+    .select('id').eq('provider_id',providerId).eq('status','pending').order('id',{ascending:false}).limit(1);
+  if(waiting&&waiting.length){
+    row={id:waiting[0].id};
+    const {error:upErr}=await sbClient.from('mdrx_outbox')
+      .update({to_email:p.email,subject:subject,body_text:body,body_html:null,template_key:'personal',
+               objective:'sent by hand from the next move',scheduled_date:mdrxToday()}).eq('id',row.id);
+    if(upErr){console.error('outbox update failed',upErr);showToast('Could not update the queued email: '+upErr.message);return;}
+  }else{
+    const {data:made,error}=await sbClient.from('mdrx_outbox').insert({
+      provider_id:providerId, touch_no:0, to_email:p.email, subject:subject,
+      body_text:body, body_html:null, status:'pending', scheduled_date:mdrxToday(),
+      objective:'sent by hand from the next move', template_key:'personal', channel:'email'
+    }).select('id').single();
+    // The whole error, not just its message: "could not send" with nothing to act on has cost hours.
+    if(error){console.error('outbox insert failed',error);showToast('Could not queue it: '+(error.message||'')+' '+(error.details||'')+' '+(error.hint||''));return;}
+    row=made;
+  }
   // Reported exactly as the queue reports it, so a send from a profile and a send from the queue
   // succeed and fail in the same words.
   const {data,error:sendErr}=await sbClient.functions.invoke('send-outreach',{body:{ids:[row.id]}});
