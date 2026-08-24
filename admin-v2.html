@@ -287,6 +287,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" data-biz="rx" onclick="showView('deals',this)"><span class="ni-ic">🎯</span> Deals</button>
     <button class="ni" data-biz="rx" onclick="showView('linkedin',this)"><span class="ni-ic">🤝</span> LinkedIn queue</button>
     <button class="ni" data-biz="rx" onclick="openPresenter()" title="Opens the dispensing model in a clean tab. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary</button>
+    <button class="ni" data-biz="rx" onclick="showView('calendar',this)"><span class="ni-ic">🗓️</span> Calendar</button>
     <button class="ni" data-biz="rx" onclick="showView('booking',this)"><span class="ni-ic">📅</span> Booking &amp; Availability <span class="nb" id="booking-pending" style="display:none;">0</span></button>
     <button class="ni" data-biz="rx" onclick="showView('pipeline',this)"><span class="ni-ic">📊</span> Pipeline <span class="nb" id="pipe-due" style="display:none;">0</span></button>
     <button class="ni" data-biz="rx" onclick="showView('replies',this)"><span class="ni-ic">📨</span> Replies <span class="nb" id="replies-pending" style="display:none;">0</span></button>
@@ -466,6 +467,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <!-- BOOKING & AVAILABILITY VIEW -->
   <div class="view" id="view-booking">
     <div id="booking-body" style="color:var(--muted);padding:8px 2px;">Loading booking…</div>
+  </div>
+
+  <div class="view" id="view-calendar">
+    <div id="cal-body" style="color:var(--muted);padding:8px 2px;">Loading your calendar…</div>
   </div>
 
   <!-- PIPELINE VIEW -->
@@ -1199,13 +1204,14 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={cockpit:'Daily Cockpit',leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',booking:'Booking & Availability',pipeline:'Pipeline',replies:'Replies',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',deals:'Deals',linkedin:'LinkedIn Queue',access:'Access Log',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={cockpit:'Daily Cockpit',leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',calendar:'Calendar',booking:'Booking & Availability',pipeline:'Pipeline',replies:'Replies',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',deals:'Deals',linkedin:'LinkedIn Queue',access:'Access Log',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
   if(v==='crm')loadCrm();
   if(v==='mdrx')loadMdrx();
   if(v==='funnel')loadFunnel();
+  if(v==='calendar')loadCalendar();
   if(v==='booking')loadBooking();
   if(v==='pipeline')loadPipeline();
   if(v==='replies')loadReplies();
@@ -1302,6 +1308,92 @@ async function bkApplyAvailability(){
     out.innerHTML='<span style="color:var(--green);">✓ '+ehtml(j.summary||'Updated.')+'</span>';
     inp.value=''; loadBooking();
   }catch(e){out.innerHTML='<span style="color:#a03434;">Error: '+ehtml(String(e))+'</span>';}
+}
+// ---- Calendar -------------------------------------------------------------
+// Reads the Zoho calendar itself rather than only the bookings this platform made, because the
+// call Phil arranged by hand is just as much a call Eric has to be at. Read only: this shows the
+// diary, it never edits it, so Zoho stays the one place a meeting can be created or moved.
+let CAL_MONTH = null;   // first of the month on view, as a Date
+function calShift(n){ const d=CAL_MONTH||new Date(); CAL_MONTH=new Date(d.getFullYear(), d.getMonth()+n, 1); loadCalendar(); }
+function calToday(){ CAL_MONTH=null; loadCalendar(); }
+// Everything is drawn in Eastern, so a meeting does not slide onto the wrong square when Eric is
+// on a different clock.
+function calParts(iso){
+  const p={}; for(const x of new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'numeric',minute:'2-digit'}).formatToParts(new Date(iso))) p[x.type]=x.value;
+  return {key:`${p.year}-${p.month}-${p.day}`, time:`${p.hour}:${p.minute} ${(p.dayPeriod||'').toLowerCase()||''}`.trim()};
+}
+function calTime(iso){ return new Date(iso).toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit'}); }
+async function loadCalendar(){
+  const box=document.getElementById('cal-body');
+  box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading your calendar…</div>';
+  let j;
+  try{
+    const {data:{session}}=await sbClient.auth.getSession();
+    const r=await fetch(BK_FN+'/calendar-feed?days=120&back=30',{headers:{'Authorization':'Bearer '+(session&&session.access_token)}});
+    j=await r.json();
+    if(!j.ok) throw new Error(j.error||'could not load');
+  }catch(e){
+    box.innerHTML='<div class="panel" style="padding:20px;color:#a03434;">Could not load the calendar: '+ehtml(String(e.message||e))+'</div>';
+    return;
+  }
+  const events=j.events||[];
+  const byDay={}; for(const e of events){ const k=calParts(e.start).key; (byDay[k]=byDay[k]||[]).push(e); }
+
+  const base=CAL_MONTH||new Date();
+  const y=base.getFullYear(), m=base.getMonth();
+  const first=new Date(y,m,1), start=new Date(y,m,1-((first.getDay()+6)%7));  // weeks start Monday
+  const todayKey=calParts(new Date().toISOString()).key;
+  const monthName=first.toLocaleString('en-US',{month:'long',year:'numeric'});
+
+  let cells='';
+  for(let i=0;i<42;i++){
+    const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
+    const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const out=d.getMonth()!==m, today=key===todayKey;
+    const evs=(byDay[key]||[]).slice().sort((a,b)=>Date.parse(a.start)-Date.parse(b.start));
+    const chips=evs.slice(0,3).map(e=>{
+      const mine=e.source==='platform';
+      return `<div title="${ehtml(e.title)}" style="font-size:11px;line-height:1.3;margin-top:2px;padding:2px 4px;border-radius:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`
+        +`background:${mine?'#eaf1fb':'#f0f0f2'};color:${mine?'#1a4f9c':'#444'};border-left:2px solid ${mine?'#2F5EA8':'#bbb'};">`
+        +`${e.all_day?'':ehtml(calTime(e.start))+' '}${ehtml(e.title)}</div>`;
+    }).join('');
+    const more=evs.length>3?`<div style="font-size:10px;color:var(--muted);margin-top:2px;">+${evs.length-3} more</div>`:'';
+    cells+=`<div style="min-height:92px;padding:5px 6px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);`
+      +`${out?'background:#fafafb;':''}">`
+      +`<div style="font-size:11px;font-weight:${today?'700':'500'};color:${today?'#fff':(out?'#bbb':'#666')};`
+      +`${today?'background:#2F5EA8;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;':''}">${d.getDate()}</div>`
+      +chips+more+'</div>';
+  }
+
+  const now=Date.now();
+  const upcoming=events.filter(e=>Date.parse(e.end||e.start)>=now).slice(0,12);
+  const agenda=upcoming.length?upcoming.map(e=>{
+    const when=new Date(e.start).toLocaleString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    const join=e.join_url?` &middot; <a href="${ehtml(e.join_url)}" target="_blank" rel="noopener" style="color:#2F5EA8;">Join</a>`:'';
+    const who=e.provider_id?` &middot; <a href="#" onclick="funOpenProvider(${e.provider_id});return false;" style="color:#2F5EA8;">open record</a>`:'';
+    return `<div style="padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;">`
+      +`<b>${ehtml(e.title)}</b><div style="color:var(--muted);font-size:12px;margin-top:2px;">${ehtml(when)} Eastern${join}${who}</div></div>`;
+  }).join(''):'<div style="color:var(--muted);font-size:13px;padding:10px 0;">Nothing in the diary.</div>';
+
+  // An empty calendar and an unreadable one look identical on screen, and treating the second as
+  // the first is how a call gets booked on top of another. Say which it is.
+  const warn=j.warning?`<div class="panel" style="padding:12px 14px;margin-bottom:12px;background:#fff8e8;color:#9a6700;font-size:13px;">${ehtml(j.warning)} Nothing below can be trusted until that is fixed.</div>`:'';
+  const dows=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<div style="padding:6px;font-size:11px;font-weight:600;color:var(--muted);text-align:center;border-right:1px solid var(--line);border-bottom:1px solid var(--line);">${d}</div>`).join('');
+
+  box.innerHTML=warn
+    +`<div class="panel" style="padding:0;overflow:hidden;">`
+    +`<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);">`
+    +`<div style="font-weight:700;">${ehtml(monthName)}</div>`
+    +`<div style="display:flex;gap:6px;">`
+    +`<button class="btn" onclick="calShift(-1)" style="padding:5px 11px;">&larr;</button>`
+    +`<button class="btn" onclick="calToday()" style="padding:5px 11px;">Today</button>`
+    +`<button class="btn" onclick="calShift(1)" style="padding:5px 11px;">&rarr;</button></div></div>`
+    +`<div style="overflow-x:auto;"><div style="min-width:640px;display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line);">${dows}${cells}</div></div>`
+    +`</div>`
+    +`<div class="panel" style="padding:14px;margin-top:12px;">`
+    +`<div style="font-weight:700;margin-bottom:4px;">What is coming up</div>`
+    +`<div style="color:var(--muted);font-size:12px;margin-bottom:6px;">Straight from the Zoho calendar. To add, move or cancel anything, do it in Zoho and it shows here.</div>`
+    +agenda+`</div>`;
 }
 async function loadBooking(){
   const box=document.getElementById('booking-body');
