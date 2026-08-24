@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>MDconcierge — Admin Dashboard</title>
@@ -1198,6 +1200,22 @@ function addMember(){
   closeModal('modal-add');renderActivity();showToast(`✓ ${name} added to network`);
 }
 
+// This page is served from GitHub Pages and a browser will happily keep an old copy for hours. That
+// is how Eric came to be looking at a draft marked "reveals tracking" by a rule that had already
+// been deleted, and being told to refresh is not a fix for that.
+//
+// So it checks itself. On load it fetches its own source past the cache, reads the build stamp, and
+// replaces itself if the running page is not the current one. Guarded by sessionStorage so a failed
+// check can never become a reload loop.
+const BUILD = "05dd21f";
+(async function freshnessCheck(){
+  try{
+    if(sessionStorage.getItem('reloaded-for')===BUILD) return;
+    const r = await fetch(location.pathname + '?cb=' + Date.now(), {cache:'no-store'});
+    const m = (await r.text()).match(/const BUILD = "([a-f0-9]+)"/);
+    if(m && m[1] !== BUILD){ sessionStorage.setItem('reloaded-for', m[1]); location.reload(); }
+  }catch(e){ /* offline or blocked: leave the page alone */ }
+})();
 function showView(v,btn){
   document.body.classList.remove('nav-open');
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
