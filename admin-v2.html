@@ -1207,7 +1207,7 @@ function addMember(){
 // So it checks itself. On load it fetches its own source past the cache, reads the build stamp, and
 // replaces itself if the running page is not the current one. Guarded by sessionStorage so a failed
 // check can never become a reload loop.
-const BUILD = "7e7bed2";
+const BUILD = "eb22cfb";
 (async function freshnessCheck(){
   try{
     if(sessionStorage.getItem('reloaded-for')===BUILD) return;
@@ -1721,8 +1721,16 @@ async function mdrxSendMove(id, providerId, prefix){
   const ta=document.getElementById((prefix||'nm-draft-')+id);
   const text=ta?ta.value.trim():'';
   if(!text){showToast('Nothing to send');return;}
-  const p=P.find(x=>x.id===providerId);
-  if(!p||!p.email){showToast('That contact has no email address');return;}
+  // P is a local inside loadCockpit, so referencing it here threw a ReferenceError and the button
+  // did nothing at all: no send, no error, no explanation. The providers this screen is built from
+  // live in MDRX_PROV. Fetched directly as a fallback, because the record must be right; sending a
+  // physician's email to whoever else happens to share that row id is far worse than not sending.
+  let p=(MDRX_PROV||[]).find(x=>x.id===providerId);
+  if(!p){
+    const {data}=await sbClient.from('mdrx_providers').select('id,email,first_name,last_name,funnel_token').eq('id',providerId).maybeSingle();
+    p=data||null;
+  }
+  if(!p||!p.email){showToast('That contact has no email address on record');return;}
   if(!confirm('Send this to '+p.email+' now, as a plain email?'))return;
   // No opt-out. This is a note to one physician Eric is in conversation with, not a mailshot, and an
   // unsubscribe line at the bottom announces it as one. The wire used to demand it and no longer does.
