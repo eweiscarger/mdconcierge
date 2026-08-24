@@ -1207,7 +1207,7 @@ function addMember(){
 // So it checks itself. On load it fetches its own source past the cache, reads the build stamp, and
 // replaces itself if the running page is not the current one. Guarded by sessionStorage so a failed
 // check can never become a reload loop.
-const BUILD = "05dd21f";
+const BUILD = "7e7bed2";
 (async function freshnessCheck(){
   try{
     if(sessionStorage.getItem('reloaded-for')===BUILD) return;
@@ -1430,7 +1430,9 @@ async function mdrxPreviewMove(moveId){
     const {data:{session}}=await sbClient.auth.getSession();
     const r=await fetch(BK_FN+'/send-outreach',{method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session&&session.access_token)},
-      body:JSON.stringify({preview:{body_text:ta.value,template_key:'personal'}})});
+      // by_hand: this text sits in a box Eric can type into, so it is his. The gate stops judging
+      // his wording and only reports what would genuinely stop the email reaching the man.
+      body:JSON.stringify({preview:{body_text:ta.value,template_key:'personal',by_hand:true}})});
     const j=await r.json();
     if(!j.ok) throw new Error(j.error||'could not render');
     // The gate that would refuse this at the wire runs here too, so a draft that cannot go says so
@@ -2770,6 +2772,14 @@ async function mdrxLoadTimeline(id){
   // tick two is a way to send two.
   const statusLabel={pending:'Current recommendation',approved:'Kept for later',discarded:'Set aside',refused:'Held back by the gate',dismissed:'Dismissed'};
   moveOptions.sort((a,b)=>(a.status==='pending'?-1:b.status==='pending'?1:String(b.recommended_date||'').localeCompare(String(a.recommended_date||''))));
+  // Moves drafted before subjects existed carry none, and an empty subject box means pressing send
+  // does nothing but complain. The conversation is already loaded here, so the reply subject is
+  // taken from it: his own words first, then ours, which is the thread the follow-up belongs on.
+  const priorSubject=msgs.map(m=>m.subject).find(x=>String(x||'').trim())
+    || ((ob.data||[]).slice().reverse().map(o=>o.subject).find(x=>String(x||'').trim()))||'';
+  const threadSubject=priorSubject
+    ? (/^re:/i.test(priorSubject.trim())?priorSubject.trim():'Re: '+priorSubject.trim())
+    : '';
   const optHtml=moveOptions.map((n,i)=>{
     const chk=(i===0)?'checked':'';
     const ch={email:'✉️',call:'📞',text:'💬'}[n.channel]||'•';
@@ -2785,7 +2795,7 @@ async function mdrxLoadTimeline(id){
         </div>
         <span style="font-size:11px;color:var(--muted);">${ehtml(n.recommended_date||'')}</span>
       </label>
-      <input id="tl-subj-${n.id}" value="${ehtml(n.subject||'')}" placeholder="Subject line" style="display:${i===0?'block':'none'};width:100%;margin-top:8px;font-size:12.5px;font-weight:600;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">
+      <input id="tl-subj-${n.id}" value="${ehtml(n.subject||threadSubject)}" placeholder="Subject line" style="display:${i===0?'block':'none'};width:100%;margin-top:8px;font-size:12.5px;font-weight:600;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">
       <textarea id="tl-draft-${n.id}" style="display:${i===0?'block':'none'};width:100%;min-height:130px;margin-top:8px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(n.draft||'')}</textarea>
       <div id="tl-act-${n.id}" style="display:${i===0?'flex':'none'};gap:6px;margin-top:6px;">
         <button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;font-weight:700;" onclick="event.preventDefault();mdrxSendMove(${n.id},${id},'tl-draft-')">Send this one</button>
