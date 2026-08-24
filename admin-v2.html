@@ -1563,9 +1563,7 @@ async function mdrxSendMove(id, providerId){
   // The opt-out belongs on anything that leaves, and the gate at the wire requires it.
   const stop='https://mdconcierge.net/unsubscribe.html?p='+(p.funnel_token||'');
   const body=/aren't interested/i.test(text)?text
-    :text+"
-
-If you aren't interested, or don't wish to hear from me anymore, click here and I won't write again: "+stop;
+    :text+"\n\nIf you aren't interested, or don't wish to hear from me anymore, click here and I won't write again: "+stop;
   const subject=prompt('Subject line', 'Following up on the work comp pharmacy program');
   if(subject===null)return;
   const {data:row,error}=await sbClient.from('mdrx_outbox').insert({
