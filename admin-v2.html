@@ -2526,7 +2526,10 @@ async function mdrxLoadTimeline(id){
     const body=String(m.body_text||'').replace(/\s+/g,' ').trim();
     items.push({when:m.sent_at,icon:inbound?'📨':'✍️',
       title:(inbound?who+' wrote':'Eric wrote, by hand')+(m.subject?': '+m.subject:''),
-      detail:body.slice(0,1200)+(body.length>1200?' ...':'')});
+      // Folded away by default. A profile with twenty seven emails on it is unreadable when every
+      // one is open, and the point of the timeline is to see the shape of the relationship first.
+      fold:body.slice(0,4000)+(body.length>4000?' ...':''),
+      peek:body.slice(0,90)+(body.length>90?'...':'')});
   });
   (dr.data||[]).forEach(d=>{
     if(haveFull.has(String(d.received_at||'').slice(0,10)+'|in')) return;
@@ -2568,7 +2571,12 @@ async function mdrxLoadTimeline(id){
            <button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;font-weight:700;" onclick="mdrxSendMove(${a.moveId},${id},'tl-draft-')">Send this one</button>
            <button class="ib" onclick="mdrxDismissMove(${a.moveId})">Dismiss</button>
          </div>`
-      : (a.detail?`<div style="font-size:12px;color:var(--muted2);margin-top:2px;white-space:pre-wrap;">${ehtml(a.detail)}</div>`:'');
+      : a.fold
+        ? `<details style="margin-top:2px;">
+             <summary style="cursor:pointer;font-size:12px;color:var(--muted2);list-style:none;">${ehtml(a.peek||'read the email')}</summary>
+             <div style="font-size:12px;color:var(--muted2);margin-top:6px;white-space:pre-wrap;border-left:2px solid var(--border2);padding-left:10px;">${ehtml(a.fold)}</div>
+           </details>`
+        : (a.detail?`<div style="font-size:12px;color:var(--muted2);margin-top:2px;white-space:pre-wrap;">${ehtml(a.detail)}</div>`:'');
     return `<div style="border-left:2px solid ${c||'var(--border2)'};padding:6px 0 6px 12px;margin-bottom:4px;">${head}${body}</div>`;
   };
   const nextBlock=upcoming.length?`<div style="margin-bottom:12px;"><div style="font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px;">WHAT HAPPENS NEXT</div>${upcoming.map(a=>row(a,'#1e9e6a')).join('')}</div>`:'';
