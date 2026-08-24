@@ -1207,7 +1207,7 @@ function addMember(){
 // So it checks itself. On load it fetches its own source past the cache, reads the build stamp, and
 // replaces itself if the running page is not the current one. Guarded by sessionStorage so a failed
 // check can never become a reload loop.
-const BUILD = "47ba8c3";
+const BUILD = "e3e8e78";
 (async function freshnessCheck(){
   try{
     if(sessionStorage.getItem('reloaded-for')===BUILD) return;
@@ -1432,7 +1432,7 @@ async function mdrxPreviewMove(moveId){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+(session&&session.access_token)},
       // by_hand: this text sits in a box Eric can type into, so it is his. The gate stops judging
       // his wording and only reports what would genuinely stop the email reaching the man.
-      body:JSON.stringify({preview:{body_text:ta.value,template_key:'personal',by_hand:true}})});
+      body:JSON.stringify({preview:{body_text:ta.value,template_key:'personal',by_hand:true,token:MDRX_TOKEN||''}})});
     const j=await r.json();
     if(!j.ok) throw new Error(j.error||'could not render');
     // The gate that would refuse this at the wire runs here too, so a draft that cannot go says so
@@ -1712,6 +1712,8 @@ function mdrxPickMove(providerId, moveId){
     const act=document.getElementById('tl-act-'+r.value);
     const sj=document.getElementById('tl-subj-'+r.value);
     if(sj) sj.style.display=r.checked?'block':'none';
+    const ins=document.getElementById('tl-ins-'+r.value);
+    if(ins) ins.style.display=r.checked?'flex':'none';
     const on=(String(r.value)===String(moveId));
     if(ta) ta.style.display=on?'block':'none';
     if(act) act.style.display=on?'flex':'none';
@@ -1724,6 +1726,35 @@ function mdrxPickMove(providerId, moveId){
 // Saves the subject and the body against the recommendation itself, so the words survive a reload,
 // a crash, or a dead button, and whatever finally sends is what he actually wrote.
 const MDRX_SAVE_TIMERS={};
+// Drop a resource into the draft without typing a URL. A tracked link is ninety characters of noise
+// in the middle of a note Eric is trying to write like a person, so what goes in the box is a short
+// name and the sender turns it into the real thing on the way out.
+//
+// On its own line it renders as a button; inside a sentence it renders as "See my calendar". Either
+// way he never sees the URL, and neither does the physician.
+// Drop a resource into the draft without typing a URL. A tracked link is ninety characters of noise
+// in the middle of a note Eric is trying to write like a person, so the box holds a short name and
+// the sender turns it into the real thing on the way out. On its own line it renders as a button;
+// inside a sentence it renders as "See my calendar". He never sees a URL, and neither does the
+// physician.
+function mdrxInsertLink(moveId, key){
+  const ta=document.getElementById('tl-draft-'+moveId);
+  if(!ta) return;
+  const NL=String.fromCharCode(10);
+  const tok='{{'+key+'}}';
+  const at=ta.selectionStart==null?ta.value.length:ta.selectionStart;
+  const end=ta.selectionEnd==null?at:ta.selectionEnd;
+  const before=ta.value.slice(0,at), after=ta.value.slice(end);
+  // A link alone on its line renders as a button, so give it its own line unless he is mid sentence.
+  const midSentence=/\S[ ]*$/.test(before);
+  const ins=midSentence?tok:(NL+NL+tok+NL+NL);
+  const head=midSentence?before:before.replace(/\s+$/,'');
+  const tail=midSentence?after:after.replace(/^\s+/,'');
+  ta.value=head+ins+tail;
+  const pos=head.length+ins.length;
+  ta.focus(); ta.setSelectionRange(pos,pos);
+  mdrxAutoSave(moveId);
+}
 function mdrxAutoSave(moveId){
   clearTimeout(MDRX_SAVE_TIMERS[moveId]);
   const tag=document.getElementById('tl-saved-'+moveId);
@@ -2372,7 +2403,7 @@ function crmExport(){
 }
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 /* ============================ MDRx Pharmacy CRM (Prompt 2: screens) ============================ */
-let MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], MDRX_DRAFTS=[], MDRX_FORM=[], MDRX_QUOTE=null, mdrxTab='due', mdrxSearch='', mdrxOpenId=null, mdrxHome='All', mdrxSort='name', mdrxDQ=false, mdrxPracCtx=null;
+let MDRX_TOKEN='', MDRX_PROV=[], MDRX_PRAC=[], MDRX_PH=[], MDRX_ACT=[], MDRX_CONTACTS=[], MDRX_UTIL=[], MDRX_DRAFTS=[], MDRX_FORM=[], MDRX_QUOTE=null, mdrxTab='due', mdrxSearch='', mdrxOpenId=null, mdrxHome='All', mdrxSort='name', mdrxDQ=false, mdrxPracCtx=null;
 const MDRX_STAGES=[['target','Target','#6B95D4'],['contacted','Contacted','#c8922a'],['interested','Interested','#1e9e6a'],['meeting','Meeting','#7a5cd0'],['document_review','Doc review','#d08a2c'],['signed','Signed','#2D6A4F']];
 const MDRX_BUCKETS=[['','—'],['cold','Cold'],['warm','Warm'],['previously_engaged','Previously engaged'],['existing_low_util','Existing low-util']];
 const MDRX_STATUS=[['active','Active'],['dormant','Dormant'],['lost','Lost']];
@@ -2718,6 +2749,8 @@ async function mdrxDelete(id){
 }
 async function mdrxLoadTimeline(id){
   if(!id)return; const el=document.getElementById('mdrx-timeline'); if(!el)return;
+  // The preview expands {{calendar}} into this man's own tracked link, so it has to know who is open.
+  MDRX_TOKEN=((MDRX_PROV||[]).find(x=>x.id===id)||{}).funnel_token||'';
   const [act,ev,dr,ql,ob,nm,msg]=await Promise.all([
     sbClient.from('mdrx_activity').select('*').eq('provider_id',id),
     sbClient.from('mdrx_funnel_events').select('event,page,link,cta,scroll,seconds,created_at').eq('provider_id',id).order('created_at',{ascending:false}).limit(120),
@@ -2853,7 +2886,12 @@ async function mdrxLoadTimeline(id){
         <button class="ib" onclick="event.preventDefault();mdrxPreviewMove(${n.id})">Preview</button>
         <button class="ib" onclick="event.preventDefault();mdrxDismissMove(${n.id})">Dismiss</button>
       </div>
-      <span id="tl-saved-${n.id}" style="font-size:11px;color:var(--muted);margin-left:8px;"></span>
+      <div id="tl-ins-${n.id}" style="display:${i===0?'flex':'none'};flex-wrap:wrap;gap:5px;margin-top:6px;align-items:center;">
+        <span style="font-size:11px;color:var(--muted);">Drop in:</span>
+        ${[['calendar','My calendar'],['model','Formulary tool'],['kits','Injection kits'],['deck','PDRx deck'],['overview','One page overview']]
+          .map(([k,lbl])=>`<button class="ib" style="padding:3px 9px;font-size:11px;" onclick="event.preventDefault();mdrxInsertLink(${n.id},'${k}')">+ ${lbl}</button>`).join('')}
+        <span id="tl-saved-${n.id}" style="font-size:11px;color:var(--muted);margin-left:4px;"></span>
+      </div>
       <div id="tl-prev-${n.id}" style="display:none;margin-top:8px;"></div>
     </div>`;}).join('');
   const optBlock=moveOptions.length?`<div style="margin-bottom:14px;"><div style="font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px;">DRAFTS TO CHOOSE FROM (${moveOptions.length})</div>${optHtml}</div>`:'';
