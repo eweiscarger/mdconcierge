@@ -2551,15 +2551,17 @@ async function mdrxLoadTimeline(id){
     // A recommendation you can only read is advice, not a tool. Pending moves get the draft in an
     // editable box with a send button, so the next step can be taken from the place you are
     // already looking rather than hunted for on another screen.
-    // Only a pending move can be acted on. Superseded and dismissed ones were filling the profile
-    // with dead drafts printed in full, so the one you could actually send was buried among them.
-    if(n.status==='dismissed'||n.status==='discarded'||n.status==='refused') return;
-    const live=(n.status==='pending');
-    const row={when:n.recommended_date,icon:ch,title:t,
-               // A move already turned into an email shows up as that email; repeating its body here
-               // says the same thing twice.
-               detail:live?'':(n.reason||''),
-               moveId:(live?n.id:null), draft:n.draft||'', reason:n.reason||''};
+    // Every draft that has not already been sent is an option Eric can pick, edit and send. The
+    // agent writing several angles is the point: one may be right and another wrong, and that is
+    // his judgement, not the machine's. Only a move already turned into a sent email is read-only,
+    // because that email is in the timeline on its own.
+    if(n.status==='queued') { items.push({when:n.recommended_date,icon:ch,title:'Sent as: '+t,detail:''}); return; }
+    const label=({pending:'Recommended',approved:'Kept for later',discarded:'Set aside',refused:'Held back by the gate',dismissed:'Dismissed'})[n.status]||n.status;
+    const row={when:n.recommended_date,icon:ch,title:label+' · '+(n.channel||'move')+(n.angle?' · '+n.angle:''),
+               detail:'', moveId:n.id, draft:n.draft||'', reason:n.reason||'',
+               // Only the current recommendation is open on arrival; the rest are there to choose
+               // from without turning the page into a wall.
+               openByDefault:(n.status==='pending')};
     (String(n.recommended_date||'')>=mdrxToday()?upcoming:items).push(row);
   });
   const prov=(MDRX_PROV||[]).find(x=>x.id===id);
@@ -2571,12 +2573,15 @@ async function mdrxLoadTimeline(id){
     const head=`<div style="font-size:12.5px;"><b>${a.icon} ${ehtml(a.title)}</b> <span style="color:var(--muted);font-size:11px;">${String(a.when||'').slice(0,16).replace('T',' ')}</span></div>`;
     // A pending recommendation is editable and sendable from here.
     const body=a.moveId
-      ? `${a.reason?`<div style="font-size:12px;color:var(--muted2);margin:2px 0 6px;">${ehtml(a.reason)}</div>`:''}
-         <textarea id="tl-draft-${a.moveId}" style="width:100%;min-height:96px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(a.draft)}</textarea>
-         <div style="margin-top:6px;display:flex;gap:6px;">
-           <button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;font-weight:700;" onclick="mdrxSendMove(${a.moveId},${id},'tl-draft-')">Send this one</button>
-           <button class="ib" onclick="mdrxDismissMove(${a.moveId})">Dismiss</button>
-         </div>`
+      ? `<details ${a.openByDefault?'open':''} style="margin-top:2px;">
+           <summary style="cursor:pointer;font-size:12px;color:var(--muted2);list-style:none;">${a.openByDefault?'edit and send':'open this option'} &middot; ${ehtml(String(a.draft).replace(/\s+/g,' ').slice(0,70))}...</summary>
+           ${a.reason?`<div style="font-size:12px;color:var(--muted2);margin:6px 0;">${ehtml(a.reason)}</div>`:''}
+           <textarea id="tl-draft-${a.moveId}" style="width:100%;min-height:120px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(a.draft)}</textarea>
+           <div style="margin-top:6px;display:flex;gap:6px;">
+             <button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;font-weight:700;" onclick="mdrxSendMove(${a.moveId},${id},'tl-draft-')">Send this one</button>
+             <button class="ib" onclick="mdrxDismissMove(${a.moveId})">Dismiss</button>
+           </div>
+         </details>`
       : a.fold
         ? `<details style="margin-top:2px;">
              <summary style="cursor:pointer;font-size:12px;color:var(--muted2);list-style:none;">${ehtml(a.peek||'read the email')}</summary>
