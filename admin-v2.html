@@ -1690,6 +1690,8 @@ function mdrxPickMove(providerId, moveId){
   document.querySelectorAll(`input[name="nmpick-${providerId}"]`).forEach(r=>{
     const ta=document.getElementById('tl-draft-'+r.value);
     const act=document.getElementById('tl-act-'+r.value);
+    const sj=document.getElementById('tl-subj-'+r.value);
+    if(sj) sj.style.display=r.checked?'block':'none';
     const on=(String(r.value)===String(moveId));
     if(ta) ta.style.display=on?'block':'none';
     if(act) act.style.display=on?'flex':'none';
@@ -1707,9 +1709,12 @@ async function mdrxSendMove(id, providerId, prefix){
   const body=text;
   // The old default was "Following up on the work comp pharmacy program", which the gate refuses as a
   // nag phrase, so pressing send produced a held email and no explanation.
-  const subject=prompt('Subject line', 'A time to talk');
-  if(subject===null)return;
-  if(!String(subject).trim()){showToast('It needs a subject line');return;}
+  // The subject is on screen and editable, so it is read from there. It was a popup, which meant
+  // Eric could not see what it said until he pressed send, and what it said was a stock campaign
+  // headline about a Pennsylvania court ruling regardless of who the email was going to.
+  const sj=document.getElementById('tl-subj-'+id);
+  const subject=sj?sj.value.trim():'';
+  if(!subject){showToast('It needs a subject line');if(sj)sj.focus();return;}
   const {data:row,error}=await sbClient.from('mdrx_outbox').insert({
     provider_id:providerId, touch_no:0, to_email:p.email, subject:subject||'',
     body_text:body, body_html:null, status:'pending', scheduled_date:mdrxToday(),
@@ -2648,7 +2653,7 @@ async function mdrxLoadTimeline(id){
     sbClient.from('mdrx_inbox_drafts').select('subject,snippet,sentiment,received_at').eq('provider_id',id),
     sbClient.from('quote_links').select('recipient_name,view_count,first_viewed_at,last_viewed_at').eq('provider_id',id),
     sbClient.from('mdrx_outbox').select('touch_no,subject,status,sent_at,scheduled_date,plain_retry').eq('provider_id',id).order('id'),
-    sbClient.from('mdrx_next_moves').select('id,recommended_date,channel,angle,reason,draft,status').eq('provider_id',id).order('recommended_date',{ascending:false}).limit(10),
+    sbClient.from('mdrx_next_moves').select('id,recommended_date,channel,angle,reason,draft,status,subject').eq('provider_id',id).order('recommended_date',{ascending:false}).limit(10),
     // The actual correspondence, both directions, including everything Eric wrote by hand from his
     // own mailbox. The timeline knew about clicks and 400-character reply snippets and had never
     // once shown the emails themselves, which is the only place the real conversation lives.
@@ -2762,6 +2767,7 @@ async function mdrxLoadTimeline(id){
         </div>
         <span style="font-size:11px;color:var(--muted);">${ehtml(n.recommended_date||'')}</span>
       </label>
+      <input id="tl-subj-${n.id}" value="${ehtml(n.subject||'')}" placeholder="Subject line" style="display:${i===0?'block':'none'};width:100%;margin-top:8px;font-size:12.5px;font-weight:600;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">
       <textarea id="tl-draft-${n.id}" style="display:${i===0?'block':'none'};width:100%;min-height:130px;margin-top:8px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(n.draft||'')}</textarea>
       <div id="tl-act-${n.id}" style="display:${i===0?'flex':'none'};gap:6px;margin-top:6px;">
         <button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;font-weight:700;" onclick="event.preventDefault();mdrxSendMove(${n.id},${id},'tl-draft-')">Send this one</button>
