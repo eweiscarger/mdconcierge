@@ -1553,8 +1553,8 @@ async function mdrxRejectEnrich(id){
 // guaranteed it would never go out. This writes the edited text straight into the outbox and sends
 // it, as PLAIN TEXT. These are notes Eric wrote to one physician about his own practice, not
 // campaign touches, and wrapping them in the designed card announces them as marketing.
-async function mdrxSendMove(id, providerId){
-  const ta=document.getElementById('nm-draft-'+id);
+async function mdrxSendMove(id, providerId, prefix){
+  const ta=document.getElementById((prefix||'nm-draft-')+id);
   const text=ta?ta.value.trim():'';
   if(!text){showToast('Nothing to send');return;}
   const p=P.find(x=>x.id===providerId);
@@ -2496,7 +2496,7 @@ async function mdrxLoadTimeline(id){
     sbClient.from('mdrx_inbox_drafts').select('subject,snippet,sentiment,received_at').eq('provider_id',id),
     sbClient.from('quote_links').select('recipient_name,view_count,first_viewed_at,last_viewed_at').eq('provider_id',id),
     sbClient.from('mdrx_outbox').select('touch_no,subject,status,sent_at,scheduled_date,plain_retry').eq('provider_id',id).order('id'),
-    sbClient.from('mdrx_next_moves').select('recommended_date,channel,angle,reason,draft,status').eq('provider_id',id).order('recommended_date',{ascending:false}).limit(10)
+    sbClient.from('mdrx_next_moves').select('id,recommended_date,channel,angle,reason,draft,status').eq('provider_id',id).order('recommended_date',{ascending:false}).limit(10)
   ]);
   MDRX_ACT=act.data||[];  // manual activity only (used for prior-touch counting)
   const items=[];
@@ -2525,7 +2525,11 @@ async function mdrxLoadTimeline(id){
   (nm.data||[]).forEach(n=>{
     const ch={email:'✉️',call:'📞',text:'💬'}[n.channel]||'•';
     const t=(n.status==='approved'?'Planned':'Recommended')+' '+(n.channel||'move')+(n.angle?' · '+n.angle:'');
-    const row={when:n.recommended_date,icon:ch,title:t,detail:(n.reason?n.reason+'\n\n':'')+(n.draft||'')};
+    // A recommendation you can only read is advice, not a tool. Pending moves get the draft in an
+    // editable box with a send button, so the next step can be taken from the place you are
+    // already looking rather than hunted for on another screen.
+    const row={when:n.recommended_date,icon:ch,title:t,detail:(n.reason?n.reason+'\n\n':'')+(n.draft||''),
+               moveId:(n.status==='pending'?n.id:null), draft:n.draft||'', reason:n.reason||''};
     if(n.status==='dismissed') return;
     (String(n.recommended_date||'')>=mdrxToday()?upcoming:items).push(row);
   });
@@ -2534,7 +2538,19 @@ async function mdrxLoadTimeline(id){
   if(prov&&prov.brief_sent_at) items.push({when:prov.brief_sent_at,icon:'📘',title:'We sent the Executive Brief',detail:''});
   upcoming.sort((a,b)=>String(a.when||'').localeCompare(String(b.when||'')));
   items.sort((a,b)=>String(b.when||'').localeCompare(String(a.when||'')));
-  const row=(a,c)=>`<div style="border-left:2px solid ${c||'var(--border2)'};padding:6px 0 6px 12px;margin-bottom:4px;"><div style="font-size:12.5px;"><b>${a.icon} ${ehtml(a.title)}</b> <span style="color:var(--muted);font-size:11px;">${String(a.when||'').slice(0,16).replace('T',' ')}</span></div>${a.detail?`<div style="font-size:12px;color:var(--muted2);margin-top:2px;white-space:pre-wrap;">${ehtml(a.detail)}</div>`:''}</div>`;
+  const row=(a,c)=>{
+    const head=`<div style="font-size:12.5px;"><b>${a.icon} ${ehtml(a.title)}</b> <span style="color:var(--muted);font-size:11px;">${String(a.when||'').slice(0,16).replace('T',' ')}</span></div>`;
+    // A pending recommendation is editable and sendable from here.
+    const body=a.moveId
+      ? `${a.reason?`<div style="font-size:12px;color:var(--muted2);margin:2px 0 6px;">${ehtml(a.reason)}</div>`:''}
+         <textarea id="tl-draft-${a.moveId}" style="width:100%;min-height:96px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(a.draft)}</textarea>
+         <div style="margin-top:6px;display:flex;gap:6px;">
+           <button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;font-weight:700;" onclick="mdrxSendMove(${a.moveId},${id},'tl-draft-')">Send this one</button>
+           <button class="ib" onclick="mdrxDismissMove(${a.moveId})">Dismiss</button>
+         </div>`
+      : (a.detail?`<div style="font-size:12px;color:var(--muted2);margin-top:2px;white-space:pre-wrap;">${ehtml(a.detail)}</div>`:'');
+    return `<div style="border-left:2px solid ${c||'var(--border2)'};padding:6px 0 6px 12px;margin-bottom:4px;">${head}${body}</div>`;
+  };
   const nextBlock=upcoming.length?`<div style="margin-bottom:12px;"><div style="font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px;">WHAT HAPPENS NEXT</div>${upcoming.map(a=>row(a,'#1e9e6a')).join('')}</div>`:'';
   if(!items.length&&!upcoming.length){el.innerHTML='<div style="color:var(--muted);font-size:13px;">No activity yet. Use the buttons above to log a call, meeting, or note.</div>';return;}
   const histBlock=items.length?`<div style="font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px;">HISTORY</div>${items.map(a=>row(a)).join('')}`:'';
