@@ -2551,9 +2551,15 @@ async function mdrxLoadTimeline(id){
     // A recommendation you can only read is advice, not a tool. Pending moves get the draft in an
     // editable box with a send button, so the next step can be taken from the place you are
     // already looking rather than hunted for on another screen.
-    const row={when:n.recommended_date,icon:ch,title:t,detail:(n.reason?n.reason+'\n\n':'')+(n.draft||''),
-               moveId:(n.status==='pending'?n.id:null), draft:n.draft||'', reason:n.reason||''};
-    if(n.status==='dismissed') return;
+    // Only a pending move can be acted on. Superseded and dismissed ones were filling the profile
+    // with dead drafts printed in full, so the one you could actually send was buried among them.
+    if(n.status==='dismissed'||n.status==='discarded'||n.status==='refused') return;
+    const live=(n.status==='pending');
+    const row={when:n.recommended_date,icon:ch,title:t,
+               // A move already turned into an email shows up as that email; repeating its body here
+               // says the same thing twice.
+               detail:live?'':(n.reason||''),
+               moveId:(live?n.id:null), draft:n.draft||'', reason:n.reason||''};
     (String(n.recommended_date||'')>=mdrxToday()?upcoming:items).push(row);
   });
   const prov=(MDRX_PROV||[]).find(x=>x.id===id);
