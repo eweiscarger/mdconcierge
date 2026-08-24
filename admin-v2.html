@@ -1207,7 +1207,7 @@ function addMember(){
 // So it checks itself. On load it fetches its own source past the cache, reads the build stamp, and
 // replaces itself if the running page is not the current one. Guarded by sessionStorage so a failed
 // check can never become a reload loop.
-const BUILD = "eb22cfb";
+const BUILD = "af04125";
 (async function freshnessCheck(){
   try{
     if(sessionStorage.getItem('reloaded-for')===BUILD) return;
@@ -1717,6 +1717,29 @@ function mdrxPickMove(providerId, moveId){
     if(act) act.style.display=on?'flex':'none';
   });
 }
+// Eric wrote an email to Justin Gulden in this box, pressed send several times, and lost every word
+// of it: the button threw before it saved anything, and the text lived nowhere but the textarea.
+// Nothing he types here is going to depend on a button working again.
+//
+// Saves the subject and the body against the recommendation itself, so the words survive a reload,
+// a crash, or a dead button, and whatever finally sends is what he actually wrote.
+const MDRX_SAVE_TIMERS={};
+function mdrxAutoSave(moveId){
+  clearTimeout(MDRX_SAVE_TIMERS[moveId]);
+  const tag=document.getElementById('tl-saved-'+moveId);
+  if(tag) tag.textContent='saving…';
+  // Debounced, so it is one write when he stops typing rather than one per keystroke.
+  MDRX_SAVE_TIMERS[moveId]=setTimeout(async()=>{
+    const ta=document.getElementById('tl-draft-'+moveId);
+    const sj=document.getElementById('tl-subj-'+moveId);
+    const patch={};
+    if(ta) patch.draft=ta.value;
+    if(sj) patch.subject=sj.value.trim()||null;
+    if(!Object.keys(patch).length) return;
+    const {error}=await sbClient.from('mdrx_next_moves').update(patch).eq('id',moveId);
+    if(tag) tag.textContent=error?('not saved: '+error.message):('saved '+new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}));
+  },700);
+}
 async function mdrxSendMove(id, providerId, prefix){
   const ta=document.getElementById((prefix||'nm-draft-')+id);
   const text=ta?ta.value.trim():'';
@@ -1743,16 +1766,20 @@ async function mdrxSendMove(id, providerId, prefix){
   const sj=document.getElementById('tl-subj-'+id);
   const subject=sj?sj.value.trim():'';
   if(!subject){showToast('It needs a subject line');if(sj)sj.focus();return;}
+  // Persist this exact wording before anything else happens, so a failure past this point can
+  // never lose it again.
+  await sbClient.from('mdrx_next_moves').update({draft:text,subject:subject}).eq('id',id);
   const {data:row,error}=await sbClient.from('mdrx_outbox').insert({
     provider_id:providerId, touch_no:0, to_email:p.email, subject:subject||'',
     body_text:body, body_html:null, status:'pending', scheduled_date:mdrxToday(),
     objective:'sent by hand from the next move', template_key:'personal', channel:'email'
   }).select('id').single();
   if(error){showToast('Could not queue it: '+error.message);return;}
+  // Reported exactly as the queue reports it, so a send from a profile and a send from the queue
+  // succeed and fail in the same words.
   const {data,error:sendErr}=await sbClient.functions.invoke('send-outreach',{body:{ids:[row.id]}});
-  if(sendErr){showToast('Send failed: '+sendErr.message);return;}
-  const held=(data&&data.failed&&data.failed.length)?data.failed.join('; '):'';
-  if(held){showToast('Held back: '+held);return;}
+  if(sendErr||!data||!data.ok){ showToast('Send error: '+((sendErr&&sendErr.message)||(data&&data.error)||'unknown')); return; }
+  if(!data.sent){ showToast('Not sent: '+((data.failed&&data.failed.join('; '))||'nothing went out')); return; }
   await sbClient.from('mdrx_next_moves').update({status:'queued',draft:text,resolved_at:new Date().toISOString()}).eq('id',id);
   // Sending from the profile queued and sent a NEW row while anything already waiting for this lead
   // stayed pending, so the queue kept a copy of a message that had just gone out and would have sent
@@ -2803,13 +2830,14 @@ async function mdrxLoadTimeline(id){
         </div>
         <span style="font-size:11px;color:var(--muted);">${ehtml(n.recommended_date||'')}</span>
       </label>
-      <input id="tl-subj-${n.id}" value="${ehtml(n.subject||threadSubject)}" placeholder="Subject line" style="display:${i===0?'block':'none'};width:100%;margin-top:8px;font-size:12.5px;font-weight:600;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">
-      <textarea id="tl-draft-${n.id}" style="display:${i===0?'block':'none'};width:100%;min-height:130px;margin-top:8px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(n.draft||'')}</textarea>
+      <input id="tl-subj-${n.id}" oninput="mdrxAutoSave(${n.id})" value="${ehtml(n.subject||threadSubject)}" placeholder="Subject line" style="display:${i===0?'block':'none'};width:100%;margin-top:8px;font-size:12.5px;font-weight:600;padding:7px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">
+      <textarea id="tl-draft-${n.id}" oninput="mdrxAutoSave(${n.id})" style="display:${i===0?'block':'none'};width:100%;min-height:130px;margin-top:8px;font-size:12.5px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(n.draft||'')}</textarea>
       <div id="tl-act-${n.id}" style="display:${i===0?'flex':'none'};gap:6px;margin-top:6px;">
         <button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;font-weight:700;" onclick="event.preventDefault();mdrxSendMove(${n.id},${id},'tl-draft-')">Send this one</button>
         <button class="ib" onclick="event.preventDefault();mdrxPreviewMove(${n.id})">Preview</button>
         <button class="ib" onclick="event.preventDefault();mdrxDismissMove(${n.id})">Dismiss</button>
       </div>
+      <span id="tl-saved-${n.id}" style="font-size:11px;color:var(--muted);margin-left:8px;"></span>
       <div id="tl-prev-${n.id}" style="display:none;margin-top:8px;"></div>
     </div>`;}).join('');
   const optBlock=moveOptions.length?`<div style="margin-bottom:14px;"><div style="font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:6px;">DRAFTS TO CHOOSE FROM (${moveOptions.length})</div>${optHtml}</div>`:'';
