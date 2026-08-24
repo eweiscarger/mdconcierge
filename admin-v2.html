@@ -1422,7 +1422,7 @@ async function loadCockpit(){
     <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;"><b style="font-size:13.5px;">${ehtml(nmp?ckName(nmp):('#'+m.provider_id))}</b>${nmp&&nmp.practice_name?'<span style="font-size:11.5px;color:var(--muted);">'+ehtml(nmp.practice_name)+'</span>':''}<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);">${nmCh[m.channel]||''} ${ehtml(m.channel||'')}</span>${m.angle?'<span style="font-size:12px;color:var(--muted2);">'+ehtml(m.angle)+'</span>':''}<span style="margin-left:auto;font-size:12px;color:var(--gold);font-weight:700;">${ehtml(m.recommended_date||'')}</span></div>
     ${m.reason?'<div style="font-size:11.5px;color:var(--muted);margin:3px 0 6px;">'+ehtml(m.reason)+'</div>':''}
     <textarea id="nm-draft-${m.id}" style="width:100%;min-height:78px;font-size:13px;line-height:1.5;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);box-sizing:border-box;">${ehtml(m.draft||'')}</textarea>
-    <div style="margin-top:6px;display:flex;gap:6px;"><button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;" onclick="mdrxApproveMove(${m.id})">Approve</button><button class="ib" onclick="mdrxDismissMove(${m.id})">Dismiss</button></div></div>`;}).join(''):'';
+    <div style="margin-top:6px;display:flex;gap:6px;"><button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;font-weight:700;" onclick="mdrxSendMove(${m.id},${m.provider_id})">Send this one</button><button class="ib" onclick="mdrxApproveMove(${m.id})">Keep for later</button><button class="ib" onclick="mdrxDismissMove(${m.id})">Dismiss</button></div></div>`;}).join(''):'';
   const cqAll=(cq&&!cq.error&&cq.data)?cq.data:[];
   const cqList=cqAll.filter(c=>c.status==='pending');
   const cqRate=c=>((c.sent_count||0)?(c.engaged_count||0)/(c.sent_count||0):0);
@@ -1547,6 +1547,39 @@ async function mdrxConfirmEnrich(id,provId){
 async function mdrxRejectEnrich(id){
   await sbClient.from('enrichment_suggestions').update({status:'rejected',resolved_at:new Date().toISOString()}).eq('id',id);
   showToast('Suggestion dismissed'); loadCockpit();
+}
+// Pick one and send it. Until now the only button was Approve, which set the row to 'approved',
+// and the promoter only ever picks up 'pending' rows: approving a draft was the one action that
+// guaranteed it would never go out. This writes the edited text straight into the outbox and sends
+// it, as PLAIN TEXT. These are notes Eric wrote to one physician about his own practice, not
+// campaign touches, and wrapping them in the designed card announces them as marketing.
+async function mdrxSendMove(id, providerId){
+  const ta=document.getElementById('nm-draft-'+id);
+  const text=ta?ta.value.trim():'';
+  if(!text){showToast('Nothing to send');return;}
+  const p=P.find(x=>x.id===providerId);
+  if(!p||!p.email){showToast('That contact has no email address');return;}
+  if(!confirm('Send this to '+p.email+' now, as a plain email?'))return;
+  // The opt-out belongs on anything that leaves, and the gate at the wire requires it.
+  const stop='https://mdconcierge.net/unsubscribe.html?p='+(p.funnel_token||'');
+  const body=/aren't interested/i.test(text)?text
+    :text+"
+
+If you aren't interested, or don't wish to hear from me anymore, click here and I won't write again: "+stop;
+  const subject=prompt('Subject line', 'Following up on the work comp pharmacy program');
+  if(subject===null)return;
+  const {data:row,error}=await sbClient.from('mdrx_outbox').insert({
+    provider_id:providerId, touch_no:0, to_email:p.email, subject:subject||'',
+    body_text:body, body_html:null, status:'pending', scheduled_date:mdrxToday(),
+    objective:'sent by hand from the next move', template_key:'personal', channel:'email'
+  }).select('id').single();
+  if(error){showToast('Could not queue it: '+error.message);return;}
+  const {data,error:sendErr}=await sbClient.functions.invoke('send-outreach',{body:{ids:[row.id]}});
+  if(sendErr){showToast('Send failed: '+sendErr.message);return;}
+  const held=(data&&data.failed&&data.failed.length)?data.failed.join('; '):'';
+  if(held){showToast('Held back: '+held);return;}
+  await sbClient.from('mdrx_next_moves').update({status:'queued',draft:text,resolved_at:new Date().toISOString()}).eq('id',id);
+  showToast('Sent to '+p.email); loadCockpit();
 }
 async function mdrxApproveMove(id){
   const ta=document.getElementById('nm-draft-'+id); const text=ta?ta.value.trim():'';
