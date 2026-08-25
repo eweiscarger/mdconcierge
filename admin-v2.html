@@ -1207,7 +1207,7 @@ function addMember(){
 // So it checks itself. On load it fetches its own source past the cache, reads the build stamp, and
 // replaces itself if the running page is not the current one. Guarded by sessionStorage so a failed
 // check can never become a reload loop.
-const BUILD = "e3e8e78";
+const BUILD = "f5b101b";
 (async function freshnessCheck(){
   try{
     if(sessionStorage.getItem('reloaded-for')===BUILD) return;
@@ -1988,13 +1988,25 @@ async function mdrxPreview(id){
   if(btn)btn.textContent='Hide preview';
   const ta=document.getElementById('ob-'+id);
   const edited=ta&&ta.dataset.orig!==undefined&&ta.value!==ta.dataset.orig;
-  let html='';
-  if(edited){ html=mdrxTextToHtml(ta.value); }
-  else {
-    const {data}=await sbClient.from('mdrx_outbox').select('body_html,body_text').eq('id',id).maybeSingle();
-    html=(data&&data.body_html)?data.body_html:mdrxTextToHtml((data&&data.body_text)||'');
+  const {data}=await sbClient.from('mdrx_outbox').select('body_html,body_text,template_key').eq('id',id).maybeSingle();
+  const text = edited ? ta.value : ((data&&data.body_text)||'');
+  // A plain text email must preview as plain text. This used to render it into a designed email,
+  // complete with navy buttons and the signature card, and relabel each URL through mdrxPvLabel,
+  // which is why two different links both read "See how it works". None of that reaches the
+  // physician: he gets the characters below and nothing else, so that is what the preview shows.
+  const isPlain = (data&&data.template_key==='plain') || !(data&&data.body_html);
+  let html='', note='';
+  if(isPlain){
+    html='<pre style="margin:0;padding:20px;white-space:pre-wrap;word-wrap:break-word;'
+      +'font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;'
+      +'line-height:1.6;color:#1a2233;background:#fff;">'+ehtml(text)+'</pre>';
+    note='<div style="background:#12324a;color:#9fd0ea;font-size:11.5px;padding:6px 10px;">'
+      +'Plain text. This is exactly what is sent, character for character.'
+      +(edited?' Showing your edit.':'')+'</div>';
+  } else {
+    html = (!edited && data && data.body_html) ? data.body_html : mdrxTextToHtml(text);
+    note = edited?'<div style="background:#3a2d10;color:#e6c76b;font-size:11.5px;padding:6px 10px;">Showing your edit, rendered the way it will send.</div>':'';
   }
-  const note=edited?'<div style="background:#3a2d10;color:#e6c76b;font-size:11.5px;padding:6px 10px;">Showing your edit, rendered the way it will send.</div>':'';
   const fr=document.createElement('iframe');
   fr.setAttribute('sandbox','');            // preview only: no scripts, no navigation out of the box
   fr.style.cssText='width:100%;border:0;background:#F6F9FD;height:520px;display:block;';
