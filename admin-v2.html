@@ -1207,7 +1207,7 @@ function addMember(){
 // So it checks itself. On load it fetches its own source past the cache, reads the build stamp, and
 // replaces itself if the running page is not the current one. Guarded by sessionStorage so a failed
 // check can never become a reload loop.
-const BUILD = "c221bed";
+const BUILD = "df3cbb8";
 (async function freshnessCheck(){
   try{
     if(sessionStorage.getItem('reloaded-for')===BUILD) return;
@@ -2000,20 +2000,16 @@ async function mdrxPreview(id){
     // These go as multipart: a plain part and a minimal HTML part. Almost every client renders the
     // HTML one, so that is what the preview shows, links labelled rather than forty characters of
     // token in the middle of a sentence. The plain half carries the same pages without the token.
+    var LINKMD = new RegExp('\\[([^\\]]+)\\]\\((https?://[^ )]+)\\)', 'g');
+    var NL2 = new RegExp('(\\r?\\n){2,}');
     html='<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;'
       +'font-size:15px;line-height:1.55;color:#1a2233;max-width:640px;padding:20px;background:#fff;">'
-      + String(text).replace(/
-/g,'
-').trim().split(/
-{2,}/).map(function(par){
+      + String(text).trim().split(NL2).filter(function(x){return x && x.trim();}).map(function(par){
           var line=par.trim(); if(!line) return '';
-          var out=ehtml(line).replace(/\[([^\]
-]+)\]\((https?:\/\/[^\s)]+)\)/g,
-            function(m,label,url){ return '<a href="'+url+'" style="color:#1a5fb4;">'+label+'</a>'; });
-          var quiet=/aren.t interested/i.test(line);
-          return '<p style="margin:0 0 12px;'+(quiet?'font-size:12px;color:#8a93a1;':'')+'">'
-            + out.replace(/
-/g,'<br>') + '</p>';
+          var out=ehtml(line).replace(LINKMD, function(m,label,url){
+            return '<a href="'+url+'" style="color:#1a5fb4;">'+label+'</a>'; });
+          var quiet=/interested/i.test(line);
+          return '<p style="margin:0 0 12px;'+(quiet?'font-size:12px;color:#8a93a1;':'')+'">'+out+'</p>';
         }).filter(Boolean).join('')
       +'</div>';
     note='<div style="background:#12324a;color:#9fd0ea;font-size:11.5px;padding:6px 10px;">'
