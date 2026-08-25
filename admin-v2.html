@@ -1207,7 +1207,7 @@ function addMember(){
 // So it checks itself. On load it fetches its own source past the cache, reads the build stamp, and
 // replaces itself if the running page is not the current one. Guarded by sessionStorage so a failed
 // check can never become a reload loop.
-const BUILD = "9768b63";
+const BUILD = "7b315eb";
 (async function freshnessCheck(){
   try{
     if(sessionStorage.getItem('reloaded-for')===BUILD) return;
@@ -2004,19 +2004,32 @@ async function mdrxPreview(id){
     var MDRX_PLAIN_SIG = '<table cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-top:22px;"><tbody><tr><td style="padding-right:14px;vertical-align:middle;"><img alt="MDconcierge" width="54" height="54" style="width:54px;height:54px;border-radius:8px;display:block;" src="https://mdconcierge.net/logo.jpg"></td><td style="border-left:3px solid rgb(200,146,42);padding-left:14px;vertical-align:middle;"><div style="font-family:Arial,Helvetica,sans-serif;font-size:16px;color:rgb(15,30,61);"><b>Eric Weiscarger</b></div><div style="letter-spacing:1px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:rgb(107,159,212);"><b>FOUNDER &middot; MDCONCIERGE</b></div><div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:rgb(90,102,117);margin-top:3px;">Referral Management <span style="color:rgb(200,146,42);">&bull;</span> Work Comp Pharmacy <span style="color:rgb(200,146,42);">&bull;</span> Ancillary Coordination</div><div style="line-height:1.7;margin-top:6px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:rgb(15,30,61);">(570) 817-7569<br><a href="mailto:eric@mdconcierge.net" style="color:rgb(15,30,61);text-decoration:none;">eric@mdconcierge.net</a><br><a href="https://mdconcierge.net/" style="color:rgb(200,146,42);text-decoration:none;"><b>mdconcierge.net</b></a></div></td></tr></tbody></table>';
     var LINKMD = new RegExp('\\[([^\\]]+)\\]\\((https?://[^ )]+)\\)', 'g');
     var NL2 = new RegExp('(\\r?\\n){2,}');
+    // Exactly what the sender does. The typed sign-off is lifted out, because the body already
+    // spells out name, title, services and number, and printing the card under that shows the
+    // whole thing twice. "Best," stays. The unsubscribe drops to the bottom, where a footer goes,
+    // instead of sitting wedged between the last sentence and the sign-off.
+    var SIGTAIL = new RegExp('\\n[ \\t]*(?:Best|Thanks|Regards|Best regards|Kind regards|Sincerely)[ \\t]*,?[ \\t]*\\n[\\s\\S]*$', 'i');
+    var full = String(text).replace(/\r\n/g, '\n');
+    var cut = full.match(SIGTAIL);
+    var body = cut ? full.slice(0, cut.index) + '\n\nBest,' : full;
+    var parts = body.trim().split(NL2).filter(function(x){ return x && x.trim(); }).map(function(par){
+        var line=par.trim(); if(!line) return '';
+        var out=ehtml(line).replace(LINKMD, function(m,label,url){
+          return '<a href="'+url+'" style="color:#1a5fb4;">'+label+'</a>'; });
+        var quiet=/aren.t interested|don.t wish to hear/i.test(line);
+        return '<p style="margin:0 0 12px;'+(quiet?'font-size:12px;color:#8a93a1;':'')+'">'+out+'</p>';
+      }).filter(Boolean);
+    var foot = parts.filter(function(x){ return x.indexOf('#8a93a1') > -1; });
+    var keep = parts.filter(function(x){ return x.indexOf('#8a93a1') === -1; });
     html='<div style="font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;'
       +'font-size:15px;line-height:1.55;color:#1a2233;max-width:640px;padding:20px;background:#fff;">'
-      + String(text).trim().split(NL2).filter(function(x){return x && x.trim();}).map(function(par){
-          var line=par.trim(); if(!line) return '';
-          var out=ehtml(line).replace(LINKMD, function(m,label,url){
-            return '<a href="'+url+'" style="color:#1a5fb4;">'+label+'</a>'; });
-          var quiet=/interested/i.test(line);
-          return '<p style="margin:0 0 12px;'+(quiet?'font-size:12px;color:#8a93a1;':'')+'">'+out+'</p>';
-        }).filter(Boolean).join('')
+      + keep.join('')
       + MDRX_PLAIN_SIG
+      + (foot.length ? '<div style="margin-top:16px;">' + foot.join('') + '</div>' : '')
       +'</div>';
     note='<div style="background:#12324a;color:#9fd0ea;font-size:11.5px;padding:6px 10px;">'
-      +'Sent as plain text with a minimal HTML part. No images, no card, no redirector.'
+      +'Plain text with a minimal HTML part. One image, the logo, on our own domain. No card, '
+      +'no redirector, no third party.'
       +(edited?' Showing your edit.':'')+'</div>';
   } else {
     html = (!edited && data && data.body_html) ? data.body_html : mdrxTextToHtml(text);
