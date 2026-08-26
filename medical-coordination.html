@@ -246,11 +246,22 @@
 <script>
 (function(){
   var els=[].slice.call(document.querySelectorAll('.rv'));
-  if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in');});return;}
-  var io=new IntersectionObserver(function(es){
-    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  },{rootMargin:'0px 0px -12% 0px',threshold:.12});
-  els.forEach(function(e){io.observe(e);});
+  if(!els.length) return;
+  function inView(e){var r=e.getBoundingClientRect();
+    return r.top < (window.innerHeight||document.documentElement.clientHeight)*0.92 && r.bottom > 0;}
+  function pass(){
+    for(var i=els.length-1;i>=0;i--){ if(inView(els[i])){ els[i].classList.add('in'); els.splice(i,1); } }
+    if(!els.length){ window.removeEventListener('scroll',pass); window.removeEventListener('resize',pass); }
+  }
+  window.addEventListener('scroll',pass,{passive:true});
+  window.addEventListener('resize',pass);
+  pass();
+  // never leave the section invisible: if nothing revealed at all, show everything
+  setTimeout(function(){
+    if(!document.querySelector('.rv.in')){
+      [].slice.call(document.querySelectorAll('.rv')).forEach(function(e){e.classList.add('in');});
+    }
+  },2500);
 })();
 </script>
 </body>
