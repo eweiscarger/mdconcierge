@@ -7,6 +7,26 @@
 <meta name="description" content="How MDconcierge manages workers compensation and personal injury referrals: claims verified, providers matched, and coordination handled from one address.">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="service.css">
+<style>
+.email-strip{background:var(--navy);padding:80px 48px;}
+.email-strip-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;}
+.email-mock{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:14px;padding:24px;}
+.em-subj{font-size:14px;font-weight:600;color:#fff;margin-bottom:8px;}
+.em-meta{font-size:11px;color:rgba(255,255,255,.25);margin-bottom:14px;}
+.em-body{font-size:12px;color:rgba(255,255,255,.55);line-height:1.7;margin-bottom:14px;}
+.em-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.2);margin-bottom:7px;}
+.em-btns{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.em-btn{font-size:11px;padding:4px 10px;background:rgba(107,159,212,.12);border:1px solid rgba(107,159,212,.2);border-radius:10px;color:var(--steel);}
+.em-portal{display:inline-flex;align-items:center;gap:5px;margin-top:6px;font-size:11px;padding:5px 12px;background:var(--navy2);border:1px solid rgba(107,159,212,.3);border-radius:10px;color:var(--steel);font-weight:600;}
+.founder{background:#fff;padding:72px 48px;border-top:1px solid var(--border);}
+.founder-inner{max-width:760px;margin:0 auto;text-align:center;}
+.founder-rule{width:48px;height:2px;background:var(--gold);margin:0 auto 28px;}
+.founder-quote{font-family:var(--serif);font-size:clamp(19px,2.5vw,28px);font-style:italic;color:var(--navy);line-height:1.55;margin-bottom:24px;font-weight:400;}
+.founder-name{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:3px;}
+.founder-role{font-size:13px;color:var(--muted);}
+.email-copy .sec-title{color:#fff;}
+.email-copy .sec-sub{color:rgba(255,255,255,.4);}
+</style>
 <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/brand/favicon-180.png">
@@ -74,6 +94,63 @@
       </div>
     </div>
   </section>
+
+<!-- EMAIL STRIP -->
+<section class="email-strip">
+  <div class="email-strip-inner">
+    <div class="email-copy">
+      <div class="sec-label" style="color:var(--gold);">One address. Everything.</div>
+      <h2 class="sec-title">Every action is one click<br>at the bottom of every email.</h2>
+      <p class="sec-sub">Referrals, ancillary requests, carrier relays, records requests, status updates, all from referrals@mdconcierge.net with action buttons on every message. No portal login required.</p>
+    </div>
+    <div class="email-mock">
+      <div class="em-subj">Introduction, Marcus Rodriguez, Dr. James Obi · Case IG-2026-001847</div>
+      <div class="em-meta">From: referrals@mdconcierge.net · To: attorney + provider</div>
+      <div class="em-body">Introducing both parties for Case IG-2026-001847. Marcus Rodriguez · Travelers · TRV-2026-44821 · NCP on file · Not litigated.</div>
+      <div class="em-label">Quick actions</div>
+      <div class="em-btns">
+        <span class="em-btn">💊 Pharmacy</span>
+        <span class="em-btn">🔬 Imaging / MRI</span>
+        <span class="em-btn">🏃 Physical Therapy</span>
+        <span class="em-btn">🧠 Pain Management</span>
+        <span class="em-btn">🩺 PM&amp;R / Physiatry</span>
+        <span class="em-btn">🦴 Orthopaedic</span>
+        <span class="em-btn">🔄 Chiropractic</span>
+        <span class="em-btn">➕ Other ancillaries</span>
+        <span class="em-btn">📡 Carrier relay</span>
+        <span class="em-btn">📋 Request records</span>
+        <span class="em-btn">📄 Request bills</span>
+      </div>
+      <div class="em-portal">🔗 View my cases, magic link portal →</div>
+    </div>
+  </div>
+</section>
+
+
+  <section class="sec sec-alt">
+    <div class="sec-inner">
+      <div class="sec-label">Get started</div>
+      <h2 class="sec-title">Join the network.</h2>
+      <p class="sec-sub">Tell us how you would like to work with MDconcierge. A brief inquiry is all it takes, and we will be in touch to schedule a call and walk through the details.</p>
+      <div class="other">
+        <a class="other-card" href="signup.html?type=attorney"><h4>Join as an Attorney</h4><p>Refer clients and receive coordinated medical placement, status updates, and one-click ancillary referrals at no cost to your firm.</p><span>Inquire &rarr;</span></a>
+        <a class="other-card" href="signup.html?type=provider"><h4>Join as a Provider</h4><p>Receive matched work comp and personal injury patients with verified claim information. Lien-based cases across PA, NJ and DE.</p><span>Inquire &rarr;</span></a>
+        <a class="other-card" href="mailto:referrals@mdconcierge.net?subject=New%20referral"><h4>Refer a Patient</h4><p>Already a partner? Send a new client or patient directly. MDconcierge handles placement and coordination from there.</p><span>Send a referral &rarr;</span></a>
+      </div>
+      <p class="soon-note">Already a partner? <a href="mailto:referrals@mdconcierge.net?subject=Portal%20access%20request">Request portal access &rarr;</a></p>
+    </div>
+  </section>
+  <!-- FOUNDER -->
+<section class="founder">
+  <div class="founder-inner">
+    <div class="founder-rule"></div>
+    <p class="founder-quote">"MDconcierge was built to close the gap between an attorney referral and a treated patient, so everyone can focus on what they do best."</p>
+    <div class="founder-name">Eric Weiscarger</div>
+    <div class="founder-role">Founder, MDconcierge</div>
+  </div>
+</section>
+
+
 
 <section class="band">
   <h2>Send us a referral.</h2>
