@@ -70,9 +70,8 @@
   <div class="bar">
     <button class="btn o" id="back" onclick="go(I-1)">◀ Back</button>
     <button class="btn n" id="next" onclick="go(I+1)">Next ▶</button>
-    <button class="btn g" id="mute" onclick="toggleMute()">🔊 Sound on</button>
-    <label class="toggle"><input type="checkbox" id="subs" checked onchange="toggleSubs(this.checked)"/> 💬 Subtitles</label>
-    <label class="toggle"><input type="checkbox" id="auto" checked onchange="AUTO=this.checked"/> ⏭ Auto-advance</label>
+    <label class="toggle"><input type="checkbox" id="subs" checked onchange="toggleSubs(this.checked)"/> 💬 Narration</label>
+    <label class="toggle"><input type="checkbox" id="auto" checked onchange="AUTO=this.checked;scheduleAdvance(STEPS[I].say)"/> ⏭ Auto-advance</label>
     <div class="spacer"></div>
     <span class="stepno" id="stepno"></span>
     <div class="dots" id="dots"></div>
@@ -130,26 +129,14 @@ const STEPS=[
   try:['Open your portal','portal.html']},
 ];
 
-let I=0, AUTO=true, MUTED=false, SUBS=true, VOICE=null;
-const hasTTS=('speechSynthesis' in window);
-function pickVoice(){
-  const vs=speechSynthesis.getVoices()||[];
-  const en=vs.filter(v=>/^en/i.test(v.lang));
-  let v=en.find(v=>/natural|neural/i.test(v.name||''));   // best quality (esp. Microsoft *Online (Natural)* in Edge)
-  if(v)return v;
-  const pref=['Samantha','Aria','Jenny','Ava','Allison','Google US English','Microsoft Aria','Microsoft Guy','Daniel','Karen','Moira'];
-  for(const n of pref){v=en.find(x=>(x.name||'').includes(n));if(v)return v;}
-  return en[0]||vs[0]||null;
-}
-function speak(text){
-  if(!hasTTS){ AUTO=false; return; }
-  speechSynthesis.cancel();
-  if(MUTED)return;
-  const u=new SpeechSynthesisUtterance(text);
-  if(VOICE)u.voice=VOICE;
-  u.rate=1.0;u.pitch=1.0;
-  u.onend=()=>{ if(AUTO && !MUTED && I<STEPS.length-1) setTimeout(()=>{ if(AUTO) go(I+1); },800); };
-  speechSynthesis.speak(u);
+let I=0, AUTO=true, SUBS=true;
+let ADV=null;
+function scheduleAdvance(text){
+  if(ADV){clearTimeout(ADV);ADV=null;}
+  if(!AUTO || I>=STEPS.length-1) return;
+  const words=String(text||'').trim().split(/\s+/).length;
+  const ms=Math.max(4500, Math.min(15000, words/3.1*1000));   // ~185 wpm reading pace
+  ADV=setTimeout(()=>{ if(AUTO) go(I+1); }, ms);
 }
 function renderDots(){ document.getElementById('dots').innerHTML=STEPS.map((s,n)=>`<div class="dot ${n===I?'on':''}" onclick="go(${n})" title="${s.k}"></div>`).join(''); }
 function go(n){
@@ -164,16 +151,9 @@ function go(n){
   document.getElementById('back').disabled=(I===0);
   document.getElementById('next').disabled=(I===STEPS.length-1);
   document.getElementById('stepno').textContent=(I+1)+' / '+STEPS.length;
-  renderDots(); speak(s.say);
-}
-function toggleMute(){
-  MUTED=!MUTED;
-  document.getElementById('mute').textContent=MUTED?'🔇 Muted':'🔊 Sound on';
-  if(MUTED){ if(hasTTS)speechSynthesis.cancel(); } else speak(STEPS[I].say);
+  renderDots(); scheduleAdvance(s.say);
 }
 function toggleSubs(on){ SUBS=on; document.getElementById('cap').style.display=SUBS?'block':'none'; }
-if(hasTTS){ VOICE=pickVoice(); speechSynthesis.onvoiceschanged=()=>{ if(!VOICE)VOICE=pickVoice(); }; }
-window.addEventListener('beforeunload',()=>{try{speechSynthesis.cancel();}catch(e){}});
 go(0);
 </script>
 </body>
