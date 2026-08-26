@@ -104,3 +104,7 @@ footer{background:#050F26;padding:36px 48px;}
   .s-hero{padding-top:52px;padding-bottom:48px;}
   .sec{padding-top:50px;padding-bottom:50px;}
 }
+
+.soon-note{margin-top:26px;font-size:13px;color:var(--muted);}
+.soon-note a{color:var(--gold2);font-weight:700;text-decoration:none;}
+.soon-note a:hover{text-decoration:underline;}
