@@ -26,6 +26,78 @@
 .founder-role{font-size:13px;color:var(--muted);}
 .email-copy .sec-title{color:#fff;}
 .email-copy .sec-sub{color:rgba(255,255,255,.4);}
+
+/* ---------------- PLATFORM STAGE ---------------- */
+.stage{background:linear-gradient(170deg,#06162F 0%,#0A2350 48%,#071A3A 100%);padding:96px 48px 104px;overflow:hidden;}
+.stage-inner{max-width:1080px;margin:0 auto;}
+.stage-head{text-align:center;max-width:660px;margin:0 auto 78px;}
+.stage-eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:18px;}
+.stage-head h2{font-size:clamp(28px,3.6vw,44px);font-weight:600;color:#fff;line-height:1.16;margin-bottom:16px;text-wrap:balance;letter-spacing:-.015em;}
+.stage-head p{font-size:16px;color:rgba(255,255,255,.5);line-height:1.75;font-weight:300;}
+
+.beat{margin-bottom:96px;}
+.beat:last-child{margin-bottom:0;}
+.beat-n{font-size:11px;font-weight:700;letter-spacing:.18em;color:var(--gold);margin-bottom:14px;}
+.beat h3{font-size:clamp(23px,2.9vw,34px);font-weight:600;color:#fff;line-height:1.2;margin-bottom:12px;letter-spacing:-.015em;text-wrap:balance;}
+.beat>p{font-size:15.5px;color:rgba(255,255,255,.5);line-height:1.75;font-weight:300;max-width:560px;margin-bottom:34px;}
+
+/* screen chrome */
+.screen{background:#08192F;border:1px solid rgba(255,255,255,.11);border-radius:13px;
+  box-shadow:0 34px 90px rgba(0,0,0,.5),0 2px 0 rgba(255,255,255,.05) inset;overflow:hidden;}
+.screen-bar{display:flex;align-items:center;gap:7px;padding:11px 15px;background:rgba(255,255,255,.045);border-bottom:1px solid rgba(255,255,255,.08);}
+.dotp{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.17);}
+.screen-title{margin-left:10px;font-size:11.5px;color:rgba(255,255,255,.42);font-weight:500;}
+.screen-body{padding:22px 24px 26px;}
+
+.sml{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.32);margin-bottom:11px;}
+.subj{font-size:14.5px;font-weight:700;color:#fff;line-height:1.4;margin-bottom:5px;}
+.meta{font-size:11.5px;color:rgba(255,255,255,.35);margin-bottom:16px;}
+.para{font-size:13px;color:rgba(255,255,255,.62);line-height:1.7;margin-bottom:20px;}
+
+.chips{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{font-size:11.5px;color:rgba(255,255,255,.8);background:rgba(107,149,212,.13);border:1px solid rgba(107,149,212,.3);border-radius:6px;padding:6px 11px;}
+.chip.gold{background:rgba(107,149,212,.26);border-color:rgba(107,149,212,.55);color:#fff;font-weight:600;}
+
+/* claim grid */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);border-radius:9px;overflow:hidden;}
+.cell{background:#0A1E3A;padding:13px 15px;}
+.cell .k{font-size:9.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:5px;}
+.cell .v{font-size:13.5px;color:#fff;font-weight:600;}
+.cell .v.lock{color:rgba(255,255,255,.26);letter-spacing:.13em;font-weight:500;}
+.cell.rev .v{color:var(--gold);}
+
+.accept{margin-top:18px;display:flex;align-items:center;gap:13px;flex-wrap:wrap;}
+.accept-btn{background:var(--gold);color:#08214C;font-size:12.5px;font-weight:700;padding:9px 20px;border-radius:6px;}
+.accept-note{font-size:11.5px;color:rgba(255,255,255,.35);}
+
+/* case rows */
+.rows{display:flex;flex-direction:column;gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);border-radius:9px;overflow:hidden;}
+.row{display:grid;grid-template-columns:1.5fr 1.1fr auto;gap:14px;align-items:center;background:#0A1E3A;padding:13px 16px;}
+.row .nm{font-size:13px;color:#fff;font-weight:600;}
+.row .sub{font-size:11px;color:rgba(255,255,255,.33);margin-top:2px;}
+.row .who{font-size:11.5px;color:rgba(255,255,255,.5);}
+.pill{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;}
+.pill.g{background:rgba(30,142,90,.2);color:#5fd39b;border:1px solid rgba(30,142,90,.4);}
+.pill.a{background:rgba(212,160,64,.16);color:#e0b45f;border:1px solid rgba(212,160,64,.36);}
+.pill.b{background:rgba(107,149,212,.18);color:#9dc0f0;border:1px solid rgba(107,149,212,.4);}
+
+/* live dot */
+.live{display:inline-block;width:7px;height:7px;border-radius:50%;background:#5fd39b;margin-right:7px;vertical-align:middle;}
+@media(prefers-reduced-motion:no-preference){.live{animation:pulse 2.1s ease-in-out infinite;}}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(95,211,155,.45);}50%{opacity:.65;box-shadow:0 0 0 6px rgba(95,211,155,0);}}
+
+/* scroll reveal */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .8s cubic-bezier(.2,.7,.3,1),transform .8s cubic-bezier(.2,.7,.3,1);}
+.rv.in{opacity:1;transform:none;}
+.rv.d1{transition-delay:.09s;}.rv.d2{transition-delay:.18s;}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none;}}
+
+/* the unlock beat */
+.unlock{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+.unlock-cap{font-size:11.5px;color:rgba(255,255,255,.4);margin-top:12px;text-align:center;}
+@media(max-width:860px){.unlock{grid-template-columns:1fr;}}
+@media(max-width:820px){.stage{padding:64px 22px 72px;}.beat{margin-bottom:64px;}.stage-head{margin-bottom:52px;}}
+
 </style>
 <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32">
@@ -85,35 +157,40 @@
 
 
 <!-- EMAIL STRIP -->
-<section class="email-strip">
-  <div class="email-strip-inner">
-    <div class="email-copy">
-      <div class="sec-label" style="color:var(--gold);">One address. Everything.</div>
-      <h2 class="sec-title">Every action is one click<br>at the bottom of every email.</h2>
-      <p class="sec-sub">Referrals, ancillary requests, carrier relays, records requests, status updates, all from referrals@mdconcierge.net with action buttons on every message. No portal login required.</p>
-    </div>
-    <div class="email-mock">
-      <div class="em-subj">Introduction, Marcus Rodriguez, Dr. James Obi · Case IG-2026-001847</div>
-      <div class="em-meta">From: referrals@mdconcierge.net · To: attorney + provider</div>
-      <div class="em-body">Introducing both parties for Case IG-2026-001847. Marcus Rodriguez · Travelers · TRV-2026-44821 · NCP on file · Not litigated.</div>
-      <div class="em-label">Quick actions</div>
-      <div class="em-btns">
-        <span class="em-btn">💊 Pharmacy</span>
-        <span class="em-btn">🔬 Imaging / MRI</span>
-        <span class="em-btn">🏃 Physical Therapy</span>
-        <span class="em-btn">🧠 Pain Management</span>
-        <span class="em-btn">🩺 PM&amp;R / Physiatry</span>
-        <span class="em-btn">🦴 Orthopaedic</span>
-        <span class="em-btn">🔄 Chiropractic</span>
-        <span class="em-btn">➕ Other ancillaries</span>
-        <span class="em-btn">📡 Carrier relay</span>
-        <span class="em-btn">📋 Request records</span>
-        <span class="em-btn">📄 Request bills</span>
+<section class="stage">
+    <div class="stage-inner">
+      <div class="stage-head rv">
+        <div class="stage-eyebrow">The platform</div>
+        <h2>You already know how to use it. It is your inbox.</h2>
+        <p>There is no software for your office to learn and no portal anyone is forced to log into. The coordination runs on email, and the portal is there for the days you want to see everything at once.</p>
       </div>
-      <div class="em-portal">🔗 View my cases, magic link portal →</div>
+
+      <div class="beat">
+        <div class="rv"><div class="beat-n">01</div>
+        <h3>Every action is one click, at the bottom of every email.</h3>
+        <p>Referrals, ancillary requests, carrier relays, records requests and status updates all come from one address, with the buttons already on the message. Nothing to log into.</p></div>
+        <div class="rv d1"><div class="screen"><div class="screen-bar"><span class="dotp"></span><span class="dotp"></span><span class="dotp"></span><span class="screen-title">referrals@mdconcierge.net</span></div><div class="screen-body"><div class="subj">Introduction, Marcus Rodriguez &middot; Dr. James Obi &middot; Case IG-2026-001847</div><div class="meta">From referrals@mdconcierge.net &middot; To attorney + provider</div><div class="para">Introducing both parties for Case IG-2026-001847. Marcus Rodriguez &middot; Travelers &middot; TRV-2026-44821 &middot; NCP on file &middot; Not litigated.</div><div class="sml">Quick actions</div><div class="chips"><span class="chip">💊 Pharmacy</span><span class="chip">🔬 Imaging / MRI</span><span class="chip">🏃 Physical Therapy</span><span class="chip">🧠 Pain Management</span><span class="chip">🩺 PM&amp;R / Physiatry</span><span class="chip">🦴 Orthopaedic</span><span class="chip">🔄 Chiropractic</span><span class="chip">➕ Other ancillaries</span><span class="chip">📡 Carrier relay</span><span class="chip">📋 Request records</span><span class="chip">📄 Request bills</span></div></div></div></div>
+      </div>
+
+      <div class="beat">
+        <div class="rv"><div class="beat-n">02</div>
+        <h3>A provider sees the claim before they see the patient.</h3>
+        <p>Claim status, carrier, claim number and body parts arrive up front. Patient contact stays locked until the provider accepts, so nobody is chasing a case they were never going to take.</p></div>
+        <div class="unlock">
+          <div class="rv d1"><div><div class="screen"><div class="screen-bar"><span class="dotp"></span><span class="dotp"></span><span class="dotp"></span><span class="screen-title">Case notification &middot; IG-2026-001847</span></div><div class="screen-body"><div class="cgrid"><div class="cell"><div class="k">Claim status</div><div class="v">Accepted</div></div><div class="cell"><div class="k">Carrier</div><div class="v">Travelers</div></div><div class="cell"><div class="k">Claim no.</div><div class="v">TRV-2026-44821</div></div><div class="cell"><div class="k">Body parts</div><div class="v">Lumbar spine, L knee</div></div><div class="cell"><div class="k">Patient phone</div><div class="v lock">&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div></div><div class="cell"><div class="k">Date of birth</div><div class="v lock">&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div></div><div class="cell"><div class="k">Attorney</div><div class="v lock">&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div></div></div><div class="accept"><span class="accept-btn">Accept this case</span><span class="accept-note">Patient contact stays locked until you accept.</span></div></div></div></div><div class="unlock-cap">Before accepting</div></div>
+          <div class="rv d2"><div><div class="screen"><div class="screen-bar"><span class="dotp"></span><span class="dotp"></span><span class="dotp"></span><span class="screen-title">Case notification &middot; IG-2026-001847</span></div><div class="screen-body"><div class="cgrid"><div class="cell"><div class="k">Claim status</div><div class="v">Accepted</div></div><div class="cell"><div class="k">Carrier</div><div class="v">Travelers</div></div><div class="cell"><div class="k">Claim no.</div><div class="v">TRV-2026-44821</div></div><div class="cell"><div class="k">Body parts</div><div class="v">Lumbar spine, L knee</div></div><div class="cell rev"><div class="k">Patient phone</div><div class="v">(215) 555-0148</div></div><div class="cell rev"><div class="k">Date of birth</div><div class="v">04 / 11 / 1981</div></div><div class="cell rev"><div class="k">Attorney</div><div class="v">J. Gulden, Esq.</div></div></div><div class="accept"><span class="chip gold">✓ Accepted</span><span class="accept-note">EHR import packet attached.</span></div></div></div></div><div class="unlock-cap">The moment they accept</div></div>
+        </div>
+      </div>
+
+      <div class="beat">
+        <div class="rv"><div class="beat-n">03</div>
+        <h3>And the case keeps reporting itself.</h3>
+        <p>Thirty-day check-ins go out on their own. The provider replies with one letter, and the attorney gets a clean summary without anyone picking up a phone.</p></div>
+        <div class="rv d1"><div class="screen"><div class="screen-bar"><span class="dotp"></span><span class="dotp"></span><span class="dotp"></span><span class="screen-title">Your cases &middot; MDconcierge portal</span></div><div class="screen-body"><div class="sml"><span class="live"></span>Live &middot; 4 open cases</div><div class="rows"><div class="row"><div><div class="nm">Marcus Rodriguez</div><div class="sub">IG-2026-001847 &middot; Travelers</div></div><div class="who">Dr. James Obi</div><span class="pill g">Treating</span></div><div class="row"><div><div class="nm">Ana Delgado</div><div class="sub">IG-2026-001862 &middot; Zurich</div></div><div class="who">Keystone Ortho</div><span class="pill b">Scheduled</span></div><div class="row"><div><div class="nm">Ray Whitfield</div><div class="sub">IG-2026-001871 &middot; AmTrust</div></div><div class="who">Awaiting acceptance</div><span class="pill a">Placing</span></div><div class="row"><div><div class="nm">Denise Park</div><div class="sub">IG-2026-001884 &middot; Erie</div></div><div class="who">Dr. L. Ferrante</div><span class="pill b">Records requested</span></div></div></div></div></div>
+      </div>
+
     </div>
-  </div>
-</section>
+  </section>
 
 
   <section class="sec sec-alt">
@@ -166,5 +243,15 @@
   </div>
 </footer>
 
+<script>
+(function(){
+  var els=[].slice.call(document.querySelectorAll('.rv'));
+  if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in');});return;}
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  },{rootMargin:'0px 0px -12% 0px',threshold:.12});
+  els.forEach(function(e){io.observe(e);});
+})();
+</script>
 </body>
 </html>
