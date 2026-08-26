@@ -196,7 +196,8 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
 /* SERVICES */
 .services{background:var(--white);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:96px 48px;}
 .services-inner{max-width:1100px;margin:0 auto;}
-.svc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px;margin-top:42px;}
+.svc-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:42px;}
+@media(max-width:760px){.svc-grid{grid-template-columns:1fr;}}
 .svc{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--r);padding:30px 28px;background:var(--white);text-decoration:none;transition:border-color .15s,transform .15s,box-shadow .15s;}
 .svc:hover{border-color:var(--gold);transform:translateY(-3px);box-shadow:0 10px 30px rgba(8,33,76,.07);}
 .svc-more{display:inline-block;margin-top:auto;padding-top:18px;font-size:12.5px;font-weight:700;color:var(--gold2);}
@@ -311,8 +312,8 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
 <section class="services" id="services">
   <div class="services-inner">
     <div class="sec-label">What we coordinate</div>
-    <h2 class="sec-title">Three lanes. One point of contact.</h2>
-    <p class="sec-sub">Referral management and medical coordination is the core of what we do. Alongside it we run the work comp pharmacy program and coordinate the other ancillary services a practice wants but should not have to manage.</p>
+    <h2 class="sec-title">One point of contact for all of it.</h2>
+    <p class="sec-sub">Referral management and medical coordination is the core of what we do. Alongside it we run the mail-order pharmacy program, supply single-use injection kits, and coordinate the other ancillary services a practice wants but should not have to manage.</p>
 
     <div class="svc-grid">
       <a class="svc" href="medical-coordination.html">
@@ -325,6 +326,12 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
         <div class="svc-tag">Live</div>
         <h3>Mail-Order Pharmacy for Workers&rsquo; Compensation</h3>
         <p>Medication delivered to the injured patient at home, next day, at no cost to them. Nothing stocked in your office.</p>
+        <span class="svc-more">Learn more &rarr;</span>
+      </a>
+      <a class="svc" href="injection-kits.html">
+        <div class="svc-tag">Live</div>
+        <h3>Single-Use Injection Kits</h3>
+        <p>Corticosteroid, anesthetic and NSAID kits for in-office injections. One kit is one injection, drug and supplies together, nothing drawn from a shared vial.</p>
         <span class="svc-more">Learn more &rarr;</span>
       </a>
       <a class="svc" href="ancillary.html">
@@ -395,7 +402,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
       <a class="join-card" onclick="openModal(&#39;vendor&#39;)" href="javascript:void(0)">
         <div class="join-card-icon">🤝</div>
         <div class="join-card-title">Become a Vendor</div>
-        <div class="join-card-text">Pharmacy, imaging, DME, or other ancillary service? Join the MDconcierge vendor network and receive coordinated referrals.</div>
+        <div class="join-card-text">Pharmacy, imaging, injection kits, or other ancillary service? Join the MDconcierge vendor network and receive coordinated referrals.</div>
         <div class="join-card-cta">Inquire →</div>
       </a>
 
