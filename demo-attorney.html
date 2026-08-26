@@ -69,10 +69,11 @@
     </div>
   </div>
   <div class="bar">
+    <button class="btn g" id="sound" onclick="toggleSound()">🔊 Sound on</button>
     <button class="btn o" id="back" onclick="go(I-1)">◀ Back</button>
     <button class="btn n" id="next" onclick="go(I+1)">Next ▶</button>
     <label class="toggle"><input type="checkbox" id="subs" checked onchange="toggleSubs(this.checked)"/> 💬 Narration</label>
-    <label class="toggle"><input type="checkbox" id="auto" checked onchange="AUTO=this.checked;scheduleAdvance(STEPS[I].say)"/> ⏭ Auto-advance</label>
+    <label class="toggle"><input type="checkbox" id="auto" checked onchange="AUTO=this.checked;if(!AUTO){clearTimer();}else if(MUTED||AUDIO_BLOCKED){readingTimer(STEPS[I].say);}"/> ⏭ Auto-advance</label>
     <div class="spacer"></div>
     <span class="stepno" id="stepno"></span>
     <div class="dots" id="dots"></div>
@@ -142,13 +143,39 @@ const STEPS=[
 ];
 
 let I=0, AUTO=true, SUBS=true;
-let ADV=null;
-function scheduleAdvance(text){
-  if(ADV){clearTimeout(ADV);ADV=null;}
+let ADV=null, AU=null, MUTED=false, AUDIO_BLOCKED=false;
+const VO_BASE='assets/audio/tut/', VO_SLUG='attorney';
+function voSrc(n){ return VO_BASE+VO_SLUG+'-'+String(n+1).padStart(2,'0')+'.mp3'; }
+function stopAudio(){ if(AU){ AU.onended=null; AU.onerror=null; try{AU.pause();}catch(e){} AU=null; } }
+function clearTimer(){ if(ADV){ clearTimeout(ADV); ADV=null; } }
+function readingTimer(text){
+  clearTimer();
   if(!AUTO || I>=STEPS.length-1) return;
   const words=String(text||'').trim().split(/\s+/).length;
-  const ms=Math.max(4500, Math.min(15000, words/3.1*1000));   // ~185 wpm reading pace
-  ADV=setTimeout(()=>{ if(AUTO) go(I+1); }, ms);
+  ADV=setTimeout(function(){ if(AUTO) go(I+1); }, Math.max(4500, Math.min(15000, words/3.1*1000)));
+}
+function narrate(text){
+  stopAudio(); clearTimer();
+  if(MUTED || AUDIO_BLOCKED){ readingTimer(text); return; }
+  AU=new Audio(voSrc(I));
+  AU.onended=function(){ if(AUTO && I<STEPS.length-1) setTimeout(function(){ if(AUTO) go(I+1); },700); };
+  AU.onerror=function(){ AUDIO_BLOCKED=true; readingTimer(text); };   // missing file: keep the tutorial moving
+  const p=AU.play();
+  if(p && p.catch) p.catch(function(){
+    AUDIO_BLOCKED=true;                 // autoplay refused until the visitor interacts
+    setSound(); readingTimer(text);
+  });
+  setSound();
+}
+function setSound(){
+  const b=document.getElementById('sound'); if(!b) return;
+  b.textContent = MUTED ? '\u{1F507} Sound off' : (AUDIO_BLOCKED ? '\u{1F50A} Play narration' : '\u{1F50A} Sound on');
+}
+function toggleSound(){
+  if(AUDIO_BLOCKED){ AUDIO_BLOCKED=false; MUTED=false; setSound(); narrate(STEPS[I].say); return; }
+  MUTED=!MUTED;
+  if(MUTED){ stopAudio(); setSound(); readingTimer(STEPS[I].say); }
+  else { setSound(); narrate(STEPS[I].say); }
 }
 function renderDots(){ document.getElementById('dots').innerHTML=STEPS.map((s,n)=>`<div class="dot ${n===I?'on':''}" onclick="go(${n})" title="${s.k}"></div>`).join(''); }
 function go(n){
@@ -163,9 +190,10 @@ function go(n){
   document.getElementById('back').disabled=(I===0);
   document.getElementById('next').disabled=(I===STEPS.length-1);
   document.getElementById('stepno').textContent=(I+1)+' / '+STEPS.length;
-  renderDots(); scheduleAdvance(s.say);
+  renderDots(); narrate(s.say);
 }
 function toggleSubs(on){ SUBS=on; document.getElementById('cap').style.display=SUBS?'block':'none'; }
+window.addEventListener('pagehide',function(){stopAudio();});
 go(0);
 </script>
 </body>
