@@ -211,17 +211,13 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
 .soon p{font-size:13.5px;color:var(--muted);line-height:1.6;}
 @media(max-width:760px){.services{padding:64px 24px;}}
 
-/* HOW WE ARE PAID */
-.paid{background:var(--cream2);padding:76px 48px;border-top:1px solid var(--border);}
-.paid-inner{max-width:820px;margin:0 auto;}
-.paid-body{margin-top:26px;display:flex;flex-direction:column;gap:16px;}
-.paid-row{display:flex;gap:16px;align-items:flex-start;}
-.paid-num{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--gold);color:#fff;
-  font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:2px;}
-.paid-row p{font-size:15.5px;color:var(--text);line-height:1.72;}
-.paid-note{margin-top:24px;padding:18px 22px;border-left:3px solid var(--gold);background:var(--white);
-  font-size:15px;color:var(--muted);line-height:1.7;border-radius:0 var(--r) var(--r) 0;}
-@media(max-width:760px){.paid{padding:56px 24px;}}
+
+/* WHY WORK WITH US */
+.why{padding:14px 0 4px;border-top:1px solid var(--border);margin-top:18px;}
+.why-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold2);margin-bottom:12px;}
+.why ul{list-style:none;display:flex;flex-direction:column;gap:9px;}
+.why li{font-size:13.5px;color:var(--text);line-height:1.6;padding-left:19px;position:relative;}
+.why li::before{content:'';position:absolute;left:0;top:7px;width:6px;height:6px;border-radius:50%;background:var(--gold);}
 </style>
 </head>
 <body>
@@ -232,7 +228,6 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
     <div class="nav-logo-wrap"><img class="nav-logo" src="assets/brand/logo.png" alt="MDconcierge"></div>
     <div class="nav-links">
       <a href="#services" class="nav-link">Services</a>
-      <a href="#paid" class="nav-link">How we are paid</a>
       <a href="#how" class="nav-link">How it works</a>
       <a href="#join" class="nav-link">Join the network</a>
       <a href="#contact" class="nav-link">Contact</a>
@@ -284,6 +279,17 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
           <div class="how-step"><div class="how-step-n">3</div><div class="how-step-text"><strong>Introduction sent</strong>Once the provider accepts, MDconcierge introduces both parties with full contact on each side.</div></div>
           <div class="how-step"><div class="how-step-n">4</div><div class="how-step-text"><strong>Ongoing coordination</strong>Status pings, ancillary referrals, and carrier relays all through email. Zero cost to your firm.</div></div>
         </div>
+        <div class="why">
+          <div class="why-label">What your firm gets</div>
+          <ul>
+            <li>Your client is seen quickly, by a provider who has already accepted the claim</li>
+            <li>Nobody at your firm chases a practice for an appointment or a status</li>
+            <li>Claim details, carrier and NCP confirmed before placement, so a referral does not come back</li>
+            <li>Ancillary needs, records requests and carrier relays handled from the same address</li>
+            <li>Lien-based coordination where the case calls for it</li>
+            <li>No cost to your firm, ever</li>
+          </ul>
+        </div>
         <div class="how-card-foot">
           <span class="how-card-foot-note">Zero cost to your firm</span>
           <a href="#join" class="btn-gold" style="font-size:12px;padding:8px 18px;">Refer a client →</a>
@@ -309,29 +315,6 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
       </div>
 
     </div>
-  </div>
-</section>
-
-<!-- HOW WE ARE PAID -->
-<section class="paid" id="paid">
-  <div class="paid-inner">
-    <div class="sec-label">How we are paid</div>
-    <h2 class="sec-title" style="font-size:30px;">Said plainly, because you should not have to ask.</h2>
-    <div class="paid-body">
-      <div class="paid-row">
-        <div class="paid-num">1</div>
-        <p>Practices engage MDconcierge on a flat monthly retainer for marketing and coordination. It does not change with the number of patients you see or the prescriptions you write.</p>
-      </div>
-      <div class="paid-row">
-        <div class="paid-num">2</div>
-        <p>We also represent the vendors who deliver these services. Where a practice chooses to work with one of them, that vendor compensates us.</p>
-      </div>
-      <div class="paid-row">
-        <div class="paid-num">3</div>
-        <p>No practice is ever required to use a vendor we represent. If you already have someone good, keep them.</p>
-      </div>
-    </div>
-    <p class="paid-note">We work for the practice, not the vendor. That means telling you when a service is not worth your time, when your current arrangement is better than what we would put in front of you, and when the answer is none of the above.</p>
   </div>
 </section>
 
