@@ -219,6 +219,13 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
 @media(max-width:760px){.services{padding:64px 24px;}}
 
 
+
+.gi-note{margin-top:30px;font-size:13.5px;color:var(--muted);line-height:1.75;font-weight:300;max-width:760px;}
+.gi-note a{color:var(--navy2);font-weight:600;text-decoration:none;}
+.gi-note a:hover{text-decoration:underline;}
+.gi-email-wrap{margin-top:26px;padding-top:24px;border-top:1px solid var(--border);}
+.gi-email{font-size:20px;font-weight:600;color:var(--navy);text-decoration:none;border-bottom:2px solid var(--gold);padding-bottom:3px;}
+.gi-email:hover{color:var(--gold2);}
 </style>
 </head>
 <body>
@@ -229,7 +236,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
     <div class="nav-logo-wrap"><img class="nav-logo" src="assets/brand/logo.png" alt="MDconcierge"></div>
     <div class="nav-links">
       <a href="#services" class="nav-link">Services</a>
-      <a href="#how" class="nav-link">How it works</a>
+      <a href="medical-coordination.html" class="nav-link">How it works</a>
       <a href="signup.html" class="nav-link">Join the network</a>
       <a href="mailto:referrals@mdconcierge.net" class="nav-link">Contact</a>
     </div>
@@ -247,7 +254,7 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
     <p class="hero-context fade-in-3">Practices are our clients. Whatever a practice needs on the non-clinical side, we source it, put it in place and run it, so none of it lands on your staff. We represent the vendors behind these services as well, and we will tell you when one is not right for you. One email address. No portal. No friction.</p>
     <div class="hero-cta-row fade-in-3">
       <a href="signup.html" class="btn-gold">Get started</a>
-      <a href="#how" class="btn-outline">See how it works</a>
+      <a href="medical-coordination.html" class="btn-outline">See how it works</a>
     </div>
     <div class="hero-trust fade-in-3">
       <span class="trust-pill"><span class="trust-dot"></span>Workers' compensation</span>
@@ -259,54 +266,6 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
 </section>
 
 
-
-<!-- HOW IT WORKS -->
-<section class="how" id="how">
-  <div class="how-inner">
-    <div class="sec-label">How it works</div>
-    <h2 class="sec-title">Simple on your end.<br>Coordinated on ours.</h2>
-    <p class="sec-sub">Providers are our clients, and attorneys refer into the same desk. We handle the placements, follow-ups, status pings and paperwork that nobody on either side wants to chase.</p>
-    <div class="how-grid">
-
-      <div class="how-card">
-        <div class="how-card-hdr">
-          <div class="how-card-icon">⚖️</div>
-          <h3 class="how-card-title">For Attorneys</h3>
-          <p class="how-card-sub">Send a client once. MDconcierge matches, places, and coordinates, with one-click action buttons on every email so you can request anything in seconds.</p>
-        </div>
-        <div class="how-steps">
-          <div class="how-step"><div class="how-step-n">1</div><div class="how-step-text"><strong>Email the referral</strong>Send client details to referrals@mdconcierge.net. We ask 8 quick follow-up questions and you reply once.</div></div>
-          <div class="how-step"><div class="how-step-n">2</div><div class="how-step-text"><strong>We match and place</strong>MDconcierge matches your client to an in-network provider by specialty, geography, and claim status.</div></div>
-          <div class="how-step"><div class="how-step-n">3</div><div class="how-step-text"><strong>Introduction sent</strong>Once the provider accepts, MDconcierge introduces both parties with full contact on each side.</div></div>
-          <div class="how-step"><div class="how-step-n">4</div><div class="how-step-text"><strong>Ongoing coordination</strong>Status pings, ancillary referrals, and carrier relays all through email.</div></div>
-        </div>
-        <div class="how-card-foot">
-          <span class="how-card-foot-note">Zero cost to your firm</span>
-          <a href="signup.html?type=attorney" class="btn-gold" style="font-size:12px;padding:8px 18px;">Refer a client →</a>
-        </div>
-      </div>
-
-      <div class="how-card">
-        <div class="how-card-hdr">
-          <div class="how-card-icon">🏥</div>
-          <h3 class="how-card-title">For Providers</h3>
-          <p class="how-card-sub">Receive matched WC and PI patients with full claim information before you accept. NCP on file, carrier confirmed, liability verified. No surprises.</p>
-        </div>
-        <div class="how-steps">
-          <div class="how-step"><div class="how-step-n">1</div><div class="how-step-text"><strong>Case notification</strong>You receive a structured notification, claim status, NCP, carrier, body parts, prior treatment. Contact locked until you accept.</div></div>
-          <div class="how-step"><div class="how-step-n">2</div><div class="how-step-text"><strong>Accept, contact revealed</strong>One reply. Patient phone, DOB, and attorney contact revealed immediately. EHR import packet included.</div></div>
-          <div class="how-step"><div class="how-step-n">3</div><div class="how-step-text"><strong>Introduction sent</strong>MDconcierge introduces you and the attorney directly. Both sides have full contact from that point forward.</div></div>
-          <div class="how-step"><div class="how-step-n">4</div><div class="how-step-text"><strong>Status pings</strong>30-day check-ins from MDconcierge. Reply with one letter. Attorney gets a clean summary. Your chart stays in your office.</div></div>
-        </div>
-        <div class="how-card-foot">
-          <span class="how-card-foot-note">Lien-based · Verified claims</span>
-          <a href="signup.html?type=provider" class="btn-gold" style="font-size:12px;padding:8px 18px;">Join the network →</a>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
 
 <!-- SERVICES -->
 <section class="services" id="services">
@@ -343,6 +302,48 @@ footer{background:var(--navy);border-top:1px solid rgba(255,255,255,.05);padding
     </div>
 
     <p class="soon-line">Also in development: collagen surgical dressings and advanced wound care, pharmaceutical grade peptides, medical grade compounded peptides, and GLP-1 programs. <a href="ancillary.html">See what is coming &rarr;</a></p>
+  </div>
+</section>
+
+<!-- GET IN TOUCH -->
+<section class="join" id="contact">
+  <div class="join-inner">
+    <div class="sec-label">Get in touch</div>
+    <h2 class="sec-title">Tell us what you need.</h2>
+    <p class="sec-sub">Referrals, provider inquiries, vendor partnerships, or a question about any of the lines above. One address, and we respond to every inquiry.</p>
+    <div class="join-grid">
+
+      <a class="join-card" href="signup.html?type=provider">
+        <div class="join-card-icon">🏥</div>
+        <div class="join-card-title">Join as a Provider</div>
+        <div class="join-card-text">Referral coordination, mail-order pharmacy, injection kits and the other ancillary lines, set up for your practice.</div>
+        <div class="join-card-cta">Inquire →</div>
+      </a>
+
+      <a class="join-card" href="signup.html?type=attorney">
+        <div class="join-card-icon">⚖️</div>
+        <div class="join-card-title">Join as an Attorney</div>
+        <div class="join-card-text">Refer clients and receive coordinated medical placement, status updates and one-click ancillary requests at no cost to your firm.</div>
+        <div class="join-card-cta">Inquire →</div>
+      </a>
+
+      <a class="join-card" href="mailto:referrals@mdconcierge.net?subject=Vendor%20inquiry">
+        <div class="join-card-icon">🤝</div>
+        <div class="join-card-title">Become a Vendor</div>
+        <div class="join-card-text">Pharmacy, imaging, injection kits or another ancillary service? Join the vendor network and receive coordinated referrals.</div>
+        <div class="join-card-cta">Inquire →</div>
+      </a>
+
+      <a class="join-card" href="mailto:referrals@mdconcierge.net?subject=New%20referral">
+        <div class="join-card-icon">📋</div>
+        <div class="join-card-title">Refer a Patient</div>
+        <div class="join-card-text">Already a partner? Send a new client or patient directly and we handle placement and coordination from there.</div>
+        <div class="join-card-cta">Send a referral →</div>
+      </a>
+
+    </div>
+    <p class="gi-note">Want detail on one line in particular? Email us and say which, referral coordination, mail-order pharmacy, injection kits or ancillary, and we will send it over. Already a partner? <a href="mailto:referrals@mdconcierge.net?subject=Portal%20access%20request">Request portal access →</a></p>
+    <div class="gi-email-wrap"><a href="mailto:referrals@mdconcierge.net" class="gi-email">referrals@mdconcierge.net</a></div>
   </div>
 </section>
 
