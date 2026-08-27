@@ -12,7 +12,7 @@
   .fld:focus{outline:none;border-color:#2F5EA8;}
   .lab{font-size:12.5px;font-weight:700;color:#5C6B85;margin:0 0 4px;}
   .row2{display:flex;gap:10px;} .row2>div{flex:1;} @media(max-width:520px){.row2{display:block;}}
-  .seg{display:flex;gap:8px;margin:0 0 12px;}
+  .seg{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;}
   .seg label{flex:1;text-align:center;border:1px solid #CFE0F0;background:#EEF3FB;color:#2b4a70;border-radius:10px;padding:11px 6px;font-size:14.5px;font-weight:700;cursor:pointer;}
   .seg input{position:absolute;opacity:0;width:0;height:0;}
   .seg label.on{background:#2F5EA8;border-color:#2F5EA8;color:#fff;}
@@ -54,6 +54,7 @@
         <label class="on" data-v="call" onclick="pick(this)">Call</label>
         <label data-v="text" onclick="pick(this)">Text</label>
         <label data-v="email" onclick="pick(this)">Email</label>
+    <label data-v="video" onclick="pick(this)">Video</label>
       </div>
 
       <div class="lab">Best time to reach you</div>
