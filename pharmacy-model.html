@@ -89,6 +89,15 @@ function tokenFromUrl(){
 function trackingFromUrl(){
   return new URL(location.href).searchParams.get('p') || '';
 }
+// A practice can be sent its OWN formulary rather than the whole price book. The ids ride in
+// the fragment, so the list never reaches a server log or a Referer header. Nothing changes
+// for a link that does not carry one: the tool opens exactly as it always has.
+function mineFromUrl(){
+  const h = new URLSearchParams(String(location.hash||'').replace(/^#/,''));
+  const q = new URL(location.href).searchParams;
+  const raw = h.get('mine') || q.get('mine') || '';
+  return raw.split(',').map(x=>x.trim()).filter(Boolean);
+}
 
 function watermark(name, email){
   const wm = document.getElementById('wm'); wm.innerHTML='';
@@ -442,7 +451,27 @@ function render(expires){
   const rc = String(REC.state||'').toUpperCase();
   const home = ACTIVE.includes(rc) ? rc : 'PA';
   document.getElementById('a-state').value = home;
-  addLine(); addLine();
+  const mine = mineFromUrl().filter(id=>FORM.some(f=>String(f.id)===String(id)));
+  if(mine.length){
+    mine.forEach(id=>{
+      addLine();
+      const rows=document.querySelectorAll('#mix .mixrow');
+      const sel=rows[rows.length-1].querySelector('select');
+      sel.value=String(id);
+    });
+    const box=document.getElementById('mix');
+    if(box){
+      const n=document.createElement('div');
+      n.className='noprint';
+      n.style.cssText='font-size:12.5px;color:#5a6675;margin:0 0 10px;padding:8px 11px;border:1px solid #e6dcc2;background:#fdf8ec;border-radius:7px;';
+      n.innerHTML='This is <b>'+esc(REC.practice||'your practice')+'</b>&rsquo;s formulary, '+mine.length+
+        ' medications, already filled in. Change any quantity, remove what you do not write, '+
+        'and add anything else from the full formulary below.';
+      box.parentNode.insertBefore(n, box);
+    }
+  } else {
+    addLine(); addLine();
+  }
   applyState(home);
 }
 
