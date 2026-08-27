@@ -640,6 +640,7 @@ function compute(){
       : '<b>Dispensing and shipping:</b> none applied. Set them above if your agreement includes them.';
   }
   if(typeof renderMixNums==='function') renderMixNums();
+  if(typeof applyForm==='function' && document.getElementById('fbody')) applyForm();
   const el=document.getElementById('result'); if(!el) return;
   el.innerHTML = `
     <div class="lbl">Estimated practice ancillary revenue</div>
@@ -666,7 +667,14 @@ function formCols(){
   // No per-unit reimbursement column. It reads as a fixed figure sitting next to each product when
   // it is nothing of the kind: it moves with whichever state is chosen at the top of the page, and
   // the estimate above already states what the basket collects at that state's rate.
-  ].concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}]);
+  ].concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}])
+   .concat([{k:'fee',label:'PA fee',num:true},{k:'net',label:'Net / fill',num:true}]);
+}
+// The two computed columns sort on what they display, not on a stored field.
+function fVal(f,k){
+  if(k==='fee') return lineNet(f).fee;
+  if(k==='net') return lineNet(f).net;
+  return f[k];
 }
 function sortForm(k){
   FSORT = (FSORT.key===k) ? {key:k, dir:-FSORT.dir} : {key:k, dir: (k==='product'||k==='category'||k==='route') ? 1 : -1};
@@ -692,8 +700,9 @@ function applyForm(){
   });
   const k=FSORT.key, d=FSORT.dir;
   rows.sort((a,b)=>{
-    const va = k==='reimb'?reimbOf(a):(k==='awp'||k==='cost'?Number(a[k])||0:String(a[k]||'').toLowerCase());
-    const vb = k==='reimb'?reimbOf(b):(k==='awp'||k==='cost'?Number(b[k])||0:String(b[k]||'').toLowerCase());
+    const NUM = (k==='awp'||k==='cost'||k==='fee'||k==='net');
+    const va = k==='reimb'?reimbOf(a):(NUM?Number(fVal(a,k))||0:String(a[k]||'').toLowerCase());
+    const vb = k==='reimb'?reimbOf(b):(NUM?Number(fVal(b,k))||0:String(b[k]||'').toLowerCase());
     return va<vb ? -d : va>vb ? d : 0;
   });
   // Then gather into category sections. Sort is stable, so whatever the physician sorted by still
@@ -714,7 +723,7 @@ function fillFormTable(rows){
   // head; grouped under NSAIDs, Pain, Muscle Relaxants and the rest he can find his own prescribing
   // in it. The filters above still work, and the chosen sort still applies inside each section.
   let lastCat = null;
-  const cols = HIDE_COST ? 5 : 6;
+  const cols = (HIDE_COST ? 5 : 6) + 2;
   b.innerHTML = rows.map(f=>{
     let head = '';
     const c = String(f.category||'Other');
@@ -726,7 +735,8 @@ function fillFormTable(rows){
     return head + `<tr class="${FSEL.has(String(f.id))?'selrow':''}" onclick="toggleSel('${f.id}')" title="${on?'Already on the formulary':''}">
     <td class="noprint" style="text-align:center;"><input type="checkbox" ${FSEL.has(String(f.id))?'checked':''} onclick="event.stopPropagation();toggleSel('${f.id}')"></td>
     <td>${esc(f.product)}${on?' <span style="font-size:10.5px;color:#8a94a4;border:1px solid #d7dee9;border-radius:3px;padding:1px 5px;">on formulary</span>':''}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
-    <td class="num">${money2(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money2(f.cost)}</td>`}</tr>`;
+    <td class="num">${money2(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money2(f.cost)}</td>`}
+    <td class="num">${money2(lineNet(f).fee)}</td><td class="num net">${money2(lineNet(f).net)}</td></tr>`;
   }).join('');
 }
 function toggleSel(id){
