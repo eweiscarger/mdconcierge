@@ -90,6 +90,14 @@ function tokenFromUrl(){
   const u = new URL(location.href);
   return u.searchParams.get('t') || u.searchParams.get('token') || '';
 }
+// A link can open on a practice's own assumptions rather than the page defaults, so what
+// they see matches what they were sent. Same fragment, same reason: it stays out of logs.
+function presetFromUrl(){
+  const h = new URLSearchParams(String(location.hash||'').replace(/^#/,''));
+  const q = new URL(location.href).searchParams;
+  const g = k => { const v = h.get(k) || q.get(k); return v==null||v==='' ? null : parseFloat(v); };
+  return { oc:g('oc'), tc:g('tc'), sh:g('share'), df:g('df'), ship:g('ship'), pat:g('pat') };
+}
 function trackingFromUrl(){
   return new URL(location.href).searchParams.get('p') || '';
 }
@@ -476,6 +484,7 @@ function render(expires){
   } else {
     addLine(); addLine();
   }
+  applyPreset();
   applyState(home);
 }
 
@@ -487,6 +496,13 @@ function addLine(){
     <button class="btn noprint" onclick="this.closest('.mixrow').remove();compute()" title="remove">✕</button>
     <div class="mixnums"></div>`;
   box.appendChild(d);
+}
+
+function applyPreset(){
+  const p = presetFromUrl();
+  const set = (id,v)=>{ if(v==null||isNaN(v)) return; const e=document.getElementById(id); if(e) e.value=String(v); };
+  set('a-oc',p.oc); set('a-tc',p.tc); set('a-sh',p.sh);
+  set('a-df',p.df); set('a-ship',p.ship); set('a-pat',p.pat);
 }
 
 function fById(id){ return FORM.find(f=>String(f.id)===String(id)); }
