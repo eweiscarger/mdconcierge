@@ -327,6 +327,9 @@ function stateByCode(c){ return STATES.find(s=>s.c===String(c||'').toUpperCase()
 // blank. It is still labeled as an assumption, because it is one.
 function stMult(s,t){ return s ? (s.basis==='other' ? 1 : (t==='br'?s.br:s.gr)) : null; }
 function basisLabel(){ return ST ? (ST.n + ' basis') : 'custom basis'; }
+// The fee column is the selected state's schedule, so it carries that state's name rather
+// than a fixed Pennsylvania label.
+function feeLabel(){ return (ST && ST.c ? ST.c : 'State') + ' fee'; }
 
 // Switching state rewrites the multiplier and every label that names a state, so the page can
 // never show Pennsylvania wording while running New York math.
@@ -339,6 +342,8 @@ function applyState(code, keepMult){
   // The state's own dispensing fee is extra REIMBURSEMENT the schedule pays out, which is a
   // different thing from the per-script fee the practice pays under the program. It stays
   // informational and out of the math, which keeps the estimate conservative.
+  if(typeof renderFormHead==='function') renderFormHead();
+  if(typeof renderMix==='function') renderMix();
   const df = DRUGTYPE==='br' ? s.dfb : s.dfg;
   const note = document.getElementById('fs-note');
   if(note){
@@ -515,7 +520,7 @@ function mixCols(){
   return [{k:'product',label:'Product'},{k:'category',label:'Category'},{k:'route',label:'Route'},
           {k:'awp',label:'MFG AWP',num:true}]
     .concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}])
-    .concat([{k:'fee',label:'PA fee',num:true},{k:'net',label:'Net / fill',num:true}]);
+    .concat([{k:'fee',label:feeLabel(),num:true},{k:'net',label:'Net / fill',num:true}]);
 }
 
 // One fill of one product, worked out exactly as the printed formulary works it out, so the
@@ -668,7 +673,7 @@ function formCols(){
   // it is nothing of the kind: it moves with whichever state is chosen at the top of the page, and
   // the estimate above already states what the basket collects at that state's rate.
   ].concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}])
-   .concat([{k:'fee',label:'PA fee',num:true},{k:'net',label:'Net / fill',num:true}]);
+   .concat([{k:'fee',label:feeLabel(),num:true},{k:'net',label:'Net / fill',num:true}]);
 }
 // The two computed columns sort on what they display, not on a stored field.
 function fVal(f,k){
