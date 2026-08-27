@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>New Account Intake &middot; MDconcierge</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/brand/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --navy:#08214C;--blue:#2F5EA8;--blue-soft:#EEF4FC;
+  --cream:#F6F9FD;--border:#DCE6F2;--ink:#14213D;--muted:#5C6B85;--faint:#8B97AC;
+  --ok:#1e8e5a;--ok-bg:#e7f6ef;--err:#b3261e;--err-bg:#fdecea;
+}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--cream);color:var(--ink);line-height:1.6;}
+.wrap{max-width:820px;margin:0 auto;padding:0 20px 90px;}
+
+header{padding:34px 0 26px;}
+.logo{height:42px;width:auto;display:block;margin-bottom:20px;}
+h1{font-size:clamp(24px,3.6vw,32px);font-weight:700;line-height:1.2;letter-spacing:-.02em;margin-bottom:10px;}
+.sub{color:var(--muted);font-size:15.5px;max-width:60ch;}
+.saved{font-size:12.5px;color:var(--faint);margin-top:14px;min-height:18px;}
+
+section.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px 24px 26px;margin-bottom:18px;}
+h2{font-size:17px;font-weight:700;color:var(--navy);margin-bottom:4px;}
+.hint{font-size:13px;color:var(--muted);margin-bottom:18px;}
+
+label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:5px;}
+.req::after{content:' *';color:var(--err);}
+input,select{
+  width:100%;font-family:inherit;font-size:15px;color:var(--ink);background:#fff;
+  border:1px solid var(--border);border-radius:8px;padding:10px 12px;transition:border-color .12s,box-shadow .12s;
+}
+input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(47,94,168,.13);}
+input.bad{border-color:var(--err);background:var(--err-bg);}
+.field{margin-bottom:14px;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.g3{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;}
+.g4{display:grid;grid-template-columns:1.6fr 1fr .9fr 1fr .9fr;gap:10px;}
+@media(max-width:720px){.g2,.g3,.g4{grid-template-columns:1fr;}}
+
+.rep{border:1px solid var(--border);border-radius:10px;padding:16px 16px 4px;margin-bottom:12px;background:var(--cream);position:relative;}
+.rep-n{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:12px;}
+.rm{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--faint);font-size:12.5px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:6px;}
+.rm:hover{color:var(--err);background:var(--err-bg);}
+.add{background:var(--blue-soft);border:1px dashed var(--blue);color:var(--blue);font-family:inherit;font-size:13.5px;font-weight:700;border-radius:8px;padding:10px 16px;cursor:pointer;width:100%;}
+.add:hover{background:#e2ecfa;}
+.add:disabled{opacity:.4;cursor:not-allowed;}
+
+.progs{display:flex;gap:10px;flex-wrap:wrap;}
+.prog{flex:1;min-width:150px;border:1px solid var(--border);border-radius:9px;padding:13px 14px;cursor:pointer;background:#fff;transition:.12s;}
+.prog:hover{border-color:var(--blue);}
+.prog.on{border-color:var(--blue);background:var(--blue-soft);box-shadow:0 0 0 2px rgba(47,94,168,.12);}
+.prog b{display:block;font-size:14.5px;color:var(--navy);}
+
+.foot{position:sticky;bottom:0;background:linear-gradient(to top,var(--cream) 72%,rgba(246,249,253,0));padding:18px 0 22px;}
+.submit{background:var(--blue);color:#fff;font-family:inherit;font-size:15.5px;font-weight:700;border:none;border-radius:9px;padding:15px 30px;cursor:pointer;width:100%;}
+.submit:hover{background:#264c8a;}
+.submit:disabled{opacity:.55;cursor:not-allowed;}
+.msg{margin-top:12px;font-size:14px;border-radius:8px;padding:11px 14px;display:none;}
+.msg.show{display:block;}
+.msg.e{background:var(--err-bg);color:var(--err);}
+.msg.k{background:var(--ok-bg);color:var(--ok);}
+
+.done{background:#fff;border:1px solid var(--border);border-radius:12px;padding:38px 30px;text-align:center;}
+.done h2{font-size:22px;margin-bottom:10px;}
+.done p{color:var(--muted);font-size:15px;max-width:46ch;margin:0 auto 18px;}
+.legal{font-size:12px;color:var(--faint);text-align:center;padding-top:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <img class="logo" src="assets/brand/logo.png" alt="MDconcierge">
+  <h1>New account intake</h1>
+  <p class="sub">Everything needed to open the account. It saves as you type, so you can stop and come back on the same device. Add only as many locations and providers as you actually have.</p>
+  <div class="saved" id="saved"></div>
+</header>
+
+<div id="form">
+
+  <section class="card">
+    <h2>Program</h2>
+    <p class="hint">Eric will have told you which one applies.</p>
+    <div class="progs" id="progs">
+      <div class="prog" data-p="RXD"><b>RXD</b></div>
+      <div class="prog" data-p="Elite"><b>Elite</b></div>
+      <div class="prog" data-p="Script Manager"><b>Script Manager</b></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Practice</h2>
+    <p class="hint">The legal entity that will hold the agreement, exactly as it appears on the tax record.</p>
+    <div class="field"><label class="req" for="legal">Legal name of company or practice</label><input id="legal" data-k="practice.legal_name" autocomplete="organization"></div>
+    <div class="g2">
+      <div class="field"><label class="req" for="signer">Name of contract signer</label><input id="signer" data-k="practice.signer_name" autocomplete="name"></div>
+      <div class="field"><label for="title">Title</label><input id="title" data-k="practice.signer_title" autocomplete="organization-title"></div>
+    </div>
+    <div class="g2">
+      <div class="field"><label class="req" for="email">Email address</label><input id="email" type="email" data-k="practice.signer_email" autocomplete="email"></div>
+      <div class="field"><label class="req" for="cell">Cell phone</label><input id="cell" type="tel" data-k="practice.signer_cell" autocomplete="tel"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Locations</h2>
+    <p class="hint">Every location that will prescribe under the account.</p>
+    <div id="locs"></div>
+    <button class="add" id="addloc" type="button">Add another location</button>
+  </section>
+
+  <section class="card">
+    <h2>Payment and remittance</h2>
+    <p class="hint">Where payments go, and where reports should be sent.</p>
+    <div class="field"><label class="req" for="payaddr">Payment address</label><input id="payaddr" data-k="payment.address" autocomplete="street-address"></div>
+    <div class="g2">
+      <div class="field"><label class="req" for="ein">Tax ID (EIN)</label><input id="ein" data-k="payment.ein" placeholder="12-3456789" inputmode="numeric"></div>
+      <div class="field"><label class="req" for="remit">Email for reports and payments</label><input id="remit" type="email" data-k="payment.remittance_email"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Provider licensing</h2>
+    <p class="hint">Every prescriber on the account. Licence and DEA numbers with their expiry dates.</p>
+    <div id="provs"></div>
+    <button class="add" id="addprov" type="button">Add another provider</button>
+  </section>
+
+  <section class="card">
+    <h2>Submitted by</h2>
+    <p class="hint">So we know who to come back to with any questions.</p>
+    <div class="g2">
+      <div class="field"><label class="req" for="subname">Your name</label><input id="subname" data-k="submitter.name" autocomplete="name"></div>
+      <div class="field"><label class="req" for="subemail">Your email</label><input id="subemail" type="email" data-k="submitter.email" autocomplete="email"></div>
+    </div>
+  </section>
+
+  <div class="foot">
+    <button class="submit" id="go" type="button">Submit intake form</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+</div>
+
+<p class="legal">MDconcierge &middot; Workers-comp claims only. Not legal advice.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+  'use strict';
+  var SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
+  var SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
+  var SUBMIT_TYPE='pdrx_intake';
+  var FALLBACK='referrals@mdconcierge.net';
+  var KEY='pdrx_intake_draft_v1';
+  var MAX_LOC=6, MAX_PROV=12;
+  var sb=null;
+  try{ sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
+
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+  var $=function(id){return document.getElementById(id);};
+
+  /* ---------- repeatable rows ---------- */
+  function locRow(n){
+    return '<div class="rep" data-row="loc">'+
+      (n>1?'<button class="rm" type="button">Remove</button>':'')+
+      '<div class="rep-n">Location '+n+'</div>'+
+      '<div class="field"><label>Address</label><input data-f="address" autocomplete="street-address"></div>'+
+      '<div class="g2"><div class="field"><label>Phone</label><input data-f="phone" type="tel"></div>'+
+      '<div class="field"><label>Fax</label><input data-f="fax" type="tel"></div></div></div>';
+  }
+  function provRow(n){
+    return '<div class="rep" data-row="prov">'+
+      (n>1?'<button class="rm" type="button">Remove</button>':'')+
+      '<div class="rep-n">Provider '+n+'</div>'+
+      '<div class="g4">'+
+      '<div class="field"><label>Name</label><input data-f="name" autocomplete="name"></div>'+
+      '<div class="field"><label>State licence #</label><input data-f="license"></div>'+
+      '<div class="field"><label>Expires</label><input data-f="license_exp" type="month"></div>'+
+      '<div class="field"><label>DEA #</label><input data-f="dea"></div>'+
+      '<div class="field"><label>Expires</label><input data-f="dea_exp" type="month"></div>'+
+      '</div></div>';
+  }
+  function renumber(host,word){
+    var rows=host.querySelectorAll('.rep');
+    for(var i=0;i<rows.length;i++){
+      rows[i].querySelector('.rep-n').textContent=word+' '+(i+1);
+      var b=rows[i].querySelector('.rm');
+      if(i===0&&b) b.remove();
+    }
+  }
+  function addRow(hostId,fn,word,max,btn){
+    var host=$(hostId);
+    var n=host.querySelectorAll('.rep').length+1;
+    if(n>max) return;
+    var d=document.createElement('div');
+    d.innerHTML=fn(n);
+    host.appendChild(d.firstChild);
+    renumber(host,word);
+    if(host.querySelectorAll('.rep').length>=max) btn.disabled=true;
+    save();
+  }
+  document.addEventListener('click',function(e){
+    if(e.target&&e.target.classList.contains('rm')){
+      var rep=e.target.closest('.rep'), host=rep.parentNode;
+      var isLoc=rep.getAttribute('data-row')==='loc';
+      rep.remove();
+      renumber(host,isLoc?'Location':'Provider');
+      (isLoc?$('addloc'):$('addprov')).disabled=false;
+      save();
+    }
+  });
+  $('addloc').addEventListener('click',function(){addRow('locs',locRow,'Location',MAX_LOC,$('addloc'));});
+  $('addprov').addEventListener('click',function(){addRow('provs',provRow,'Provider',MAX_PROV,$('addprov'));});
+
+  /* ---------- program picker ---------- */
+  var program='';
+  $('progs').addEventListener('click',function(e){
+    var t=e.target.closest('.prog'); if(!t) return;
+    var all=$('progs').querySelectorAll('.prog');
+    for(var i=0;i<all.length;i++) all[i].classList.remove('on');
+    t.classList.add('on');
+    program=t.getAttribute('data-p');
+    save();
+  });
+
+  /* ---------- collect ---------- */
+  function rows(hostId){
+    var out=[];
+    var reps=$(hostId).querySelectorAll('.rep');
+    for(var i=0;i<reps.length;i++){
+      var o={}, any=false;
+      var fs=reps[i].querySelectorAll('[data-f]');
+      for(var j=0;j<fs.length;j++){
+        var v=(fs[j].value||'').trim();
+        o[fs[j].getAttribute('data-f')]=v;
+        if(v) any=true;
+      }
+      if(any) out.push(o);
+    }
+    return out;
+  }
+  function collect(){
+    var p={program:program,practice:{},payment:{},submitter:{},
+           locations:rows('locs'),providers:rows('provs'),
+           source_url:location.href.split('#')[0]};
+    var fs=document.querySelectorAll('[data-k]');
+    for(var i=0;i<fs.length;i++){
+      var parts=fs[i].getAttribute('data-k').split('.');
+      p[parts[0]][parts[1]]=(fs[i].value||'').trim();
+    }
+    return p;
+  }
+
+  /* ---------- autosave ---------- */
+  var t=null;
+  function save(){
+    clearTimeout(t);
+    t=setTimeout(function(){
+      try{
+        localStorage.setItem(KEY,JSON.stringify({
+          p:collect(),
+          nloc:$('locs').querySelectorAll('.rep').length,
+          nprov:$('provs').querySelectorAll('.rep').length
+        }));
+        var d=new Date();
+        $('saved').textContent='Saved '+d.getHours()+':'+('0'+d.getMinutes()).slice(-2)+' on this device.';
+      }catch(e){}
+    },400);
+  }
+  document.addEventListener('input',save);
+
+  function restore(){
+    var raw=null;
+    try{ raw=localStorage.getItem(KEY); }catch(e){}
+    var st=null;
+    if(raw){ try{ st=JSON.parse(raw); }catch(e){} }
+    var nloc=(st&&st.nloc)||1, nprov=(st&&st.nprov)||1;
+    for(var i=0;i<Math.max(1,nloc);i++) addRow('locs',locRow,'Location',MAX_LOC,$('addloc'));
+    for(var k=0;k<Math.max(1,nprov);k++) addRow('provs',provRow,'Provider',MAX_PROV,$('addprov'));
+    if(!st||!st.p) return;
+    var p=st.p;
+    var fs=document.querySelectorAll('[data-k]');
+    for(var a=0;a<fs.length;a++){
+      var parts=fs[a].getAttribute('data-k').split('.');
+      var v=p[parts[0]]&&p[parts[0]][parts[1]];
+      if(v) fs[a].value=v;
+    }
+    fill('locs',p.locations); fill('provs',p.providers);
+    if(p.program){
+      var all=$('progs').querySelectorAll('.prog');
+      for(var b=0;b<all.length;b++){
+        if(all[b].getAttribute('data-p')===p.program){ all[b].classList.add('on'); program=p.program; }
+      }
+    }
+    if(raw) $('saved').textContent='Restored your saved draft.';
+  }
+  function fill(hostId,arr){
+    if(!arr||!arr.length) return;
+    var reps=$(hostId).querySelectorAll('.rep');
+    for(var i=0;i<arr.length&&i<reps.length;i++){
+      var fs=reps[i].querySelectorAll('[data-f]');
+      for(var j=0;j<fs.length;j++){
+        var v=arr[i][fs[j].getAttribute('data-f')];
+        if(v) fs[j].value=v;
+      }
+    }
+  }
+
+  /* ---------- validate + submit ---------- */
+  function emailOk(s){return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);}
+  function show(cls,txt){var m=$('msg');m.className='msg show '+cls;m.innerHTML=txt;}
+
+  function validate(p){
+    var bad=[];
+    document.querySelectorAll('input').forEach(function(el){el.classList.remove('bad');});
+    function need(id,ok,label){
+      var el=$(id);
+      if(!ok){ el.classList.add('bad'); bad.push(label); }
+    }
+    need('legal',!!p.practice.legal_name,'legal name');
+    need('signer',!!p.practice.signer_name,'contract signer');
+    need('email',emailOk(p.practice.signer_email),'a valid signer email');
+    need('cell',!!p.practice.signer_cell,'cell phone');
+    need('payaddr',!!p.payment.address,'payment address');
+    need('ein',!!p.payment.ein,'tax ID');
+    need('remit',emailOk(p.payment.remittance_email),'a valid remittance email');
+    need('subname',!!p.submitter.name,'your name');
+    need('subemail',emailOk(p.submitter.email),'your email');
+    if(!p.locations.length) bad.push('at least one location');
+    if(!p.providers.length) bad.push('at least one provider');
+    if(!p.program) bad.push('a program');
+    return bad;
+  }
+
+  function summaryText(p){
+    var L=[];
+    L.push('PDRx new account intake');
+    L.push('Program: '+(p.program||''));
+    L.push('');
+    L.push('Practice: '+(p.practice.legal_name||''));
+    L.push('Signer: '+(p.practice.signer_name||'')+(p.practice.signer_title?', '+p.practice.signer_title:''));
+    L.push('Email: '+(p.practice.signer_email||'')+'   Cell: '+(p.practice.signer_cell||''));
+    L.push('');
+    L.push('Payment address: '+(p.payment.address||''));
+    L.push('Tax ID: '+(p.payment.ein||''));
+    L.push('Remittance email: '+(p.payment.remittance_email||''));
+    L.push('');
+    p.locations.forEach(function(l,i){
+      L.push('Location '+(i+1)+': '+(l.address||'')+'  ph '+(l.phone||'')+'  fax '+(l.fax||''));
+    });
+    L.push('');
+    p.providers.forEach(function(v,i){
+      L.push('Provider '+(i+1)+': '+(v.name||'')+'  Lic '+(v.license||'')+' exp '+(v.license_exp||'')+
+             '  DEA '+(v.dea||'')+' exp '+(v.dea_exp||''));
+    });
+    L.push('');
+    L.push('Submitted by: '+(p.submitter.name||'')+' <'+(p.submitter.email||'')+'>');
+    return L.join('\n');
+  }
+
+  function succeeded(p){
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    $('form').innerHTML='<div class="done"><h2>Thank you, '+
+      esc((p.submitter.name||'').split(' ')[0])+'.</h2>'+
+      '<p>The intake is in. Eric will confirm and come back to you if anything needs clarifying.</p></div>';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  $('go').addEventListener('click',async function(){
+    var p=collect();
+    var bad=validate(p);
+    if(bad.length){
+      show('e','Still needed: '+bad.join(', ')+'.');
+      var f=document.querySelector('input.bad'); if(f) f.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    $('go').disabled=true; show('k','Submitting...');
+    var ok=false;
+    if(sb){
+      try{
+        var r=await sb.rpc('submit_signup',{p_type:SUBMIT_TYPE,p_payload:p});
+        ok=!!(r&&r.data&&r.data.ok&&!r.error);
+      }catch(e){ ok=false; }
+    }
+    if(ok){ succeeded(p); return; }
+    // Submission path unavailable. Never lose the physician's work: hand it back
+    // in a form he can send in one click.
+    var body=encodeURIComponent(summaryText(p));
+    var subj=encodeURIComponent('PDRx intake, '+(p.practice.legal_name||''));
+    show('e','Could not submit automatically. <a href="mailto:'+FALLBACK+'?subject='+subj+
+            '&body='+body+'" style="color:inherit;font-weight:700;">Click here to send it by email instead</a>, '+
+            'or reply to the message this link came from. Nothing you typed has been lost.');
+    $('go').disabled=false;
+  });
+
+  /* ---------- prefill ----------
+     Read from the URL fragment, never the query string. A fragment is not sent to
+     the server, so it stays out of access logs and Referer headers. Only ever holds
+     details the recipient already owns: never a licence number, never a DEA number.
+     A saved draft always wins, so prefill cannot overwrite work in progress. */
+  function prefill(){
+    var h=(location.hash||'').replace(/^#/,'');
+    if(h.indexOf('d=')!==0) return false;
+    var d=null;
+    try{ d=JSON.parse(decodeURIComponent(escape(atob(h.slice(2))))); }catch(e){ return false; }
+    if(!d) return false;
+    var touched=false;
+    var fs=document.querySelectorAll('[data-k]');
+    for(var i=0;i<fs.length;i++){
+      var k=fs[i].getAttribute('data-k');
+      if(d[k]&&!fs[i].value){ fs[i].value=d[k]; touched=true; }
+    }
+    if(d.program){
+      var all=$('progs').querySelectorAll('.prog');
+      for(var b=0;b<all.length;b++){
+        if(all[b].getAttribute('data-p')===d.program&&!program){
+          all[b].classList.add('on'); program=d.program; touched=true;
+        }
+      }
+    }
+    if(d.loc1){
+      var r=$('locs').querySelector('.rep');
+      if(r){
+        Object.keys(d.loc1).forEach(function(f){
+          var el=r.querySelector('[data-f="'+f+'"]');
+          if(el&&!el.value){ el.value=d.loc1[f]; touched=true; }
+        });
+      }
+    }
+    if(d.prov1){
+      var pr=$('provs').querySelector('.rep');
+      if(pr){
+        Object.keys(d.prov1).forEach(function(f){
+          var el=pr.querySelector('[data-f="'+f+'"]');
+          if(el&&!el.value){ el.value=d.prov1[f]; touched=true; }
+        });
+      }
+    }
+    return touched;
+  }
+
+  restore();
+  if(prefill()){
+    $('saved').textContent='Some fields are filled in already. Correct anything that is wrong.';
+    save();
+  }
+})();
+</script>
+</body>
+</html>
