@@ -33,18 +33,21 @@
   .fctl input{ flex:1; min-width:200px; }
   th.sortable{ cursor:pointer; user-select:none; white-space:nowrap; }
   th.sortable:hover{ color:var(--navy); }
-  #ftable tbody tr{ cursor:pointer; }
+  #ftable tbody tr, #mtable tbody tr{ cursor:pointer; }
+  #mtable tbody tr:hover{ background:#f6f9fd; }
+  #mtable tbody tr.selrow{ background:#eef6ff; }
+  #mtable tbody tr.catrow td{ background:#f0f4fa; font-weight:800; font-size:11.5px; letter-spacing:.6px;
+    text-transform:uppercase; color:var(--navy); cursor:default; }
+  #mtable input.qty{ width:64px; padding:5px 7px; border:1px solid var(--line); border-radius:6px;
+    font-size:13px; text-align:right; }
+  #mtable .rm{ border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer;
+    padding:3px 8px; color:#8a94a4; font-size:13px; }
+  #mtable .rm:hover{ color:#9b3b2e; border-color:#9b3b2e; }
+  td.net{ font-weight:700; color:#0f5132; }
   #ftable tbody tr:hover{ background:#f6f9fd; }
   #ftable tbody tr.selrow{ background:#eef6ff; }
   #ftable tbody tr.catrow td{ background:#f0f4fa; font-weight:800; font-size:11.5px; letter-spacing:.6px;
     text-transform:uppercase; color:var(--navy); cursor:default; }
-  .mixrow{ display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; }
-  .mixnums{ flex:0 0 100%; font-size:12px; color:#5a6675; padding:2px 2px 0 2px;
-            font-variant-numeric:tabular-nums; letter-spacing:.01em; }
-  .mixnums b{ color:#0f5132; font-weight:700; }
-  .mixnums span{ color:#9aa5b4; }
-  .mixrow select{ flex:1; min-width:180px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; background:#fff; }
-  .mixrow input{ width:76px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:13.5px; }
   .btn{ border:1px solid var(--steel); background:#fff; color:var(--navy); border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer; }
   .btn:hover{ background:#eef3fb; }
   .btn.solid{ background:var(--navy); color:#fff; border-color:var(--navy); }
@@ -81,6 +84,8 @@ const FN = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/formulary-acce
 const PROGRAM = 'mdrx';
 const app = document.getElementById('app');
 const money = n => '$' + Math.round(n||0).toLocaleString('en-US');
+// Cents matter wherever the number has to match the formulary line for line.
+const money2 = n => '$' + (Number(n)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let FORM = [], REC = {};
 // Someone who skipped the sign-in gets the tool and the estimate, but not the price book.
@@ -423,8 +428,16 @@ function render(expires){
     <div class="card">
       <h2>Your formulary mix</h2>
       <p class="hint">Add the medications you'd realistically dispense. "Units per patient" is how many of that item an average patient receives each month.</p>
-      <div id="mix"></div>
-      <button class="btn noprint" onclick="addLine()">+ Add medication</button>
+      <div id="mixbar" class="noprint" style="display:none;"></div>
+      <div class="tablewrap">
+        <table id="mtable">
+          <thead id="mhead"></thead>
+          <tbody id="mbody"></tbody>
+        </table>
+      </div>
+      <p class="hint noprint" id="mixempty" style="display:none;margin:10px 0 0;">
+        Nothing here yet. Find what you dispense in the full formulary below, tick it, and
+        press <b>Add to formulary</b>.</p>
     </div>
 
     <div class="result" id="result"></div>
@@ -464,14 +477,10 @@ function render(expires){
   const home = ACTIVE.includes(rc) ? rc : 'PA';
   document.getElementById('a-state').value = home;
   const mine = mineFromUrl().filter(id=>FORM.some(f=>String(f.id)===String(id)));
+  MIX = mine.map(id=>({id:String(id), units:1}));
+  sortMix();
   if(mine.length){
-    mine.forEach(id=>{
-      addLine();
-      const rows=document.querySelectorAll('#mix .mixrow');
-      const sel=rows[rows.length-1].querySelector('select');
-      sel.value=String(id);
-    });
-    const box=document.getElementById('mix');
+    const box=document.getElementById('mixbar');
     if(box){
       const n=document.createElement('div');
       n.className='noprint';
@@ -481,22 +490,12 @@ function render(expires){
         'and add anything else from the full formulary below.';
       box.parentNode.insertBefore(n, box);
     }
-  } else {
-    addLine(); addLine();
   }
   applyPreset();
+  renderMix();
   applyState(home);
 }
 
-function addLine(){
-  const box = document.getElementById('mix'); if(!box) return;
-  const d = document.createElement('div'); d.className='mixrow';
-  d.innerHTML = `<select onchange="compute()">${window._OPTS}</select>
-    <input type="number" value="1" min="0" step="0.5" title="units per patient / month" oninput="compute()">
-    <button class="btn noprint" onclick="this.closest('.mixrow').remove();compute()" title="remove">✕</button>
-    <div class="mixnums"></div>`;
-  box.appendChild(d);
-}
 
 function applyPreset(){
   const p = presetFromUrl();
@@ -507,6 +506,109 @@ function applyPreset(){
 
 function fById(id){ return FORM.find(f=>String(f.id)===String(id)); }
 
+// The practice's own formulary: a list of {id, units}. It is the single source for the
+// table, the totals and the line arithmetic.
+let MIX = [];
+let MSEL = new Set();
+
+function mixCols(){
+  return [{k:'product',label:'Product'},{k:'category',label:'Category'},{k:'route',label:'Route'},
+          {k:'awp',label:'MFG AWP',num:true}]
+    .concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}])
+    .concat([{k:'fee',label:'PA fee',num:true},{k:'net',label:'Net / fill',num:true}]);
+}
+
+// One fill of one product, worked out exactly as the printed formulary works it out, so the
+// figure on screen and the figure on the page they were sent are the same number.
+function lineNet(f){
+  const num = id => { const e=document.getElementById(id); return e?(parseFloat(e.value)||0):0; };
+  const mult=num('a-mult'), share=num('a-sh')/100;
+  const coll=(f.route==='Oral'?num('a-oc'):num('a-tc'))/100;
+  const fee=num('a-df'), ship=num('a-ship');
+  const paAwp=(Number(f.awp)||0)*mult;
+  return { fee:paAwp, net:(paAwp*coll-(Number(f.cost)||0)-fee-ship)*share };
+}
+
+function renderMix(){
+  const head=document.getElementById('mhead'), body=document.getElementById('mbody');
+  const empty=document.getElementById('mixempty'), wrap=document.querySelector('#mtable');
+  if(!head||!body) return;
+  head.innerHTML='<tr><th style="width:34px;"></th>'
+    + mixCols().map(c=>`<th class="${c.num?'num':''}">${esc(c.label)}</th>`).join('')
+    + '<th class="num" style="width:78px;">Units</th><th class="noprint" style="width:44px;"></th></tr>';
+  const cols = mixCols().length + 3;
+  let lastCat=null;
+  body.innerHTML = MIX.map(m=>{
+    const f=fById(m.id); if(!f) return '';
+    const c=String(f.category||'Other');
+    let head2='';
+    if(c!==lastCat){ lastCat=c; head2=`<tr class="catrow"><td colspan="${cols}">${esc(c)}</td></tr>`; }
+    const L=lineNet(f);
+    return head2 + `<tr class="${MSEL.has(String(f.id))?'selrow':''}" onclick="toggleMixSel('${f.id}')">
+      <td class="noprint" style="text-align:center;"><input type="checkbox" ${MSEL.has(String(f.id))?'checked':''} onclick="event.stopPropagation();toggleMixSel('${f.id}')"></td>
+      <td>${esc(f.product)}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
+      <td class="num">${money2(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money2(f.cost)}</td>`}
+      <td class="num">${money2(L.fee)}</td><td class="num net">${money2(L.net)}</td>
+      <td class="num"><input class="qty" type="number" min="0" step="0.5" value="${m.units}"
+        onclick="event.stopPropagation();" oninput="setUnits('${f.id}',this.value)"></td>
+      <td class="noprint" style="text-align:center;"><button class="rm" title="Remove from formulary"
+        onclick="event.stopPropagation();removeFromFormulary(['${f.id}'])">&#10005;</button></td></tr>`;
+  }).join('');
+  if(empty) empty.style.display = MIX.length ? 'none' : '';
+  if(wrap) wrap.style.display = MIX.length ? '' : 'none';
+  renderMixBar();
+}
+
+// The assumptions drive every line, so the table is redrawn when they move.
+function renderMixNums(){
+  const body=document.getElementById('mbody'); if(!body) return;
+  const rows=[...body.querySelectorAll('tr')].filter(r=>!r.classList.contains('catrow'));
+  let i=0;
+  MIX.forEach(m=>{
+    const f=fById(m.id); if(!f) return;
+    const tr=rows[i++]; if(!tr) return;
+    const L=lineNet(f), tds=tr.querySelectorAll('td');
+    const feeIdx = HIDE_COST ? 5 : 6, netIdx = feeIdx+1;
+    if(tds[feeIdx]) tds[feeIdx].textContent=money2(L.fee);
+    if(tds[netIdx]) tds[netIdx].textContent=money2(L.net);
+  });
+}
+
+function toggleMixSel(id){ id=String(id); if(MSEL.has(id)) MSEL.delete(id); else MSEL.add(id); renderMix(); }
+
+function renderMixBar(){
+  const b=document.getElementById('mixbar'); if(!b) return;
+  if(!MSEL.size){ b.style.display='none'; b.innerHTML=''; return; }
+  b.style.display='';
+  b.style.cssText='display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#f7faff;';
+  b.innerHTML = `<span style="font-size:13px;color:var(--muted);">${MSEL.size} selected</span>
+    <button class="btn solid" onclick="removeFromFormulary([...MSEL])">Remove from formulary</button>
+    <button class="btn" onclick="MSEL.clear();renderMix();">Clear selection</button>`;
+}
+
+function setUnits(id,v){
+  const m=MIX.find(x=>String(x.id)===String(id)); if(!m) return;
+  m.units=parseFloat(v)||0; compute();
+}
+
+function addToFormulary(ids){
+  ids.forEach(id=>{ if(!MIX.some(m=>String(m.id)===String(id))) MIX.push({id:String(id), units:1}); });
+  sortMix(); renderMix(); compute();
+}
+
+function removeFromFormulary(ids){
+  const drop=new Set(ids.map(String));
+  MIX = MIX.filter(m=>!drop.has(String(m.id)));
+  drop.forEach(d=>MSEL.delete(d));
+  renderMix(); compute(); applyForm();
+}
+
+// Keep the practice's formulary in the same order as the full one below it.
+function sortMix(){
+  const order = new Map(FORM.map((f,i)=>[String(f.id),i]));
+  MIX.sort((a,b)=>(order.get(String(a.id))??0)-(order.get(String(b.id))??0));
+}
+
 // Typing over the multiplier by hand has to move the formulary column too, not just the headline.
 function multChanged(){ compute(); filterForm(); }
 
@@ -515,27 +617,12 @@ function compute(){
   const patients=num('a-pat'), mult=num('a-mult'), oc=num('a-oc')/100, tc=num('a-tc')/100, share=num('a-sh')/100;
   const fee=num('a-df'), ship=num('a-ship');
   let oAwp=0,oCost=0,tAwp=0,tCost=0,oScripts=0,tScripts=0; const lines=[];
-  document.querySelectorAll('#mix .mixrow').forEach(row=>{
-    const id=(row.querySelector('select')||{}).value; const units=parseFloat((row.querySelector('input')||{}).value)||0;
-    const f=fById(id);
-    if(!f||!units){ const n0=row.querySelector('.mixnums'); if(n0) n0.textContent=''; return; }
+  MIX.forEach(m=>{
+    const f=fById(m.id); const units=Number(m.units)||0;
+    if(!f||!units) return;
     const paAwp=(Number(f.awp)||0)*mult, extAwp=units*paAwp, extCost=units*(Number(f.cost)||0);
     if(f.route==='Oral'){ oAwp+=extAwp; oCost+=extCost; oScripts+=units; } else { tAwp+=extAwp; tCost+=extCost; tScripts+=units; }
     lines.push(f.product);
-    // Every line carries its own arithmetic, so the figure in the tool and the figure in the
-    // formulary are visibly the same number. Collections are applied per route, and the per Rx
-    // dispensing and shipping are charged once per order rather than once per medication, so
-    // they are not deducted here. The line reads what one fill of that product returns.
-    const coll = f.route==='Oral' ? oc : tc;
-    const lineNet = (paAwp*coll - (Number(f.cost)||0)) * share;
-    const nums = row.querySelector('.mixnums');
-    if(nums){
-      nums.innerHTML = HIDE_COST
-        ? 'PA fee '+money(paAwp)+' <span>per fill</span>'
-        : 'Cost '+money(Number(f.cost)||0)+' <span>&middot;</span> AWP '+money(Number(f.awp)||0)
-          +' <span>&middot;</span> PA fee '+money(paAwp)
-          +' <span>&middot;</span> <b>'+money(lineNet)+'</b> <span>per fill</span>';
-    }
   });
   // Dispensing and shipping are charges against the practice, not something it collects, and both
   // are per Rx order rather than per medication: a patient on five drugs carries one $6 dispensing
@@ -552,6 +639,7 @@ function compute(){
       ? '<b>Practice pays per Rx:</b> $'+fee.toFixed(2)+' dispensing and $'+ship.toFixed(2)+' shipping, $'+(fee+ship).toFixed(2)+' in total. Both are charged once per patient order, not per medication, so a patient on five drugs still carries one of each. Both are counted as costs and are already deducted from the figures below.'
       : '<b>Dispensing and shipping:</b> none applied. Set them above if your agreement includes them.';
   }
+  if(typeof renderMixNums==='function') renderMixNums();
   const el=document.getElementById('result'); if(!el) return;
   el.innerHTML = `
     <div class="lbl">Estimated practice ancillary revenue</div>
@@ -634,10 +722,11 @@ function fillFormTable(rows){
       lastCat = c;
       head = `<tr class="catrow"><td colspan="${cols}">${esc(c)}</td></tr>`;
     }
-    return head + `<tr class="${FSEL.has(String(f.id))?'selrow':''}" onclick="toggleSel('${f.id}')">
+    const on = MIX.some(m=>String(m.id)===String(f.id));
+    return head + `<tr class="${FSEL.has(String(f.id))?'selrow':''}" onclick="toggleSel('${f.id}')" title="${on?'Already on the formulary':''}">
     <td class="noprint" style="text-align:center;"><input type="checkbox" ${FSEL.has(String(f.id))?'checked':''} onclick="event.stopPropagation();toggleSel('${f.id}')"></td>
-    <td>${esc(f.product)}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
-    <td class="num">${money(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money(f.cost)}</td>`}</tr>`;
+    <td>${esc(f.product)}${on?' <span style="font-size:10.5px;color:#8a94a4;border:1px solid #d7dee9;border-radius:3px;padding:1px 5px;">on formulary</span>':''}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
+    <td class="num">${money2(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money2(f.cost)}</td>`}</tr>`;
   }).join('');
 }
 function toggleSel(id){
@@ -651,22 +740,16 @@ function renderSelBar(){
   bar.style.display='block';
   bar.innerHTML = `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:11px 14px;background:#eef6ff;border:1px solid var(--steel);border-radius:10px;">
     <b style="font-size:14px;">${FSEL.size} selected</b>
-    <button class="btn solid" onclick="addSelected()">Add to my mix</button>
+    <button class="btn solid" onclick="addSelected()">Add to formulary</button>
     <button class="btn" onclick="FSEL.clear();applyForm();renderSelBar();">Clear selection</button>
   </div>`;
 }
 function addSelected(){
   const ids=[...FSEL];
   if(!ids.length) return;
-  ids.forEach(id=>{
-    // Re-use an empty row before making a new one, so the mix does not fill up with blanks.
-    let row=[...document.querySelectorAll('#mix .mixrow')].find(r=>!r.querySelector('select').value);
-    if(!row){ addLine(); const all=document.querySelectorAll('#mix .mixrow'); row=all[all.length-1]; }
-    row.querySelector('select').value=String(id);
-    if(!parseFloat(row.querySelector('input').value)) row.querySelector('input').value='1';
-  });
-  FSEL.clear(); applyForm(); renderSelBar(); compute();
-  const mix=document.getElementById('mix');
+  addToFormulary(ids);
+  FSEL.clear(); applyForm(); renderSelBar();
+  const mix=document.getElementById('mtable');
   if(mix) mix.scrollIntoView({behavior:'smooth', block:'center'});
 }
 // Kept so the multiplier and state handlers can refresh the table without knowing the details.
