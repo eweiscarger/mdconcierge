@@ -40,9 +40,22 @@
 .gate .msg{font-size:13.5px;margin-top:12px;line-height:1.6;}
 .gate .msg.bad{color:#9B3B2E;} .gate .msg.good{color:#2F6B4F;}
 #howto-body{display:none;}
+
+#dead{display:none;font-family:inherit;max-width:520px;margin:16vh auto;padding:0 22px;text-align:left;}
+#dead h2{font-size:22px;font-weight:700;margin:0 0 10px;}
+#dead p{font-size:15px;line-height:1.65;opacity:.72;margin:0 0 8px;}
+body.dead #dead{display:block;}
+body.dead .wrap,body.dead .gate,body.dead #howto-body{display:none !important;}
 </style>
 </head>
 <body>
+<div id="dead">
+  <h2>This link is not valid</h2>
+  <p>Packets open only from the link Eric sent. If a colleague forwarded this to you,
+  ask them for the original email and open it from there.</p>
+  <p>Anything at all, eric@mdconcierge.net or 570 817 7569.</p>
+</div>
+
 
 <div class="gate" id="gate">
   <h2>Your email, to read this</h2>
@@ -262,6 +275,33 @@
   'use strict';
   var FN='https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/doc-access';
   function el(i){return document.getElementById(i);}
+  /* Nothing renders until the link itself is recognised. The address on its own is a
+     dead end, so the page cannot be found by typing it or by a crawler. A forwarded
+     link still carries the token, which is intended: the colleague reaches the page
+     and is then asked who they are like anybody else. */
+  function tok(){
+    var h=new URLSearchParams(String(location.hash||'').replace(/^#/,''));
+    var q=new URL(location.href).searchParams;
+    var p=h.get('p')||q.get('p')||'';
+    if(!p){
+      var d=h.get('d')||q.get('d')||'';
+      if(d){ try{ p=(JSON.parse(decodeURIComponent(escape(atob(d))))||{}).p||''; }catch(e){} }
+    }
+    return p;
+  }
+  function guard(){
+    var p=tok();
+    if(!p){ document.body.classList.add('dead'); return Promise.resolve(false); }
+    return fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'link',p:p})})
+      .then(function(r){return r.json();})
+      .then(function(j){
+        if(j&&j.ok&&j.valid) return true;
+        document.body.classList.add('dead'); return false;
+      })
+      .catch(function(){ document.body.classList.add('dead'); return false; });
+  }
+
   function post(b){return fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify(b)}).then(function(r){return r.json();});}
   function open_(){ el('gate').style.display='none'; el('howto-body').style.display=''; }
@@ -289,11 +329,14 @@
     }).catch(function(){b.disabled=false;m.className='msg bad';m.textContent='Could not reach the server.';});
   }
   document.addEventListener('DOMContentLoaded',function(){
+    guard().then(function(okLink){
+    if(!okLink) return;
     el('g-go').addEventListener('click',ask);
     el('g-email').addEventListener('keydown',function(e){if(e.key==='Enter')ask();});
     var sv=''; try{sv=localStorage.getItem('mdc_howto')||'';}catch(x){}
     if(sv){ el('g-email').value=sv;
       post({action:'check',packet:'mdrx',email:sv}).then(function(j){if(j&&j.ok&&j.allowed)open_();}).catch(function(){}); }
+    });
   });
 })();
 </script>
