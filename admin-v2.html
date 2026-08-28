@@ -296,7 +296,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div class="ns">Analytics</div>
     <button class="ni" data-biz="ml" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
     <button class="ni" data-biz="ml" onclick="showView('analytics',this)"><span class="ni-ic">📊</span> Analytics</button>
-    <button class="ni" data-biz="both" onclick="showView('access',this)"><span class="ni-ic">🛡️</span> Access Log</button>
+    <button class="ni" data-biz="both" onclick="showView('access',this)"><span class="ni-ic">🛡️</span> Access Log <span class="nb" id="access-pending" style="display:none;">0</span></button>
     <div class="ns">Resources</div>
     <a class="ni" data-biz="both" href="overview.html" target="_blank" rel="noopener" style="text-decoration:none;"><span class="ni-ic">📊</span> Platform Overview</a>
     <button class="ni" data-biz="both" onclick="showView('tools',this)"><span class="ni-ic">🔗</span> Links &amp; Tools</button>
@@ -496,6 +496,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <div class="view" id="view-linkedin"></div>
 
   <div class="view" id="view-access">
+    <div class="panel" style="margin-bottom:16px;">
+      <div class="ph"><div class="pt">🔐 Access requests</div><div class="ps">Somebody who is not in the CRM asked to open a packet. Nothing is served to them until you approve it.</div></div>
+      <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Asked</th><th>Name</th><th>Email</th><th>Practice</th><th>Packet</th><th></th></tr></thead><tbody id="access-req-body"></tbody></table></div>
+    </div>
     <div class="panel" style="margin-bottom:0;">
       <div class="ph"><div class="pt">Access &amp; activity log</div><div class="ps">Every case open, accept, reveal &amp; access across all cases — newest first. Sensitive events are flagged.</div></div>
       <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>When</th><th>Case</th><th>Event</th><th>Detail</th><th>Source</th></tr></thead><tbody id="access-body"></tbody></table></div>
@@ -832,6 +836,40 @@ async function loadAudit(supaId){
 function renderActivity(){
   document.getElementById('act-feed').innerHTML=ACTIVITY.map(a=>`<div class="ai"><div class="ai-ic ic-${a.t==='new'?'new':a.t==='rt'?'rt':'dq'}">${a.ic}</div><div><div class="ai-txt">${a.tx}</div><div class="ai-time">${a.time}</div></div></div>`).join('');
 }
+// Anyone waiting on Eric. A request is a quote_links row that is revoked and marked
+// ACCESS REQUEST; approving is clearing that flag, which is the whole mechanism.
+async function loadAccessRequests(){
+  const tb=document.getElementById('access-req-body'); if(!tb)return;
+  tb.innerHTML='<tr><td colspan="6" style="color:var(--muted);padding:14px;">Loading…</td></tr>';
+  const {data,error}=await sbClient.from('quote_links')
+    .select('id,recipient_name,recipient_email,practice,program,created_at')
+    .eq('note','ACCESS REQUEST').eq('revoked',true)
+    .order('created_at',{ascending:false}).limit(50);
+  if(error){tb.innerHTML='<tr><td colspan="6" style="color:var(--red);padding:14px;">'+ehtml(error.message)+'</td></tr>';return;}
+  const n=(data||[]).length;
+  const badge=document.getElementById('access-pending');
+  if(badge){ badge.textContent=n; badge.style.display=n?'':'none'; }
+  if(!n){tb.innerHTML='<tr><td colspan="6" style="color:var(--muted);padding:14px;">Nobody is waiting.</td></tr>';return;}
+  tb.innerHTML=data.map(r=>{
+    let ts='';try{ts=new Date(r.created_at).toLocaleString();}catch(e){ts=r.created_at;}
+    return `<tr><td style="font-size:11px;color:var(--muted2);white-space:nowrap;">${ehtml(ts)}</td>`
+      +`<td style="font-size:12.5px;font-weight:500;">${ehtml(r.recipient_name||'')}</td>`
+      +`<td style="font-size:12px;">${ehtml(r.recipient_email||'')}</td>`
+      +`<td style="font-size:12px;color:var(--muted2);">${ehtml(r.practice||'')}</td>`
+      +`<td style="font-size:12px;">${ehtml(String(r.program||'').toUpperCase())}</td>`
+      +`<td style="white-space:nowrap;"><button class="ib" onclick="approveAccess(${r.id},true)">Approve</button> `
+      +`<button class="ib" onclick="approveAccess(${r.id},false)">Decline</button></td></tr>`;
+  }).join('');
+}
+
+async function approveAccess(id,yes){
+  const patch = yes ? {revoked:false, note:'APPROVED'} : {note:'DECLINED'};
+  const {error}=await sbClient.from('quote_links').update(patch).eq('id',id);
+  if(error){ showToast('Could not save: '+error.message); return; }
+  showToast(yes?'Approved. They can open it now.':'Declined.');
+  loadAccessRequests();
+}
+
 async function loadAccessLog(){
   const tb=document.getElementById('access-body'); if(!tb)return;
   tb.innerHTML='<tr><td colspan="5" style="color:var(--muted);padding:14px;">Loading…</td></tr>';
@@ -1236,7 +1274,7 @@ function showView(v,btn){
   if(v==='cockpit')loadCockpit();
   if(v==='tools')renderTools();
   if(v==='analytics')loadAnalytics();
-  if(v==='access')loadAccessLog();
+  if(v==='access'){loadAccessLog();loadAccessRequests();}
   if(v==='linkedin')loadLinkedIn();
   if(v==='deals')loadDeals();
 }

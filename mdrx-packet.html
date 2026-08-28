@@ -93,8 +93,11 @@ h3{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
     <button id="g-go" type="button">Open</button>
   </div>
   <div class="row" style="margin-top:9px;">
-    <input id="g-name" type="text" placeholder="Your name, if you are asking for access">
-    <input id="g-practice" type="text" placeholder="Practice">
+    <input id="g-first" type="text" placeholder="First name" autocomplete="given-name">
+    <input id="g-last" type="text" placeholder="Last name" autocomplete="family-name">
+  </div>
+  <div class="row" style="margin-top:9px;">
+    <input id="g-practice" type="text" placeholder="Practice" autocomplete="organization">
   </div>
   <div class="msg" id="g-msg"></div>
 </div>
@@ -213,7 +216,7 @@ h3{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
         ev.preventDefault();
         msg.textContent='Sending\u2026';
         post({action:'request',packet:PACKET,email:e,
-              name:(el('g-name')?el('g-name').value:''),
+              name:((el('g-first')?el('g-first').value:'')+' '+(el('g-last')?el('g-last').value:'')).trim(),
               practice:(el('g-practice')?el('g-practice').value:'')})
           .then(function(){ msg.className='msg good';
             msg.textContent='Sent. Eric has to approve it, and you will hear from him.'; })

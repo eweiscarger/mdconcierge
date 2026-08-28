@@ -52,8 +52,11 @@
     <button id="g-go" type="button">Open</button>
   </div>
   <div class="row" style="margin-top:9px;">
-    <input id="g-name" type="text" placeholder="Your name, if you are asking for access">
-    <input id="g-practice" type="text" placeholder="Practice">
+    <input id="g-first" type="text" placeholder="First name" autocomplete="given-name">
+    <input id="g-last" type="text" placeholder="Last name" autocomplete="family-name">
+  </div>
+  <div class="row" style="margin-top:9px;">
+    <input id="g-practice" type="text" placeholder="Practice" autocomplete="organization">
   </div>
   <div class="msg" id="g-msg"></div>
 </div>
@@ -272,8 +275,14 @@
       if(j&&j.pending){ m.textContent='Your request is with Eric. You will hear as soon as he approves it.'; return; }
       m.innerHTML='We do not have that address. <a href="#" id="g-req" style="color:#2F5EA8;font-weight:600;">Ask Eric for access</a>.';
       el('g-req').addEventListener('click',function(ev){ev.preventDefault();
+        var fn=(el('g-first')||{}).value||'', ln=(el('g-last')||{}).value||'', pr=(el('g-practice')||{}).value||'';
+        if(!fn.trim()||!ln.trim()||!pr.trim()){
+          m.className='msg bad';
+          m.textContent='First name, last name and practice, so Eric knows who is asking.';
+          return;
+        }
         m.textContent='Sending…';
-        post({action:'request',packet:'mdrx',email:e,name:el('g-name').value,practice:el('g-practice').value})
+        post({action:'request',packet:'mdrx',email:e,name:((el('g-first')?el('g-first').value:'')+' '+(el('g-last')?el('g-last').value:'')).trim(),practice:el('g-practice').value})
           .then(function(){m.className='msg good';m.textContent='Sent. Eric has to approve it, and you will hear from him.';})
           .catch(function(){m.className='msg bad';m.textContent='That did not go through.';});
       });
