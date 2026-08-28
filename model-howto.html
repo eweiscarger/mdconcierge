@@ -27,10 +27,37 @@
   .foot{ text-align:center; color:var(--muted); font-size:12.5px; margin-top:26px; }
   .foot a{ color:var(--steel); }
   @media (max-width:520px){ h1{ font-size:22px; } }
+
+.gate{background:#fff;border:1px solid var(--blue,#2F5EA8);border-radius:12px;padding:24px;margin:20px 0;
+  box-shadow:0 0 0 3px rgba(47,94,168,.09);font-family:inherit;}
+.gate h2{font-size:18.5px;font-weight:700;margin:0 0 7px;}
+.gate p{font-size:14.5px;margin:0 0 14px;opacity:.75;}
+.gate .row{display:flex;gap:9px;flex-wrap:wrap;}
+.gate input{flex:1;min-width:220px;padding:12px 14px;border:1px solid #DCE6F2;border-radius:9px;
+  font-size:15px;font-family:inherit;}
+.gate button{background:#2F5EA8;color:#fff;border:0;border-radius:9px;padding:12px 20px;
+  font-size:14.5px;font-weight:600;font-family:inherit;cursor:pointer;}
+.gate .msg{font-size:13.5px;margin-top:12px;line-height:1.6;}
+.gate .msg.bad{color:#9B3B2E;} .gate .msg.good{color:#2F6B4F;}
+#howto-body{display:none;}
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div class="gate" id="gate">
+  <h2>Your email, to read this</h2>
+  <p>This page shows real reimbursement figures, so it is not public. Put in your email and it opens.</p>
+  <div class="row">
+    <input id="g-email" type="email" placeholder="you@practice.com" autocomplete="email">
+    <button id="g-go" type="button">Open</button>
+  </div>
+  <div class="row" style="margin-top:9px;">
+    <input id="g-name" type="text" placeholder="Your name, if you are asking for access">
+    <input id="g-practice" type="text" placeholder="Practice">
+  </div>
+  <div class="msg" id="g-msg"></div>
+</div>
+<div id="howto-body"><div class="wrap">
   <div class="kicker">MDconcierge Pharmacy Partner</div>
   <h1>How to use your dispensing analysis</h1>
   <p class="sub">About a minute. Every number in it is yours to change.</p>
@@ -56,9 +83,9 @@
 
   <div class="card">
     <h2>What the numbers assume</h2>
-    <p style="margin-top:0;">The defaults are deliberately conservative and every one of them is editable:</p>
+    <p style="margin-top:0;">Every one of these is editable and moves every figure on the page:</p>
     <ul style="margin:0;padding-left:22px;">
-      <li><b>80% collections</b> on oral scripts, <b>70%</b> on topicals.</li>
+      <li><b>100% collections</b> on oral scripts, <b>70%</b> on topicals.</li>
       <li>Your practice keeps <b>65% of net.</b></li>
       <li>The practice carries the <b>cost of the medication plus per-Rx dispensing and shipping fees</b>. Both come out before the split, and both are already deducted from the figure you see.</li>
     </ul>
@@ -148,7 +175,7 @@
           <label class="fld">Patients / month<i class="hot">your number</i></label>
           <label class="fld">State<i class="hot">Pennsylvania</i></label>
           <label class="fld">AWP multiplier<i class="hot">1.1</i></label>
-          <label class="fld">Oral collection %<i>80</i></label>
+          <label class="fld">Oral collection %<i>100</i></label>
           <label class="fld">Practice share %<i>65</i></label>
         </div>
         <p class="note" style="margin:12px 0 0;"><b>Pennsylvania:</b> AWP + 10% · brand 1.1× / generic 1.1×</p>
@@ -226,5 +253,40 @@
   <p class="foot">Open your own analysis from the private link in your email. Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction.<br>
   Eric Weiscarger · MDconcierge · <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a> · mdconcierge.net</p>
 </div>
+</div>
+<script>
+(function(){
+  'use strict';
+  var FN='https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/doc-access';
+  function el(i){return document.getElementById(i);}
+  function post(b){return fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(b)}).then(function(r){return r.json();});}
+  function open_(){ el('gate').style.display='none'; el('howto-body').style.display=''; }
+  function ask(){
+    var e=(el('g-email').value||'').trim().toLowerCase(), m=el('g-msg'), b=el('g-go');
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){m.className='msg bad';m.textContent='That does not look like an email address.';return;}
+    b.disabled=true; m.className='msg'; m.textContent='Checking…';
+    post({action:'check',packet:'mdrx',email:e}).then(function(j){
+      b.disabled=false;
+      if(j&&j.ok&&j.allowed){ try{localStorage.setItem('mdc_howto',e);}catch(x){} open_(); return; }
+      if(j&&j.pending){ m.textContent='Your request is with Eric. You will hear as soon as he approves it.'; return; }
+      m.innerHTML='We do not have that address. <a href="#" id="g-req" style="color:#2F5EA8;font-weight:600;">Ask Eric for access</a>.';
+      el('g-req').addEventListener('click',function(ev){ev.preventDefault();
+        m.textContent='Sending…';
+        post({action:'request',packet:'mdrx',email:e,name:el('g-name').value,practice:el('g-practice').value})
+          .then(function(){m.className='msg good';m.textContent='Sent. Eric has to approve it, and you will hear from him.';})
+          .catch(function(){m.className='msg bad';m.textContent='That did not go through.';});
+      });
+    }).catch(function(){b.disabled=false;m.className='msg bad';m.textContent='Could not reach the server.';});
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    el('g-go').addEventListener('click',ask);
+    el('g-email').addEventListener('keydown',function(e){if(e.key==='Enter')ask();});
+    var sv=''; try{sv=localStorage.getItem('mdc_howto')||'';}catch(x){}
+    if(sv){ el('g-email').value=sv;
+      post({action:'check',packet:'mdrx',email:sv}).then(function(j){if(j&&j.ok&&j.allowed)open_();}).catch(function(){}); }
+  });
+})();
+</script>
 </body>
 </html>
