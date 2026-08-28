@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="referrer" content="no-referrer">
-<title>What else is available &middot; MDconcierge</title>
+<title>Your PDRx and Elite Care account &middot; MDconcierge</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32">
@@ -78,9 +78,11 @@ body.dead .wrap{display:none !important;}
 
 <header>
   <img class="logo" src="logo.jpg" alt="MDconcierge">
-  <h1 id="hd">What else is available to you</h1>
-  <p class="sub">You are already set up, so there is no paperwork here. This is simply the rest
-  of what we can send for the patients you are already treating.</p>
+  <p class="tag" style="margin-bottom:10px;">PDRx and Elite Care &middot; work comp pharmacy</p>
+  <h1 id="hd">What else is available on your account</h1>
+  <p class="sub">Your PDRx and Elite Care account is live and there is no paperwork here.
+  This is simply the rest of what the work comp pharmacy can send for the patients you are
+  already treating.</p>
 </header>
 
 <div class="gate" id="gate">
@@ -104,9 +106,9 @@ body.dead .wrap{display:none !important;}
 <div class="step first locked">
   <span class="tag">The formulary</span>
   <h2>Everything we can send, and what it returns</h2>
-  <p>Filter it, sort it, search it. Tick what you already prescribe and it shows you the fee
-  schedule and what each fill returns to the practice. Every assumption on the page is yours
-  to change.</p>
+  <p>This is the full PDRx work comp formulary. Filter it, sort it, search it. Tick what you
+  already prescribe and it shows you the state fee schedule and what each fill returns to the
+  practice. Every assumption on the page is yours to change.</p>
   <p>Most practices find something on it they did not know we carried.</p>
   <a class="btn" id="formulary" href="#" target="_blank" rel="noopener noreferrer">Open the formulary &rarr;</a>
 </div>
@@ -114,7 +116,8 @@ body.dead .wrap{display:none !important;}
 <div class="step locked">
   <span class="tag">Injection kits</span>
   <h2>The same as a prescription, delivered to the office</h2>
-  <p>These work exactly the way the medications do. Nothing new to learn and nothing to set up.</p>
+  <p>These come through PDRx on the same account, and they work exactly the way the
+  medications do. Nothing new to learn and nothing to set up.</p>
   <ul class="how">
     <li><b>You prescribe it the same way</b>, through the EHR, exactly as you would any other item.</li>
     <li><b>It ships to the office</b> rather than to the patient&rsquo;s home.</li>
@@ -166,7 +169,7 @@ body.dead .wrap{display:none !important;}
     if(!p){ document.body.classList.add('dead'); return Promise.resolve(false); }
     return post({action:'link',p:p}).then(function(j){
       if(j&&j.ok&&j.valid){
-        if(j.name) el('hd').textContent='What else is available to you, '+j.name.split(' ')[0];
+        if(j.practice) el('hd').textContent='What else is available on the '+j.practice+' account';
         return true;
       }
       document.body.classList.add('dead'); return false;
