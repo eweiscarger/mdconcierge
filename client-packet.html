@@ -198,7 +198,10 @@ body.dead .wrap{display:none !important;}
     el('gate').style.display='none';
     Array.prototype.forEach.call(document.querySelectorAll('.locked'),function(n){n.classList.remove('locked');});
     var t=tok();
-    el('formulary').href='pharmacy-model.html?p='+encodeURIComponent(t);
+    // This packet is the PDRx and Elite Care account, so it opens the PDRx tool. The MDRx
+    // tool is a different price book and a different share, and sending a PDRx practice
+    // there would show them the wrong formulary at the wrong split.
+    el('formulary').href='pdrx-model.html?p='+encodeURIComponent(t);
     paint();
   }
   function ask(){
