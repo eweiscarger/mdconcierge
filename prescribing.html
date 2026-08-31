@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="referrer" content="no-referrer">
-<title>Prescribing through Excel</title>
+<title>Prescribing your work comp scripts</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32">
@@ -96,12 +96,6 @@ table.form th{background:var(--navy);color:#fff;text-align:left;padding:9px 12px
 table.form td{padding:8px 12px;border-top:1px solid var(--border);color:var(--ink);vertical-align:top;}
 table.form .br{color:var(--faint);font-weight:400;}
 table.form td.d{color:var(--muted);font-size:13.5px;}
-table.form .br{color:var(--faint);font-weight:400;}
-table.form td.d{color:var(--muted);font-size:13.5px;}
-table.form .br{color:var(--faint);font-weight:400;}
-table.form td.d{color:var(--muted);font-size:13.5px;}
-table.form .br{color:var(--faint);font-weight:400;}
-table.form td.d{color:var(--muted);font-size:13.5px;}
 table.form td.c{text-align:right;color:var(--muted);white-space:nowrap;}
 table.form tr.cat td{background:var(--blue);color:#fff;font-weight:700;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;padding:7px 12px;}
 .owner{margin-top:18px;font-size:15px;color:var(--ink);}
@@ -122,21 +116,21 @@ table.form tr.cat td{background:var(--blue);color:#fff;font-weight:700;font-size
 
 <header class="mast">
   <p class="eyebrow">MDRx workers&rsquo; compensation pharmacy</p>
-  <h1>Sending a work comp prescription to Excel</h1>
+  <h1>Sending a work comp prescription</h1>
   <p class="dek">For whoever handles the scripts. Two minutes to set up, then it is one click a
   visit. Nothing about how you prescribe changes.</p>
 </header>
 
 <div class="step">
   <h2>The rule</h2>
-  <p>When the visit is work comp, the prescription goes to <b>Excel Pharmacy Services</b> rather
-  than the patient&rsquo;s retail pharmacy. That is the whole change.</p>
+  <p>When the visit is work comp, the prescription goes to the work comp pharmacy rather than the
+  patient&rsquo;s retail pharmacy. That is the whole change.</p>
 </div>
 
 <div class="gate" id="gate">
   <h2>Your email, to open this</h2>
-  <p class="sub">This is specific to your practice, so it is not public. Put in your email and it
-  opens.</p>
+  <p class="sub">This names the pharmacy and carries the formulary, so it is not public. Put in
+  your email and it opens.</p>
   <div class="row">
     <input id="g-email" type="email" placeholder="you@practice.com" autocomplete="email">
     <button id="g-go">Open</button>
@@ -146,13 +140,7 @@ table.form tr.cat td{background:var(--blue);color:#fff;font-weight:700;font-size
 
 <div class="step locked hero">
   <h2>Search your pharmacy directory for this</h2>
-  <div class="pharma">
-    <p class="pn">Excel Pharmacy</p>
-    <p class="addr">354 W Lancaster Ave, Ste 120<br>Haverford, PA 19041</p>
-    <p>Phone <b>877 272 7983</b></p>
-    <p>Fax <b>877 274 1122</b></p>
-    <p class="tag">E-prescribing accepted. Statewide home delivery.</p>
-  </div>
+  <div class="pharma" id="pharma"><p class="pn">Loading&hellip;</p></div>
   <p class="note"><b>Widen the search past your local area.</b> Most systems only list nearby
   pharmacies until you turn that off, and a mail order pharmacy will not appear until you do.
   This is the step practices miss.</p>
@@ -163,10 +151,9 @@ table.form tr.cat td{background:var(--blue);color:#fff;font-weight:700;font-size
 <div class="step locked">
   <h2>Two ways to send it</h2>
   <ol class="steps">
-    <li><b>E-prescribe.</b> Route the script to Excel Pharmacy from your existing e-prescribing
+    <li><b>E-prescribe.</b> Route the script to the pharmacy from your existing e-prescribing
     software, exactly as you would to any other pharmacy.</li>
-    <li><b>Or fax to 877 274 1122.</b> Send the prescription together with a completed
-    demographic sheet.</li>
+    <li><b>Or fax it</b>, on the fax number above, together with a completed demographic sheet.</li>
   </ol>
 </div>
 
@@ -185,9 +172,9 @@ table.form tr.cat td{background:var(--blue);color:#fff;font-weight:700;font-size
 
 <div class="step locked">
   <h2>What happens next</h2>
-  <p>Excel&rsquo;s advocate team calls the patient <b>within 24 hours</b> to confirm insurance,
-  the prescription and the delivery address. The call comes from <b>area code 484 or 267</b>,
-  which is worth telling the patient so they answer it.</p>
+  <p>The pharmacy&rsquo;s advocate team calls the patient <b>within 24 hours</b> to confirm
+  insurance, the prescription and the delivery address. The call comes from <b>area code 484 or
+  267</b>, which is worth telling the patient so they answer it.</p>
   <p style="margin-top:10px;">From there it ships to their home. No copay and nothing paid out of
   pocket for covered work comp medications, no trip to a counter, and no prior authorization
   landing on your staff. Patients get their medication while the claim is open.</p>
@@ -203,28 +190,12 @@ table.form tr.cat td{background:var(--blue);color:#fff;font-weight:700;font-size
   <h2>The formulary</h2>
   <p>The full work comp formulary, oral and topical. <b>Other work comp medications are available
   on request</b>, so if what you write is not listed, ask rather than assume.</p>
-
-  <h3 class="sub2">Oral medications</h3>
-  <div class="tablewrap">
-    <table class="form"><tbody><tr class="cat"><td colspan="2">Antibiotics</td></tr><tr><td>Cephalexin <span class="br">(Keflex)</span></td><td class="c">500mg</td></tr><tr><td>Ciprofloxacin <span class="br">(Cipro)</span></td><td class="c">500mg</td></tr><tr><td>Mupirocin cream <span class="br">(Mupirocin)</span></td><td class="c">2%</td></tr><tr class="cat"><td colspan="2">Analgesics</td></tr><tr><td>Duloxetine <span class="br">(Cymbalta)</span></td><td class="c">30mg / 60mg</td></tr><tr><td>Tramadol <span class="br">(Ultram)</span></td><td class="c">50mg</td></tr><tr><td>Tramadol ER <span class="br">(Ultram ER, Tramadol)</span></td><td class="c">100mg / 150mg / 200mg / 300mg</td></tr><tr class="cat"><td colspan="2">NSAIDs</td></tr><tr><td>Celecoxib <span class="br">(Celebrex)</span></td><td class="c">100mg / 200mg</td></tr><tr><td>Diclofenac Sodium Tablets <span class="br">(Voltaren)</span></td><td class="c">100mg</td></tr><tr><td>Ibuprofen <span class="br">(Motrin)</span></td><td class="c">600mg / 800mg</td></tr><tr><td>Meloxicam <span class="br">(Mobic)</span></td><td class="c">7.5mg / 15mg</td></tr><tr><td>Nabumetone <span class="br">(Relafen)</span></td><td class="c">500mg</td></tr><tr><td>Naproxen <span class="br">(Naprosyn)</span></td><td class="c">375mg / 500mg / 550mg</td></tr><tr class="cat"><td colspan="2">NSAID combination</td></tr><tr><td>Ibuprofen/famotidine <span class="br">(Duexis)</span></td><td class="c">800-26.6</td></tr><tr class="cat"><td colspan="2">Muscle relaxants</td></tr><tr><td>Baclofen</td><td class="c">10mg / 20mg</td></tr><tr><td>Carisoprodol <span class="br">(Soma)</span></td><td class="c">350mg</td></tr><tr><td>Cyclobenzaprine <span class="br">(Fexmid, Flexeril, Cyclobenzaprine Tablets)</span></td><td class="c">7.5mg / 10mg / 15mg / 15mg ER</td></tr><tr><td>Metaxalone</td><td class="c">800mg</td></tr><tr><td>Methocarbamol <span class="br">(Robaxin)</span></td><td class="c">500mg / 750mg</td></tr><tr><td>Tizanidine <span class="br">(Zanaflex)</span></td><td class="c">4mg</td></tr><tr class="cat"><td colspan="2">Anticonvulsants</td></tr><tr><td>Gabapentin <span class="br">(Neurontin)</span></td><td class="c">100mg / 300mg / 400mg / 600mg</td></tr><tr><td>Topiramate <span class="br">(Topamax)</span></td><td class="c">50mg / 100mg</td></tr><tr class="cat"><td colspan="2">Antiepileptics</td></tr><tr><td>Pregabalin <span class="br">(Lyrica)</span></td><td class="c">75mg / 100mg</td></tr><tr class="cat"><td colspan="2">Antiemetics</td></tr><tr><td>Ondansetron <span class="br">(Zofran)</span></td><td class="c">4mg / 8mg</td></tr><tr><td>Ondansetron ODT <span class="br">(Zofran ODT)</span></td><td class="c">4mg / 8mg</td></tr><tr class="cat"><td colspan="2">Proton pump inhibitors</td></tr><tr><td>Esomeprazole</td><td class="c">20mg / 40mg</td></tr><tr><td>Omeprazole <span class="br">(Prilosec)</span></td><td class="c">20mg / 40mg</td></tr><tr><td>Pantoprazole <span class="br">(Protonix)</span></td><td class="c">20mg / 40mg</td></tr><tr><td>Rabeprazole <span class="br">(Aciphex)</span></td><td class="c">20mg</td></tr><tr class="cat"><td colspan="2">H2 blockers</td></tr><tr><td>Ranitidine <span class="br">(Zantac)</span></td><td class="c">150mg</td></tr><tr class="cat"><td colspan="2">Stool softeners</td></tr><tr><td>Docusate</td><td class="c">100mg</td></tr><tr><td>Lactulose 10G/15ml Solution <span class="br">(Chronulac)</span></td><td class="c">10g/15ml</td></tr><tr><td>Laxacin (docusate/senna) <span class="br">(Laxacin)</span></td><td class="c">8.6mg/50mg / 50mg/8.6mg</td></tr><tr><td>Lubiprostone (Amitiza) <span class="br">(Lubiprostone)</span></td><td class="c">24mcg</td></tr><tr><td>Narcosoft</td><td class="c">60</td></tr><tr><td>Promolaxin 100mg Tab <span class="br">(Promolaxin)</span></td><td class="c">100mg</td></tr><tr class="cat"><td colspan="2">Sleep agents</td></tr><tr><td>Eszopiclone <span class="br">(Lunesta)</span></td><td class="c">1mg / 2mg / 3mg</td></tr><tr><td>Zolpidem <span class="br">(Ambien)</span></td><td class="c">5mg / 10mg</td></tr><tr class="cat"><td colspan="2">Corticosteroid</td></tr><tr><td>Methylprednisolone dose pack <span class="br">(Methylprednisolone)</span></td><td class="c">4mg</td></tr></tbody></table>
-  </div>
-
-  <h3 class="sub2">Topical agents and patches</h3>
-  <div class="tablewrap">
-    <table class="form"><thead><tr><th>Medication</th><th>Size and directions</th></tr></thead>
-    <tbody><tr class="cat"><td colspan="2">Topical analgesics</td></tr><tr><td>Lido Pain Relief Ointment <span class="br">(Lidocaine)</span></td><td class="d">5%, 35.44gm</td></tr><tr><td>Lido Pain Relief Ointment <span class="br">(Lidocaine)</span></td><td class="d">5%, 50gm</td></tr><tr><td>Lido Patch -Trubexa <span class="br">(Trubrexia Patch)</span></td><td class="d">32count</td></tr><tr><td>Lido/Methyl/Menthol Pain Relief Ointment <span class="br">(LidoPro Topical)</span></td><td class="d">99gm</td></tr><tr><td>Lidocaine oint <span class="br">(Lidocaine)</span></td><td class="d">5%, 35.44g</td></tr><tr><td>Lidocaine oint <span class="br">(Lidocaine)</span></td><td class="d">5%, 177.2g. Apply to affected area three times daily as needed</td></tr><tr><td>Lidocaine patch <span class="br">(Lidocaine)</span></td><td class="d">5%, 30</td></tr><tr><td>Lidocaine patch <span class="br">(Lidocaine)</span></td><td class="d">5%, 60</td></tr><tr><td>Lidopro Ointment <span class="br">(Lidopro)</span></td><td class="d">99g</td></tr><tr><td>Lidopro Pain Relief Ointment <span class="br">(Lidopro)</span></td><td class="d">0.0325%-10%-27.5%-4.0%, 121gm</td></tr><tr><td>Lidopro Patch <span class="br">(Lidopro)</span></td><td class="d">4% Lido / 1% Menthol, 30. Apply 1 patch every 8 to 12 hours. Maximum 2 per day</td></tr><tr><td>Lidopro Patch <span class="br">(Lidopro)</span></td><td class="d">4% Lido / 1% Menthol, 60. Apply 1 patch every 8 to 12 hours. Maximum 2 per day</td></tr><tr><td>Pain Relief Ointment <span class="br">(Xylocaine 5%)</span></td><td class="d">5%, 35.44gm</td></tr><tr><td>Zylotrol Gel <span class="br">(Zylotrol)</span></td><td class="d">4% Lido / 1% Menthol, 102</td></tr><tr><td>Zylotrol Gel <span class="br">(Zylotrol)</span></td><td class="d">4% Lido / 1% Menthol, 204</td></tr><tr><td>Zylotrol Patch <span class="br">(Zylotrol)</span></td><td class="d">4% Lido / 1% Menthol, 30</td></tr><tr><td>Zylotrol Patch <span class="br">(Zylotrol)</span></td><td class="d">4% Lido / 1% Menthol, 60</td></tr><tr class="cat"><td colspan="2">Topical anti inflammatories</td></tr><tr><td>Diclofenac 3%</td><td class="d">3%, 100ml</td></tr><tr><td>Diclofenac Gel <span class="br">(Diclofenac)</span></td><td class="d">1%, 200g</td></tr><tr><td>Diclofenac Gel <span class="br">(Diclofenac)</span></td><td class="d">3%, 200g. Apply 2 g to affected area 2 to 4 times daily</td></tr><tr><td>Diclofenac Solution <span class="br">(Diclofenac)</span></td><td class="d">2%, 112g</td></tr><tr><td>Diclofenac Solution <span class="br">(Diclofenac)</span></td><td class="d">1.5%, 150ml</td></tr><tr><td>Diclofenac Solution <span class="br">(Diclofenac)</span></td><td class="d">1.5%, 300ml. Apply 2.5 mL to affected area 2 to 4 times daily as needed</td></tr></tbody></table>
-  </div>
-
-  <p class="note">38 oral medications and 23 topical items. Directions
-  are shown only for the products the pharmacy publishes them for. The formulary is subject to
-  change and does not account for state restrictions on any given medication. To confirm a
-  specific medication, call Excel on 877 272 7983. Nothing here is a recommendation about what any
-  patient should be prescribed.</p>
+  <div id="formulary"><p class="note">Loading&hellip;</p></div>
 </div>
 
 <div class="step locked">
   <h2>If you do not see what you write</h2>
-  <p>Ask. Call me on 570 817 7569, or Excel directly on 877 272 7983. Do not let a script sit.</p>
+  <p>Ask. Call me on 570 817 7569, or the pharmacy on the number above. Do not let a script sit.</p>
   <p class="owner">Who owns this here: <span class="line"></span></p>
   <p class="ownernote">Worth filling in. The practices where this keeps running are the ones where
   a named person owns it, and that is the first thing to hand over when they move on.</p>
@@ -236,6 +207,119 @@ table.form tr.cat td{background:var(--blue);color:#fff;font-weight:700;font-size
 </p>
 
 </div>
+
+
+<script>
+(function(){
+  'use strict';
+  var FN='https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/doc-access';
+  var ORDER=['ANTIBIOTICS','ANALGESICS','N-SAIDS','NSAID Combo','MUSCLE RELAXANTS',
+    'ANTI CONVULSANTS','AED','ANTI NAUSEANT','PROTON PUMP INHIBITOR','H2 HISTAMINE ANTAGONIST',
+    'STOOL SOFTENER','SLEEP AID','CORTICOSTEROID','TOPICAL ANALGESIC','TOPICAL ANTI INFLAMMATORY'];
+  var PRETTY={'N-SAIDS':'NSAIDs','NSAID Combo':'NSAID combination','AED':'Antiepileptics',
+    'ANTI CONVULSANTS':'Anticonvulsants','ANTI NAUSEANT':'Antiemetics',
+    'PROTON PUMP INHIBITOR':'Proton pump inhibitors','H2 HISTAMINE ANTAGONIST':'H2 blockers',
+    'STOOL SOFTENER':'Stool softeners','SLEEP AID':'Sleep agents','CORTICOSTEROID':'Corticosteroid',
+    'TOPICAL ANALGESIC':'Topical analgesics','TOPICAL ANTI INFLAMMATORY':'Topical anti inflammatories',
+    'ANTIBIOTICS':'Antibiotics','ANALGESICS':'Analgesics','MUSCLE RELAXANTS':'Muscle relaxants'};
+
+  function esc(x){return String(x==null?'':x).trim()
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function norm(x){return String(x||'').toLowerCase().replace(/[^a-z0-9%./ ]/g,'').replace(/\s+/g,' ').trim();}
+  function tidy(x){return String(x||'').trim()
+    .replace(/\s*(mg|ml|mcg|gm|g|grams?|count)\b/gi,function(m,u){var l=u.toLowerCase();
+      return (l==='grams'||l==='gram')?'g':l;}).replace(/\s+/g,' ').trim();}
+  function numOf(x){var m=String(x).match(/[\d.]+/);return m?parseFloat(m[0]):1e9;}
+  function uniqTidy(a){var seen={},out=[];
+    a.forEach(function(x){ if(!x||!String(x).trim())return; var t=tidy(x),k=t.toLowerCase();
+      if(!seen[k]){seen[k]=1;out.push(t);} });
+    return out.sort(function(x,y){return numOf(x)-numOf(y)||x.localeCompare(y);});}
+  function isTop(c){return /TOPICAL/i.test(c||'');}
+  function label(n,b){return esc(n)+(b?' <span class="br">('+esc(b)+')</span>':'');}
+
+  window.loadSheet=function(email){
+    fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'sheet',packet:'mdrx',email:email})})
+      .then(function(r){return r.json();})
+      .then(function(j){ if(!j||!j.ok) throw new Error('denied'); draw(j); })
+      .catch(function(){
+        document.getElementById('pharma').innerHTML='<p class="pn">Could not load</p>';
+        document.getElementById('formulary').innerHTML='<p class="note">Could not load. Call 570 817 7569.</p>';
+      });
+  };
+
+  function draw(j){
+    var p=j.pharmacy;
+    document.getElementById('pharma').innerHTML=
+      '<p class="pn">'+esc(p.name)+'</p>'+
+      '<p class="addr">'+esc(p.address1)+'<br>'+esc(p.address2)+'</p>'+
+      '<p>Phone <b>'+esc(p.phone)+'</b></p>'+
+      '<p>Fax <b>'+esc(p.fax)+'</b></p>'+
+      '<p class="tag">'+esc(p.note)+'</p>';
+
+    var meds=j.meds||[], orals=[], tops=[];
+    meds.forEach(function(r){ (isTop(r.category)?tops:orals).push(r); });
+
+    // orals consolidated, one line per medication
+    var g={},keys=[];
+    orals.forEach(function(r){
+      var k=norm(r.name);
+      if(!g[k]){g[k]={name:r.name||'',brands:[],cat:r.category||'OTHER',strengths:[],sizes:[]};keys.push(k);}
+      var e=g[k];
+      if(String(r.name||'').length>e.name.length) e.name=r.name;
+      e.brands.push(String(r.brand||'').trim());
+      e.strengths.push(String(r.strength||'').trim());
+      e.sizes.push(String(r.size||'').trim());
+    });
+    var list=keys.map(function(k){var e=g[k];
+      var br=[];e.brands.forEach(function(b){if(b&&norm(b)!==norm(e.name)&&br.indexOf(b)<0)br.push(b);});
+      return {name:e.name,brand:br.join(', '),cat:e.cat,
+              strengths:uniqTidy(e.strengths),sizes:uniqTidy(e.sizes)};});
+
+    var oralHtml='';
+    ORDER.filter(function(c){return !isTop(c);}).forEach(function(c){
+      var rows=list.filter(function(m){return m.cat===c;})
+        .sort(function(a,b){return a.name.localeCompare(b.name);});
+      if(!rows.length) return;
+      oralHtml+='<tr class="cat"><td colspan="2">'+esc(PRETTY[c]||c)+'</td></tr>';
+      rows.forEach(function(m){
+        var st=(m.strengths.length?m.strengths:m.sizes).join(' / ');
+        oralHtml+='<tr><td>'+label(m.name,m.brand)+'</td><td class="c">'+esc(st)+'</td></tr>';});
+    });
+
+    // topicals one row each: merging them would put a 3% direction on a 1% product
+    var withStrength={};
+    tops.forEach(function(r){ if(String(r.strength||'').trim()) withStrength[norm(r.name)+'|'+norm(r.size)]=1; });
+    var tRows=tops.filter(function(r){
+      return String(r.strength||'').trim() || !withStrength[norm(r.name)+'|'+norm(r.size)];});
+
+    var topHtml='';
+    ORDER.filter(isTop).forEach(function(c){
+      var rows=tRows.filter(function(r){return r.category===c;})
+        .sort(function(a,b){return String(a.name).localeCompare(String(b.name))||numOf(a.size)-numOf(b.size);});
+      if(!rows.length) return;
+      topHtml+='<tr class="cat"><td colspan="2">'+esc(PRETTY[c]||c)+'</td></tr>';
+      rows.forEach(function(r){
+        var d=r.directions||'';
+        var bits=[tidy(r.strength),tidy(r.size)].filter(Boolean).join(', ');
+        topHtml+='<tr><td>'+label(r.name,(r.brand&&norm(r.brand)!==norm(r.name))?r.brand:'')+
+          '</td><td class="d">'+esc(bits)+(d?'. '+esc(d):'')+'</td></tr>';});
+    });
+
+    document.getElementById('formulary').innerHTML=
+      '<h3 class="sub2">Oral medications</h3>'+
+      '<div class="tablewrap"><table class="form"><tbody>'+oralHtml+'</tbody></table></div>'+
+      '<h3 class="sub2">Topical agents and patches</h3>'+
+      '<div class="tablewrap"><table class="form"><thead><tr><th>Medication</th>'+
+      '<th>Size and directions</th></tr></thead><tbody>'+topHtml+'</tbody></table></div>'+
+      '<p class="note">'+list.length+' oral medications and '+tRows.length+' topical items. '+
+      'Directions are shown only for the products the pharmacy publishes them for. The formulary '+
+      'is subject to change and does not account for state restrictions on any given medication. '+
+      'To confirm a specific medication, call the pharmacy on '+esc(p.phone)+'. Nothing here is a '+
+      'recommendation about what any patient should be prescribed.</p>';
+  }
+})();
+</script>
 
 <script>
 (function(){
@@ -287,6 +371,7 @@ table.form tr.cat td{background:var(--blue);color:#fff;font-weight:700;font-size
     el('gate').style.display='none';
     Array.prototype.forEach.call(document.querySelectorAll('.locked'),function(n){n.classList.remove('locked');});
     paint();
+    if (window.loadSheet) window.loadSheet(e);
   }
   function ask(){
     var e=(el('g-email').value||'').trim().toLowerCase(), m=el('g-msg'), b=el('g-go');
