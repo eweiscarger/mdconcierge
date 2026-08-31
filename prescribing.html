@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="referrer" content="no-referrer">
-<title>Prescribing through Excel &middot; MDRx</title>
+<title>Prescribing your work comp scripts</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="icon" href="assets/brand/favicon.ico" sizes="any">
 <link rel="icon" type="image/png" href="assets/brand/favicon-32.png" sizes="32x32">
@@ -96,15 +96,15 @@ body.dead .wrap{display:none !important;}
 <div class="wrap">
 
 <header class="mast">
-  <p class="eyebrow">MDRx workers&rsquo; compensation pharmacy</p>
-  <h1>Sending a work comp prescription to Excel</h1>
+  <p class="eyebrow"><span class="rxprog">MDRx</span> workers&rsquo; compensation pharmacy</p>
+  <h1>Sending a work comp prescription</h1>
   <p class="dek">For whoever handles the scripts. Two minutes to set up, then it is one click a
   visit. Nothing about how you prescribe changes.</p>
 </header>
 
 <div class="step">
   <h2>The rule</h2>
-  <p>When the visit is work comp, the prescription goes to <b>Excel Pharmacy Services</b> rather
+  <p>When the visit is work comp, the prescription goes to <b class="rx">your pharmacy</b> rather
   than the patient&rsquo;s retail pharmacy. That is the whole change.</p>
 </div>
 
@@ -122,7 +122,7 @@ body.dead .wrap{display:none !important;}
 <div class="step locked">
   <h2>Set it up once</h2>
   <ol class="steps">
-    <li><b>Search your pharmacy directory for Excel Pharmacy Services.</b> It is in the same
+    <li><b>Search your pharmacy directory for <span class="rx">your pharmacy</span>.</b> It is in the same
     directory as every other pharmacy you send to.</li>
     <li><b>Widen the search past your local area.</b> Most systems only list nearby pharmacies
     until you turn that off. A mail order pharmacy will not appear until you do, and this is the
@@ -137,7 +137,7 @@ body.dead .wrap{display:none !important;}
 <div class="step locked">
   <h2>Every time after that</h2>
   <ol class="steps">
-    <li>Work comp visit, select Excel Pharmacy Services.</li>
+    <li>Work comp visit, select <span class="rx">your pharmacy</span>.</li>
     <li>Prescribe exactly as you always do.</li>
     <li>Glance at the pharmacy on the order before you sign it.</li>
   </ol>
@@ -158,7 +158,7 @@ body.dead .wrap{display:none !important;}
 
 <div class="step locked">
   <h2>If something is not on the list</h2>
-  <p>Call me on 570 817 7569, or Excel directly on 877 272 7983. Do not let a script sit.</p>
+  <p>Call me on 570 817 7569, or the pharmacy directly on <span class="rxphone">877 272 7983</span>. Do not let a script sit.</p>
   <p class="owner">Who owns this here: <span class="line"></span></p>
   <p class="ownernote">Worth filling in. The practices where this keeps running are the ones where
   a named person owns it, and that is the first thing to hand over when they move on.</p>
@@ -254,6 +254,33 @@ body.dead .wrap{display:none !important;}
         post({action:'check',packet:PACKET,email:sv}).then(function(j){if(j&&j.ok&&j.allowed)unlock(sv);}).catch(function(){}); }
     });
   });
+})();
+</script>
+
+<script>
+(function(){
+  'use strict';
+  // The gate tells the page which lane this practice is on, so one sheet serves both.
+  var LANES = {
+    mdrx: { name:'Excel Pharmacy Services', phone:'877 272 7983', prog:'MDRx' },
+    pdrx: { name:'Elite Care Pharmacy',     phone:'877 272 7983', prog:'PDRx' }
+  };
+  function paintLane(lane){
+    var L = LANES[String(lane||'').toLowerCase()] || LANES.mdrx;
+    Array.prototype.forEach.call(document.querySelectorAll('.rx'), function(n){ n.textContent = L.name; });
+    Array.prototype.forEach.call(document.querySelectorAll('.rxphone'), function(n){ n.textContent = L.phone; });
+    Array.prototype.forEach.call(document.querySelectorAll('.rxprog'), function(n){ n.textContent = L.prog; });
+    document.title = 'Prescribing through ' + L.name;
+  }
+  var FN='https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/doc-access';
+  var h=new URLSearchParams(String(location.hash||'').replace(/^#/,''));
+  var p=h.get('p')||new URL(location.href).searchParams.get('p')||'';
+  if(!p) return;
+  fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'link',p:p})})
+    .then(function(r){return r.json();})
+    .then(function(j){ if(j&&j.ok&&j.valid) paintLane(j.pharmacy); })
+    .catch(function(){});
 })();
 </script>
 </body>
