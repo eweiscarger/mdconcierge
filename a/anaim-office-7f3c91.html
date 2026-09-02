@@ -5,43 +5,72 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
 <style>
-  /* Fixed light palette: this gets screenshotted, printed, and taped next to a monitor. It has to
-     look the same everywhere and read at arm's length. */
+  /* One fixed light palette on purpose: these are screenshotted on phones and printed. */
   :root {
-    --navy:#0F1E3D; --navy-soft:#33405A;
-    --gold:#C8922A; --gold-wash:#FBF3E2; --gold-ink:#8A6414;
+    --navy:#0F1E3D; --navy-soft:#33405A; --gold:#C8922A; --gold-wash:#FBF3E2; --gold-ink:#8A6414;
     --ink:#1A2233; --muted:#5D6B82; --faint:#8794A8;
     --ground:#EEF2F8; --plate:#FFFFFF; --rule:#DAE3EF; --rule-soft:#EAF0F7;
-    --fill:#FFF8E6; --fill-line:#E0C98A;
+    --miss:#B0453A; --miss-wash:#FBECEA;
     --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
     --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
   }
   body { background:var(--ground); color:var(--ink); font-family:var(--sans); }
-  .sheet { max-width:720px; margin:0 auto; background:var(--plate); padding:34px 26px 28px; }
-
+  .sheet { max-width:760px; margin:0 auto; background:var(--plate); padding:32px 24px 28px; }
   .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.13em; text-transform:uppercase;
     color:var(--gold); margin:0 0 10px; font-weight:600; }
-  h1 { font-size:31px; line-height:1.12; font-weight:700; color:var(--navy); margin:0 0 10px; letter-spacing:-.02em; }
-  .sub { margin:0 0 30px; color:var(--muted); font-size:16px; line-height:1.6; }
+  h1 { font-size:29px; line-height:1.13; font-weight:700; color:var(--navy); margin:0 0 8px; letter-spacing:-.02em; }
+  .sub { margin:0 0 28px; color:var(--muted); font-size:15.5px; line-height:1.6; }
+  .sub b { color:var(--ink); }
 
   section { margin:0 0 32px; }
   .shead { display:flex; align-items:center; gap:11px; margin:0 0 6px; }
-  .snum { font-family:var(--mono); font-size:13px; font-weight:600; color:#fff; background:var(--navy);
-    width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
-  .shead h2 { margin:0; font-size:22px; font-weight:700; color:var(--navy); letter-spacing:-.01em; }
-  .snote { margin:0 0 16px 37px; font-size:15px; color:var(--muted); line-height:1.6; }
+  .snum { font-family:var(--mono); font-size:12px; font-weight:600; color:#fff; background:var(--navy);
+    width:25px; height:25px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .shead h2 { margin:0; font-size:21px; font-weight:700; color:var(--navy); letter-spacing:-.01em; }
+  .snote { margin:0 0 16px 36px; font-size:14.5px; color:var(--muted); line-height:1.6; }
 
-  .plan { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  @media (max-width:620px) { .plan { grid-template-columns:1fr; } }
-  .card { border:2px solid var(--navy); border-radius:12px; overflow:hidden; }
-  .card header { background:var(--navy); color:#fff; padding:13px 16px; }
-  .card header h3 { margin:0; font-size:17px; font-weight:700; }
-  .card header p { margin:3px 0 0; font-size:12.5px; color:#A9B8D0; }
-  .card ol { margin:0; padding:14px 16px 16px 36px; }
-  .card li { font-size:15.5px; line-height:1.5; padding:7px 0; color:var(--ink); font-weight:600; }
-  .card li span { display:block; font-size:13px; font-weight:400; color:var(--muted); margin-top:2px; }
-  .card li.star { color:var(--gold-ink); }
-  .card li.star span { color:var(--gold-ink); }
+  table.log { width:100%; border-collapse:collapse; }
+  table.log th { text-align:left; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--faint); font-weight:600; padding:0 0 8px; border-bottom:1px solid var(--rule); }
+  table.log th.n, table.log td.n { text-align:right; }
+  table.log td { padding:8px 0; border-bottom:1px solid var(--rule-soft); font-size:13.5px; }
+  .d { font-family:var(--mono); font-size:12px; color:var(--navy-soft); white-space:nowrap; padding-right:12px; }
+  .amt { font-family:var(--mono); font-size:13px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  tr.tot td { border-bottom:0; border-top:2px solid var(--navy); padding-top:11px; font-weight:700;
+    color:var(--navy); font-size:14.5px; }
+  tr.sep td { padding:0; border:0; height:7px; }
+  .daymark td { background:#F5F8FC; font-family:var(--mono); font-size:10.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--navy-soft); font-weight:600; padding:6px 0 6px 8px; }
+  .daymark.bad td { background:var(--miss-wash); color:var(--miss); }
+
+  .pkg { border:2px solid var(--navy); border-radius:13px; overflow:hidden; margin:0 0 16px; }
+  .pkg > header { background:var(--navy); color:#fff; padding:13px 18px;
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  .pkg > header h3 { margin:0; font-size:18px; font-weight:700; }
+  .pkg > header span { font-family:var(--mono); font-size:12px; color:#A9B8D0; }
+  .pbody { padding:6px 18px 14px; }
+  .line { padding:13px 0; border-bottom:1px solid var(--rule-soft); }
+  .line:last-of-type { border-bottom:0; }
+  .lab { font-size:11px; letter-spacing:.09em; text-transform:uppercase; color:var(--faint);
+    font-weight:600; margin:0 0 7px; }
+  select { width:100%; font-family:var(--sans); font-size:15px; font-weight:600; color:var(--navy);
+    padding:11px 12px; border:1px solid var(--rule); border-radius:9px; background:#fff;
+    -webkit-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><path d='M1 1l5 5 5-5' stroke='%235D6B82' stroke-width='2' fill='none'/></svg>");
+    background-repeat:no-repeat; background-position:right 13px center; }
+  select:focus-visible { outline:2px solid var(--gold); outline-offset:1px; }
+  .fig { display:flex; gap:16px; margin:8px 2px 0; font-family:var(--mono);
+    font-size:12.5px; font-variant-numeric:tabular-nums; }
+  .fig .b { color:var(--muted); }
+  .fig .n { color:var(--gold-ink); font-weight:600; }
+  .tot2 { display:flex; border-top:2px solid var(--navy); background:var(--gold-wash); }
+  .tot2 div { flex:1 1 0; padding:14px 18px; }
+  .tot2 div + div { border-left:1px solid #E8D6AE; }
+  .tot2 .l { font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-ink);
+    font-weight:600; margin:0 0 3px; }
+  .tot2 .v { font-family:var(--mono); font-size:24px; font-weight:600; color:var(--gold-ink);
+    font-variant-numeric:tabular-nums; margin:0; }
+  .tot2 .was { font-family:var(--mono); font-size:11.5px; color:var(--muted); margin:3px 0 0; }
 
   .steps { counter-reset:s; margin:0; padding:0; list-style:none; }
   .steps li { counter-increment:s; position:relative; padding:0 0 0 46px; margin:0 0 16px; }
@@ -53,30 +82,26 @@
   .steps p { margin:0; font-size:14.5px; line-height:1.6; color:var(--navy-soft); }
   .steps p + p { margin-top:6px; }
 
-  .fill { display:inline-block; background:var(--fill); border-bottom:2px solid var(--fill-line);
-    padding:1px 10px; font-family:var(--mono); font-size:13.5px; color:var(--gold-ink); font-weight:600;
-    border-radius:3px 3px 0 0; }
-
   .rulebox { border:1px solid var(--rule); border-radius:12px; padding:18px 20px; }
-  .rulebox h3 { margin:0 0 12px; font-size:17px; font-weight:700; color:var(--navy); }
   .r { display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-top:1px solid var(--rule-soft); }
   .r:first-of-type { border-top:0; padding-top:0; }
   .r .mark { flex:0 0 auto; width:8px; height:8px; border-radius:50%; background:var(--gold); margin-top:7px; }
   .r p { margin:0; font-size:15px; line-height:1.55; }
   .r b { color:var(--navy); }
 
-  .callout { border-left:4px solid var(--gold); background:var(--gold-wash); padding:17px 19px;
+  .callout { border-left:4px solid var(--gold); background:var(--gold-wash); padding:16px 18px;
     border-radius:0 10px 10px 0; margin:18px 0 0; }
-  .callout p { margin:0; font-size:15.5px; line-height:1.6; color:var(--ink); }
-  .callout p + p { margin-top:10px; }
+  .callout p { margin:0; font-size:15px; line-height:1.6; color:var(--ink); }
+  .callout p + p { margin-top:9px; }
   .callout b { color:var(--navy); }
-
-  .pending { border:2px dashed var(--gold); border-radius:12px; padding:15px 18px; background:var(--gold-wash);
-    margin:0 0 28px; }
+  .ask { border:2px solid var(--gold); border-radius:12px; padding:18px 20px; background:var(--gold-wash); }
+  .ask h3 { margin:0 0 9px; font-size:16.5px; font-weight:700; color:var(--navy); }
+  .ask p { margin:0 0 9px; font-size:14.5px; line-height:1.6; color:var(--ink); }
+  .ask p:last-child { margin:0; }
+  .ask .small { font-size:13px; color:var(--navy-soft); }
+  .pending { border:2px dashed var(--gold); border-radius:12px; padding:15px 18px;
+    background:var(--gold-wash); margin:0 0 28px; }
   .pending p { margin:0; font-size:14.5px; line-height:1.55; color:var(--gold-ink); font-weight:600; }
-
-  .foot { margin:26px 0 0; padding-top:15px; border-top:1px solid var(--rule);
-    font-size:12.5px; color:var(--faint); line-height:1.6; }
 
   .notice { border:1px solid #C9D4E3; border-left:4px solid #5D6B82; background:#F7F9FC;
     border-radius:0 10px 10px 0; padding:16px 18px; margin:26px 0 0; }
@@ -91,8 +116,8 @@
   <p class="eyebrow">For the office &middot; work comp prescriptions</p>
   <h1>Sending a work comp script, start to finish</h1>
   <p class="sub">Two lists and four steps. Every work comp patient is on one of the two lists.
-    <b>Everything is written as a 30 day supply</b>, the way Dr. Anaim prefers. Nothing here changes how
-    he treats anybody.</p>
+    <b>Everything is a 30 day supply</b>, the way Dr. Anaim writes. Nothing here changes how he treats
+    anybody.</p>
 
   <div class="pending">
     <p>Hold until Dr. Anaim has approved this. Nothing here starts before he says so.</p>
@@ -100,48 +125,133 @@
 
   <section>
     <div class="shead"><span class="snum">1</span><h2>Which list is this patient on</h2></div>
-    <p class="snote">Surgical, or not surgical. That is the only question.</p>
-    <div class="plan">
-      <div class="card">
-        <header><h3>Surgical patient</h3><p>had, or is having, a procedure</p></header>
-        <ol>
-          <li>Cephalexin 500 mg &mdash; <b>30 capsules</b>
-            <span>or Clindamycin 300 mg, 28 &middot; Doxycycline 100 mg, 30 &middot; Levofloxacin 750 mg, 14.
-              <b>30 count, not 21.</b> 21 is not a program size.</span></li>
-          <li>Meloxicam 15 mg &mdash; 30 tablets
-            <span>30 days at once daily. Or Celecoxib 200 mg, 60 &middot; Ibuprofen 800 mg with famotidine, 90</span></li>
-          <li>Omeprazole DR 20 mg &mdash; 30 capsules
-            <span>30 days at once daily. Goes with the meloxicam every time.
-              Or Esomeprazole 20 or 40 mg, 30 &middot; Rabeprazole 20 mg, 30.</span></li>
-          <li>Docusate 50 mg with senna 8.6 mg &mdash; 60 count
-            <span>30 days at twice daily. 60 count only, never the 28.</span></li>
-          <li class="star">Diclofenac 3% gel &mdash; 100 g
-            <span>or Lidocaine 4% / menthol 1% patch, 30. <b>Every single order, no exceptions.</b></span></li>
-        </ol>
+    <p class="snote">Surgical, or not surgical. That is the only question. Each line is a dropdown showing
+      everything the program covers in that category, so you can match whatever Dr. Anaim has written.</p>
+
+    <div class="pkg" id="s">
+      <header><h3>Surgical patient</h3><span>had, or is having, a procedure</span></header>
+      <div class="pbody">
+      <div class="line" data-cat="antibiotic">
+        <div class="lab">Antibiotic</div>
+        <select onchange="recalc()">
+            <option value="0" selected>CEPHALEXIN 500MG · 30</option>
+            <option value="1">CLINDAMYCIN HCL 300MG · 28</option>
+            <option value="2">DOXYCYCLINE HYCLATE 100MG · 30</option>
+            <option value="3">LEVOFLOXACIN 750MG · 14</option>
+            <option value="4">CIPROFLOXACIN 500MG · 20</option>
+        </select>
       </div>
-      <div class="card">
-        <header><h3>Non-surgical patient</h3><p>conservative care</p></header>
-        <ol>
-          <li>Meloxicam 15 mg &mdash; 30 tablets
-            <span>30 days at once daily. Or Celecoxib 200 mg, 60 &middot; Ibuprofen 800 mg with famotidine, 90</span></li>
-          <li>Omeprazole DR 20 mg &mdash; 30 capsules
-            <span>30 days at once daily. Goes with the meloxicam every time.
-              Or Esomeprazole 20 or 40 mg, 30 &middot; Rabeprazole 20 mg, 30.</span></li>
-          <li class="star">Diclofenac 3% gel &mdash; 100 g
-            <span>or Lidocaine 4% / menthol 1% patch, 30. <b>Every single order, no exceptions.</b></span></li>
-        </ol>
+      <div class="line" data-cat="oral">
+        <div class="lab">Anti-inflammatory</div>
+        <select onchange="recalc()">
+            <option value="0">CELECOXIB 200MG · 60</option>
+            <option value="1">IBUPROFEN/FAMOTIDINE 800MG/26.6MG · 90</option>
+            <option value="2">Meloxicam 7.5mg · 30</option>
+            <option value="3" selected>MELOXICAM 15MG · 30</option>
+            <option value="4">MELOXICAM 7.5MG · 60</option>
+            <option value="5">Naproxen 550mg · 60</option>
+        </select>
       </div>
+      <div class="line" data-cat="ppi">
+        <div class="lab">Stomach protection</div>
+        <select onchange="recalc()">
+            <option value="0">Esomeprazole 20mg · 30</option>
+            <option value="1">Esomeprazole 40mg · 30</option>
+            <option value="2" selected>OMEPRAZOLE 20MG · 30</option>
+            <option value="3">RABEPRAZOLE 20MG · 30</option>
+        </select>
+      </div>
+      <div class="line" data-cat="bowel">
+        <div class="lab">Stool softener</div>
+        <select onchange="recalc()">
+            <option value="0">Docusate 100mg · 60</option>
+            <option value="1" selected>Laxacin (docusate/senna) 50mg/8.6mg · 60</option>
+        </select>
+      </div>
+      <div class="line" data-cat="topical">
+        <div class="lab">Topical</div>
+        <select onchange="recalc()">
+            <option value="0">Diclofenac Gel 1% · 200g</option>
+            <option value="1">Diclofenac Gel 0.03 · 200g</option>
+            <option value="2" selected>DICLOFENAC SODIUM GEL 3% · 100</option>
+            <option value="3">DICLOFENAC SODIUM SOLUTION 2% · 112</option>
+            <option value="4">Diclofenac Solution 1.5% · 150ML</option>
+            <option value="5">Diclofenac Solution 1.5% · 300ML</option>
+            <option value="6">LIDOCAINE 5% · 30</option>
+            <option value="7">LIDOCAINE 5% · 177</option>
+            <option value="8">LIDOCAINE HCL/DICLOFENAC SODIUM 4.5%-1% · 99G</option>
+            <option value="9">Lidocaine oint 0.05 · 35.44 grams</option>
+            <option value="10">Lidocaine oint 5% · 177.2 grams</option>
+            <option value="11">Lidocaine patch 5% · 60</option>
+            <option value="12">LIDOCAINE/MENTHOL 4%-1% · 30</option>
+            <option value="13">Lidopro Ointment · 99 grams</option>
+            <option value="14">Lidopro Patch 4% Lido / 1% Menthol · 30</option>
+            <option value="15">Lidopro Patch 4% Lido / 1% Menthol · 60</option>
+            <option value="16">METHYL SALICYLATE/MENTHOL/CAPSAICIN/LIDOCAINE 27.5%-10%-0.0325%-4% · 99</option>
+            <option value="17">Zylotrol Gel 4% Lido / 1% Menthol · 102</option>
+            <option value="18">Zylotrol Gel 4% Lido / 1% Menthol · 204</option>
+            <option value="19">Zylotrol Patch 4% Lido / 1% Menthol · 30</option>
+            <option value="20">Zylotrol Patch 4% Lido / 1% Menthol · 60</option>
+        </select>
+      </div></div>
     </div>
-    <div class="callout">
-      <p><b>Everything is a 30 day supply.</b> That is how Dr. Anaim writes. The 21 and 28 counts that went out
-        in August were both short of a month, which is the single easiest thing on this page to get right.</p>
-      <p><b>The first line on each list is the default.</b> The alternates underneath are all on the program
-        and can be used whenever Dr. Anaim prefers one of them for a patient. Anything not on these lists,
-        ask before you send.</p>
+
+    <div class="pkg" id="n">
+      <header><h3>Non-surgical patient</h3><span>conservative care</span></header>
+      <div class="pbody">
+      <div class="line" data-cat="oral">
+        <div class="lab">Anti-inflammatory</div>
+        <select onchange="recalc()">
+            <option value="0">CELECOXIB 200MG · 60</option>
+            <option value="1">IBUPROFEN/FAMOTIDINE 800MG/26.6MG · 90</option>
+            <option value="2">Meloxicam 7.5mg · 30</option>
+            <option value="3" selected>MELOXICAM 15MG · 30</option>
+            <option value="4">MELOXICAM 7.5MG · 60</option>
+            <option value="5">Naproxen 550mg · 60</option>
+        </select>
+      </div>
+      <div class="line" data-cat="ppi">
+        <div class="lab">Stomach protection</div>
+        <select onchange="recalc()">
+            <option value="0">Esomeprazole 20mg · 30</option>
+            <option value="1">Esomeprazole 40mg · 30</option>
+            <option value="2" selected>OMEPRAZOLE 20MG · 30</option>
+            <option value="3">RABEPRAZOLE 20MG · 30</option>
+        </select>
+      </div>
+      <div class="line" data-cat="topical">
+        <div class="lab">Topical</div>
+        <select onchange="recalc()">
+            <option value="0">Diclofenac Gel 1% · 200g</option>
+            <option value="1">Diclofenac Gel 0.03 · 200g</option>
+            <option value="2" selected>DICLOFENAC SODIUM GEL 3% · 100</option>
+            <option value="3">DICLOFENAC SODIUM SOLUTION 2% · 112</option>
+            <option value="4">Diclofenac Solution 1.5% · 150ML</option>
+            <option value="5">Diclofenac Solution 1.5% · 300ML</option>
+            <option value="6">LIDOCAINE 5% · 30</option>
+            <option value="7">LIDOCAINE 5% · 177</option>
+            <option value="8">LIDOCAINE HCL/DICLOFENAC SODIUM 4.5%-1% · 99G</option>
+            <option value="9">Lidocaine oint 0.05 · 35.44 grams</option>
+            <option value="10">Lidocaine oint 5% · 177.2 grams</option>
+            <option value="11">Lidocaine patch 5% · 60</option>
+            <option value="12">LIDOCAINE/MENTHOL 4%-1% · 30</option>
+            <option value="13">Lidopro Ointment · 99 grams</option>
+            <option value="14">Lidopro Patch 4% Lido / 1% Menthol · 30</option>
+            <option value="15">Lidopro Patch 4% Lido / 1% Menthol · 60</option>
+            <option value="16">METHYL SALICYLATE/MENTHOL/CAPSAICIN/LIDOCAINE 27.5%-10%-0.0325%-4% · 99</option>
+            <option value="17">Zylotrol Gel 4% Lido / 1% Menthol · 102</option>
+            <option value="18">Zylotrol Gel 4% Lido / 1% Menthol · 204</option>
+            <option value="19">Zylotrol Patch 4% Lido / 1% Menthol · 30</option>
+            <option value="20">Zylotrol Patch 4% Lido / 1% Menthol · 60</option>
+        </select>
+      </div></div>
     </div>
+
     <div class="callout">
+      <p><b>The option showing when the page opens is the default.</b> Everything else in the dropdown is on
+        the program too. Anything not in these lists, ask before you send.</p>
       <p><b>The topical is the one that gets missed.</b> On 12 August nine prescriptions went out of this
-        office and not one of them was a topical. If you take one thing from this page, take that one.</p>
+        office and not one was a topical.</p>
     </div>
   </section>
 
@@ -149,34 +259,25 @@
     <div class="shead"><span class="snum">2</span><h2>Sending it in the EHR</h2></div>
     <p class="snote">Same as any other prescription. The only change is which pharmacy you pick.</p>
     <ol class="steps">
-      <li>
-        <h4>Write the prescription the way you always do</h4>
-        <p>Nothing about the drug, the dose or the directions changes. Dr. Anaim decides all of that.</p>
-      </li>
-      <li>
-        <h4>Open the pharmacy field and search for the pharmacy by name</h4>
-        <p>Type <b>Excel Pharmacy</b> in the pharmacy search box.</p>
+      <li><h4>Write the prescription the way you always do</h4>
+        <p>Nothing about the drug, the dose or the directions changes. Dr. Anaim decides all of that.</p></li>
+      <li><h4>Search the pharmacy directory for Excel Pharmacy</h4>
         <p>The right one is <b>354 W Lancaster Ave, Suite 120, Haverford, PA 19041</b>.
           Phone 877 272 7983, fax 877 274 1122. Check the address, not just the name.</p>
         <p><b>Widen the search past your local area first.</b> Most systems only list nearby pharmacies until
           you turn that off, and a mail order pharmacy will not appear until you do. This is the step that
-          gets missed, and it is the most likely reason prescriptions have not been reaching us.</p>
-      </li>
-      <li>
-        <h4>Save it as the patient's pharmacy</h4>
-        <p>Set it as the preferred or default pharmacy on that patient's chart, so the next refill goes to
-          the same place without anyone having to remember.</p>
-      </li>
-      <li>
-        <h4>Send, and send every item in the set together</h4>
+          gets missed, and it is the most likely reason prescriptions have not been reaching us.</p></li>
+      <li><h4>Save it as the patient's pharmacy</h4>
+        <p>Set it as the preferred pharmacy on that patient's chart, so the next refill goes to the same
+          place without anyone having to remember.</p></li>
+      <li><h4>Send every item in the set together</h4>
         <p>All of the items on that patient's list go in the same transmission. If the topical goes
-          separately it tends not to go at all.</p>
-      </li>
+          separately it tends not to go at all.</p></li>
     </ol>
     <div class="callout">
-      <p><b>That is the whole change.</b> No forms, no phone calls, no prior authorizations, nothing to
-        stock in the office. The pharmacy ships to the patient's home, usually the next day, at no cost
-        to the patient while the claim is open.</p>
+      <p><b>That is the whole change.</b> No forms, no phone calls, nothing stocked in the office. The
+        pharmacy ships to the patient's home, usually the next day, at no cost to the patient while the
+        claim is open.</p>
     </div>
   </section>
 
@@ -185,10 +286,10 @@
     <div class="rulebox">
       <div class="r"><span class="mark"></span><p><b>One strength, one size, one form per medication.</b>
         Once Dr. Anaim picks it, it stays that way. Over the summer the omeprazole went out at 40 mg some
-        weeks and 20 mg others, and the gel at 1% some weeks and 3% others. Pick one and stay with it.</p></div>
-      <div class="r"><span class="mark"></span><p><b>Docusate is the 60 count with senna, never the 28 count on its own.</b>
-        It is taken twice a day, so 60 is the 30 day supply. The 28 count is only two weeks. The 28 count is not on the program. If it is what comes up by default in the EHR,
-        change it before you send.</p></div>
+        weeks and 20 mg others, and the gel at 1% some weeks and 3% others.</p></div>
+      <div class="r"><span class="mark"></span><p><b>Docusate is the 60 count with senna.</b>
+        It is taken twice a day, so 60 is the 30 day supply. The 28 count is only two weeks and is not a
+        program size.</p></div>
       <div class="r"><span class="mark"></span><p><b>Cephalexin is 30 count, not 21.</b>
         The one sent on 12 August was written for 21, which is not a program size. Same drug, same patient,
         wrong pack. Check the count before you send.</p></div>
@@ -197,11 +298,8 @@
 
   <section>
     <div class="shead"><span class="snum">4</span><h2>If something is not clear, ask before you send</h2></div>
-    <p class="snote">Nobody is expected to guess. A thirty second question is always better than a script
-      that has to be chased afterwards.</p>
     <div class="callout">
-      <p><b>Eric Weiscarger</b> &middot; MDconcierge<br>
-        (570) 817-7569 &middot; eric@mdconcierge.net</p>
+      <p><b>Eric Weiscarger</b> &middot; MDconcierge<br>(570) 817-7569 &middot; eric@mdconcierge.net</p>
       <p>Call or text any time during the day. If it is about whether a medication is on the list, text is
         fastest.</p>
     </div>
@@ -210,16 +308,24 @@
   <div class="notice">
     <h4>Please read</h4>
     <p><b>Eric Weiscarger and MDconcierge are consultants to this practice on its workers' compensation
-      pharmacy program. We are not clinicians and we are not a pharmacy.</b> Nothing in this document is
-      medical advice, and nothing in it is a recommendation about how to treat any patient. What to
-      prescribe, for which patient, at what strength and what quantity, is entirely the prescriber's own
-      clinical judgment.</p>
-    <p>What this document does is report what our in-network pharmacy received from this office, and set
-      out what the program covers, its pack sizes and its terms, so that the prescriber can see both.</p>
-    <p>Amounts describe the program's terms applied to the Pennsylvania workers' compensation pharmacy
-      fee schedule. They are not a guarantee of payment. What a carrier pays on any claim is determined by
-      the carrier.</p>
+      pharmacy program. We are not clinicians and we are not a pharmacy.</b> Nothing here is medical advice
+      or a recommendation about how to treat any patient. What to prescribe, for which patient, at what
+      strength and what quantity, is entirely the prescriber's own clinical judgment.</p>
+    <p>The lists set out what the program covers and its pack sizes. They do not replace the pharmacist's
+      review at the point of fill.</p>
   </div>
-  <p class="foot">This page is about routing prescriptions, not about choosing them. Every clinical decision
-    stays with Dr. Anaim. Prepared by MDconcierge for this office only.</p>
 </div>
+
+<script>
+const CATS = {"antibiotic":[{"n":"CEPHALEXIN","s":"500MG","q":"30","b":665.5,"net":420.19,"nsaid":false},{"n":"CLINDAMYCIN HCL","s":"300MG","q":"28","b":114.48,"net":63.99,"nsaid":false},{"n":"DOXYCYCLINE HYCLATE","s":"100MG","q":"30","b":202.82,"net":119.49,"nsaid":false},{"n":"LEVOFLOXACIN","s":"750MG","q":"14","b":556.2,"net":350.88,"nsaid":false},{"n":"CIPROFLOXACIN","s":"500MG","q":"20","b":114.2,"net":61.82,"nsaid":false}],"oral":[{"n":"CELECOXIB","s":"200MG","q":"60","b":500.37,"net":312.44,"nsaid":true},{"n":"IBUPROFEN/FAMOTIDINE","s":"800MG/26.6MG","q":"90","b":1097.8,"net":641.1,"nsaid":true},{"n":"Meloxicam","s":"7.5mg","q":"30","b":453.68,"net":255.24,"nsaid":true},{"n":"MELOXICAM","s":"15MG","q":"30","b":160.05,"net":96.47,"nsaid":true},{"n":"MELOXICAM","s":"7.5MG","q":"60","b":209.22,"net":126.22,"nsaid":true},{"n":"Naproxen","s":"550mg","q":"60","b":387.94,"net":230.54,"nsaid":true}],"ppi":[{"n":"Esomeprazole","s":"20mg","q":"30","b":327.55,"net":200.88,"nsaid":false},{"n":"Esomeprazole","s":"40mg","q":"30","b":327.55,"net":199.37,"nsaid":false},{"n":"OMEPRAZOLE","s":"20MG","q":"30","b":137.01,"net":81.52,"nsaid":false},{"n":"RABEPRAZOLE","s":"20MG","q":"30","b":377.95,"net":229.53,"nsaid":false}],"bowel":[{"n":"Docusate","s":"100mg","q":"60","b":2.73,"net":-2.98,"nsaid":false},{"n":"Laxacin (docusate/senna)","s":"50mg/8.6mg","q":"60","b":143.02,"net":69.24,"nsaid":false}],"topical":[{"n":"Diclofenac Gel","s":"1%","q":"200g","b":587.5,"net":319.8,"nsaid":true},{"n":"Diclofenac Gel","s":"0.03","q":"200g","b":2854.29,"net":1760.08,"nsaid":true},{"n":"DICLOFENAC SODIUM GEL","s":"3%","q":"100","b":1297.41,"net":793.6,"nsaid":true},{"n":"DICLOFENAC SODIUM SOLUTION","s":"2%","q":"112","b":2954.99,"net":1838.52,"nsaid":true},{"n":"Diclofenac Solution","s":"1.5%","q":"150ML","b":1925.92,"net":1140.38,"nsaid":true},{"n":"Diclofenac Solution","s":"1.5%","q":"300ML","b":3851.84,"net":2284.98,"nsaid":true},{"n":"LIDOCAINE","s":"5%","q":"30","b":346.36,"net":165.67,"nsaid":false},{"n":"LIDOCAINE","s":"5%","q":"177","b":2181.58,"net":1374.8,"nsaid":false},{"n":"LIDOCAINE HCL/DICLOFENAC SODIUM","s":"4.5%-1%","q":"99G","b":1290.62,"net":790.8,"nsaid":true},{"n":"Lidocaine oint","s":"0.05","q":"35.44 grams","b":383.16,"net":235.11,"nsaid":false},{"n":"Lidocaine oint","s":"5%","q":"177.2 grams","b":1915.79,"net":1192.32,"nsaid":false},{"n":"Lidocaine patch","s":"5%","q":"60","b":828.89,"net":424.07,"nsaid":false},{"n":"LIDOCAINE/MENTHOL","s":"4%-1%","q":"30","b":1774.08,"net":1040.05,"nsaid":false},{"n":"Lidopro Ointment","s":"","q":"99 grams","b":670.44,"net":401.02,"nsaid":false},{"n":"Lidopro Patch","s":"4% Lido / 1% Menthol","q":"30","b":2156.26,"net":1286.84,"nsaid":false},{"n":"Lidopro Patch","s":"4% Lido / 1% Menthol","q":"60","b":4312.54,"net":2577.93,"nsaid":false},{"n":"METHYL SALICYLATE/MENTHOL/CAPSAICIN/LIDOCAINE","s":"27.5%-10%-0.0325%-4%","q":"99","b":703.09,"net":428.74,"nsaid":true},{"n":"Zylotrol Gel","s":"4% Lido / 1% Menthol","q":"102","b":604.24,"net":349.53,"nsaid":false},{"n":"Zylotrol Gel","s":"4% Lido / 1% Menthol","q":"204","b":1208.48,"net":703.29,"nsaid":false},{"n":"Zylotrol Patch","s":"4% Lido / 1% Menthol","q":"30","b":1931.96,"net":1141.05,"nsaid":false},{"n":"Zylotrol Patch","s":"4% Lido / 1% Menthol","q":"60","b":3863.92,"net":2286.32,"nsaid":false}]};
+function recalc() {
+  for (const pkg of ['s', 'n']) {
+    let b = 0, n = 0;
+    for (const el of document.querySelectorAll('#' + pkg + ' .line')) {
+      const o = CATS[el.dataset.cat][+el.querySelector('select').value];
+      b += o.b; n += o.net;
+    }
+  }
+}
+recalc();
+</script>
