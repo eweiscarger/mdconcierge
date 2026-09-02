@@ -159,8 +159,7 @@
   <section>
     <div class="shead"><span class="snum">2</span><h2>Build the package</h2></div>
     <p class="snote">Every line is a dropdown. Change any medication for something else in the same category
-      and the numbers move with it. Everything is a 30 day supply. What comes through today is shown against
-      each total.</p>
+      and the numbers move with it. Everything is a 30 day supply. What was sent over the summer sits under each total.</p>
 
     <div class="pkg" id="s">
       <header><h3>Surgical patient</h3><span>your 12 August set</span></header>
@@ -168,74 +167,74 @@
       <div class="line" data-cat="antibiotic">
         <div class="lab">Antibiotic</div>
         <select onchange="recalc()">
-            <option value="0" selected>CEPHALEXIN 500MG · 30 &nbsp;·&nbsp; $420 to you</option>
-            <option value="1">CLINDAMYCIN HCL 300MG · 28 &nbsp;·&nbsp; $64 to you</option>
-            <option value="2">DOXYCYCLINE HYCLATE 100MG · 30 &nbsp;·&nbsp; $119 to you</option>
-            <option value="3">LEVOFLOXACIN 750MG · 14 &nbsp;·&nbsp; $351 to you</option>
-            <option value="4">CIPROFLOXACIN 500MG · 20 &nbsp;·&nbsp; $62 to you</option>
+            <option value="0" selected>CEPHALEXIN 500MG · 30 &nbsp;·&nbsp; $420 practice share</option>
+            <option value="1">CLINDAMYCIN HCL 300MG · 28 &nbsp;·&nbsp; $64 practice share</option>
+            <option value="2">DOXYCYCLINE HYCLATE 100MG · 30 &nbsp;·&nbsp; $119 practice share</option>
+            <option value="3">LEVOFLOXACIN 750MG · 14 &nbsp;·&nbsp; $351 practice share</option>
+            <option value="4">CIPROFLOXACIN 500MG · 20 &nbsp;·&nbsp; $62 practice share</option>
         </select>
         <div class="fig"><span class="b"></span><span class="n"></span></div>
       </div>
       <div class="line" data-cat="oral">
         <div class="lab">Anti-inflammatory</div>
         <select onchange="recalc()">
-            <option value="0">CELECOXIB 200MG · 60 &nbsp;·&nbsp; $312 to you</option>
-            <option value="1">IBUPROFEN/FAMOTIDINE 800MG/26.6MG · 90 &nbsp;·&nbsp; $641 to you</option>
-            <option value="2">Meloxicam 7.5mg · 30 &nbsp;·&nbsp; $255 to you</option>
-            <option value="3" selected>MELOXICAM 15MG · 30 &nbsp;·&nbsp; $96 to you</option>
-            <option value="4">MELOXICAM 7.5MG · 60 &nbsp;·&nbsp; $126 to you</option>
-            <option value="5">Naproxen 550mg · 60 &nbsp;·&nbsp; $231 to you</option>
+            <option value="0">CELECOXIB 200MG · 60 &nbsp;·&nbsp; $312 practice share</option>
+            <option value="1">IBUPROFEN/FAMOTIDINE 800MG/26.6MG · 90 &nbsp;·&nbsp; $641 practice share</option>
+            <option value="2">Meloxicam 7.5mg · 30 &nbsp;·&nbsp; $255 practice share</option>
+            <option value="3" selected>MELOXICAM 15MG · 30 &nbsp;·&nbsp; $96 practice share</option>
+            <option value="4">MELOXICAM 7.5MG · 60 &nbsp;·&nbsp; $126 practice share</option>
+            <option value="5">Naproxen 550mg · 60 &nbsp;·&nbsp; $231 practice share</option>
         </select>
         <div class="fig"><span class="b"></span><span class="n"></span></div>
       </div>
       <div class="line" data-cat="ppi">
         <div class="lab">Stomach protection</div>
         <select onchange="recalc()">
-            <option value="0">Esomeprazole 20mg · 30 &nbsp;·&nbsp; $201 to you</option>
-            <option value="1">Esomeprazole 40mg · 30 &nbsp;·&nbsp; $199 to you</option>
-            <option value="2" selected>OMEPRAZOLE 20MG · 30 &nbsp;·&nbsp; $82 to you</option>
-            <option value="3">RABEPRAZOLE 20MG · 30 &nbsp;·&nbsp; $230 to you</option>
+            <option value="0">Esomeprazole 20mg · 30 &nbsp;·&nbsp; $201 practice share</option>
+            <option value="1">Esomeprazole 40mg · 30 &nbsp;·&nbsp; $199 practice share</option>
+            <option value="2" selected>OMEPRAZOLE 20MG · 30 &nbsp;·&nbsp; $82 practice share</option>
+            <option value="3">RABEPRAZOLE 20MG · 30 &nbsp;·&nbsp; $230 practice share</option>
         </select>
         <div class="fig"><span class="b"></span><span class="n"></span></div>
       </div>
       <div class="line" data-cat="bowel">
         <div class="lab">Stool softener</div>
         <select onchange="recalc()">
-            <option value="0">Docusate 100mg · 60 &nbsp;·&nbsp; $-3 to you</option>
-            <option value="1" selected>Laxacin (docusate/senna) 50mg/8.6mg · 60 &nbsp;·&nbsp; $69 to you</option>
+            <option value="0">Docusate 100mg · 60 &nbsp;·&nbsp; $-3 practice share</option>
+            <option value="1" selected>Laxacin (docusate/senna) 50mg/8.6mg · 60 &nbsp;·&nbsp; $69 practice share</option>
         </select>
         <div class="fig"><span class="b"></span><span class="n"></span></div>
       </div>
       <div class="line" data-cat="topical">
         <div class="lab">Topical</div>
         <select onchange="recalc()">
-            <option value="0">Diclofenac Gel 1% · 200g &nbsp;·&nbsp; $320 to you</option>
-            <option value="1">Diclofenac Gel 0.03 · 200g &nbsp;·&nbsp; $1760 to you</option>
-            <option value="2" selected>DICLOFENAC SODIUM GEL 3% · 100 &nbsp;·&nbsp; $794 to you</option>
-            <option value="3">DICLOFENAC SODIUM SOLUTION 2% · 112 &nbsp;·&nbsp; $1839 to you</option>
-            <option value="4">Diclofenac Solution 1.5% · 150ML &nbsp;·&nbsp; $1140 to you</option>
-            <option value="5">Diclofenac Solution 1.5% · 300ML &nbsp;·&nbsp; $2285 to you</option>
-            <option value="6">LIDOCAINE 5% · 30 &nbsp;·&nbsp; $166 to you</option>
-            <option value="7">LIDOCAINE 5% · 177 &nbsp;·&nbsp; $1375 to you</option>
-            <option value="8">LIDOCAINE HCL/DICLOFENAC SODIUM 4.5%-1% · 99G &nbsp;·&nbsp; $791 to you</option>
-            <option value="9">Lidocaine oint 0.05 · 35.44 grams &nbsp;·&nbsp; $235 to you</option>
-            <option value="10">Lidocaine oint 5% · 177.2 grams &nbsp;·&nbsp; $1192 to you</option>
-            <option value="11">Lidocaine patch 5% · 60 &nbsp;·&nbsp; $424 to you</option>
-            <option value="12">LIDOCAINE/MENTHOL 4%-1% · 30 &nbsp;·&nbsp; $1040 to you</option>
-            <option value="13">Lidopro Ointment · 99 grams &nbsp;·&nbsp; $401 to you</option>
-            <option value="14">Lidopro Patch 4% Lido / 1% Menthol · 30 &nbsp;·&nbsp; $1287 to you</option>
-            <option value="15">Lidopro Patch 4% Lido / 1% Menthol · 60 &nbsp;·&nbsp; $2578 to you</option>
-            <option value="16">METHYL SALICYLATE/MENTHOL/CAPSAICIN/LIDOCAINE 27.5%-10%-0.0325%-4% · 99 &nbsp;·&nbsp; $429 to you</option>
-            <option value="17">Zylotrol Gel 4% Lido / 1% Menthol · 102 &nbsp;·&nbsp; $350 to you</option>
-            <option value="18">Zylotrol Gel 4% Lido / 1% Menthol · 204 &nbsp;·&nbsp; $703 to you</option>
-            <option value="19">Zylotrol Patch 4% Lido / 1% Menthol · 30 &nbsp;·&nbsp; $1141 to you</option>
-            <option value="20">Zylotrol Patch 4% Lido / 1% Menthol · 60 &nbsp;·&nbsp; $2286 to you</option>
+            <option value="0">Diclofenac Gel 1% · 200g &nbsp;·&nbsp; $320 practice share</option>
+            <option value="1">Diclofenac Gel 0.03 · 200g &nbsp;·&nbsp; $1760 practice share</option>
+            <option value="2" selected>DICLOFENAC SODIUM GEL 3% · 100 &nbsp;·&nbsp; $794 practice share</option>
+            <option value="3">DICLOFENAC SODIUM SOLUTION 2% · 112 &nbsp;·&nbsp; $1839 practice share</option>
+            <option value="4">Diclofenac Solution 1.5% · 150ML &nbsp;·&nbsp; $1140 practice share</option>
+            <option value="5">Diclofenac Solution 1.5% · 300ML &nbsp;·&nbsp; $2285 practice share</option>
+            <option value="6">LIDOCAINE 5% · 30 &nbsp;·&nbsp; $166 practice share</option>
+            <option value="7">LIDOCAINE 5% · 177 &nbsp;·&nbsp; $1375 practice share</option>
+            <option value="8">LIDOCAINE HCL/DICLOFENAC SODIUM 4.5%-1% · 99G &nbsp;·&nbsp; $791 practice share</option>
+            <option value="9">Lidocaine oint 0.05 · 35.44 grams &nbsp;·&nbsp; $235 practice share</option>
+            <option value="10">Lidocaine oint 5% · 177.2 grams &nbsp;·&nbsp; $1192 practice share</option>
+            <option value="11">Lidocaine patch 5% · 60 &nbsp;·&nbsp; $424 practice share</option>
+            <option value="12">LIDOCAINE/MENTHOL 4%-1% · 30 &nbsp;·&nbsp; $1040 practice share</option>
+            <option value="13">Lidopro Ointment · 99 grams &nbsp;·&nbsp; $401 practice share</option>
+            <option value="14">Lidopro Patch 4% Lido / 1% Menthol · 30 &nbsp;·&nbsp; $1287 practice share</option>
+            <option value="15">Lidopro Patch 4% Lido / 1% Menthol · 60 &nbsp;·&nbsp; $2578 practice share</option>
+            <option value="16">METHYL SALICYLATE/MENTHOL/CAPSAICIN/LIDOCAINE 27.5%-10%-0.0325%-4% · 99 &nbsp;·&nbsp; $429 practice share</option>
+            <option value="17">Zylotrol Gel 4% Lido / 1% Menthol · 102 &nbsp;·&nbsp; $350 practice share</option>
+            <option value="18">Zylotrol Gel 4% Lido / 1% Menthol · 204 &nbsp;·&nbsp; $703 practice share</option>
+            <option value="19">Zylotrol Patch 4% Lido / 1% Menthol · 30 &nbsp;·&nbsp; $1141 practice share</option>
+            <option value="20">Zylotrol Patch 4% Lido / 1% Menthol · 60 &nbsp;·&nbsp; $2286 practice share</option>
         </select>
         <div class="fig"><span class="b"></span><span class="n"></span></div>
       </div></div>
       <div class="tot2">
-        <div><p class="l">Billed</p><p class="v" id="s-b"></p><p class="was">came through: $344</p></div>
-        <div><p class="l">To the practice</p><p class="v" id="s-n"></p><p class="was">came through: $148</p></div>
+        <div><p class="l">Billed</p><p class="v" id="s-b"></p><p class="was">as sent: $344</p></div>
+        <div><p class="l">Practice share</p><p class="v" id="s-n"></p><p class="was">as sent: $148</p></div>
       </div>
     </div>
 
@@ -245,55 +244,55 @@
       <div class="line" data-cat="oral">
         <div class="lab">Anti-inflammatory</div>
         <select onchange="recalc()">
-            <option value="0">CELECOXIB 200MG · 60 &nbsp;·&nbsp; $312 to you</option>
-            <option value="1">IBUPROFEN/FAMOTIDINE 800MG/26.6MG · 90 &nbsp;·&nbsp; $641 to you</option>
-            <option value="2">Meloxicam 7.5mg · 30 &nbsp;·&nbsp; $255 to you</option>
-            <option value="3" selected>MELOXICAM 15MG · 30 &nbsp;·&nbsp; $96 to you</option>
-            <option value="4">MELOXICAM 7.5MG · 60 &nbsp;·&nbsp; $126 to you</option>
-            <option value="5">Naproxen 550mg · 60 &nbsp;·&nbsp; $231 to you</option>
+            <option value="0">CELECOXIB 200MG · 60 &nbsp;·&nbsp; $312 practice share</option>
+            <option value="1">IBUPROFEN/FAMOTIDINE 800MG/26.6MG · 90 &nbsp;·&nbsp; $641 practice share</option>
+            <option value="2">Meloxicam 7.5mg · 30 &nbsp;·&nbsp; $255 practice share</option>
+            <option value="3" selected>MELOXICAM 15MG · 30 &nbsp;·&nbsp; $96 practice share</option>
+            <option value="4">MELOXICAM 7.5MG · 60 &nbsp;·&nbsp; $126 practice share</option>
+            <option value="5">Naproxen 550mg · 60 &nbsp;·&nbsp; $231 practice share</option>
         </select>
         <div class="fig"><span class="b"></span><span class="n"></span></div>
       </div>
       <div class="line" data-cat="ppi">
         <div class="lab">Stomach protection</div>
         <select onchange="recalc()">
-            <option value="0">Esomeprazole 20mg · 30 &nbsp;·&nbsp; $201 to you</option>
-            <option value="1">Esomeprazole 40mg · 30 &nbsp;·&nbsp; $199 to you</option>
-            <option value="2" selected>OMEPRAZOLE 20MG · 30 &nbsp;·&nbsp; $82 to you</option>
-            <option value="3">RABEPRAZOLE 20MG · 30 &nbsp;·&nbsp; $230 to you</option>
+            <option value="0">Esomeprazole 20mg · 30 &nbsp;·&nbsp; $201 practice share</option>
+            <option value="1">Esomeprazole 40mg · 30 &nbsp;·&nbsp; $199 practice share</option>
+            <option value="2" selected>OMEPRAZOLE 20MG · 30 &nbsp;·&nbsp; $82 practice share</option>
+            <option value="3">RABEPRAZOLE 20MG · 30 &nbsp;·&nbsp; $230 practice share</option>
         </select>
         <div class="fig"><span class="b"></span><span class="n"></span></div>
       </div>
       <div class="line" data-cat="topical">
         <div class="lab">Topical</div>
         <select onchange="recalc()">
-            <option value="0">Diclofenac Gel 1% · 200g &nbsp;·&nbsp; $320 to you</option>
-            <option value="1">Diclofenac Gel 0.03 · 200g &nbsp;·&nbsp; $1760 to you</option>
-            <option value="2" selected>DICLOFENAC SODIUM GEL 3% · 100 &nbsp;·&nbsp; $794 to you</option>
-            <option value="3">DICLOFENAC SODIUM SOLUTION 2% · 112 &nbsp;·&nbsp; $1839 to you</option>
-            <option value="4">Diclofenac Solution 1.5% · 150ML &nbsp;·&nbsp; $1140 to you</option>
-            <option value="5">Diclofenac Solution 1.5% · 300ML &nbsp;·&nbsp; $2285 to you</option>
-            <option value="6">LIDOCAINE 5% · 30 &nbsp;·&nbsp; $166 to you</option>
-            <option value="7">LIDOCAINE 5% · 177 &nbsp;·&nbsp; $1375 to you</option>
-            <option value="8">LIDOCAINE HCL/DICLOFENAC SODIUM 4.5%-1% · 99G &nbsp;·&nbsp; $791 to you</option>
-            <option value="9">Lidocaine oint 0.05 · 35.44 grams &nbsp;·&nbsp; $235 to you</option>
-            <option value="10">Lidocaine oint 5% · 177.2 grams &nbsp;·&nbsp; $1192 to you</option>
-            <option value="11">Lidocaine patch 5% · 60 &nbsp;·&nbsp; $424 to you</option>
-            <option value="12">LIDOCAINE/MENTHOL 4%-1% · 30 &nbsp;·&nbsp; $1040 to you</option>
-            <option value="13">Lidopro Ointment · 99 grams &nbsp;·&nbsp; $401 to you</option>
-            <option value="14">Lidopro Patch 4% Lido / 1% Menthol · 30 &nbsp;·&nbsp; $1287 to you</option>
-            <option value="15">Lidopro Patch 4% Lido / 1% Menthol · 60 &nbsp;·&nbsp; $2578 to you</option>
-            <option value="16">METHYL SALICYLATE/MENTHOL/CAPSAICIN/LIDOCAINE 27.5%-10%-0.0325%-4% · 99 &nbsp;·&nbsp; $429 to you</option>
-            <option value="17">Zylotrol Gel 4% Lido / 1% Menthol · 102 &nbsp;·&nbsp; $350 to you</option>
-            <option value="18">Zylotrol Gel 4% Lido / 1% Menthol · 204 &nbsp;·&nbsp; $703 to you</option>
-            <option value="19">Zylotrol Patch 4% Lido / 1% Menthol · 30 &nbsp;·&nbsp; $1141 to you</option>
-            <option value="20">Zylotrol Patch 4% Lido / 1% Menthol · 60 &nbsp;·&nbsp; $2286 to you</option>
+            <option value="0">Diclofenac Gel 1% · 200g &nbsp;·&nbsp; $320 practice share</option>
+            <option value="1">Diclofenac Gel 0.03 · 200g &nbsp;·&nbsp; $1760 practice share</option>
+            <option value="2" selected>DICLOFENAC SODIUM GEL 3% · 100 &nbsp;·&nbsp; $794 practice share</option>
+            <option value="3">DICLOFENAC SODIUM SOLUTION 2% · 112 &nbsp;·&nbsp; $1839 practice share</option>
+            <option value="4">Diclofenac Solution 1.5% · 150ML &nbsp;·&nbsp; $1140 practice share</option>
+            <option value="5">Diclofenac Solution 1.5% · 300ML &nbsp;·&nbsp; $2285 practice share</option>
+            <option value="6">LIDOCAINE 5% · 30 &nbsp;·&nbsp; $166 practice share</option>
+            <option value="7">LIDOCAINE 5% · 177 &nbsp;·&nbsp; $1375 practice share</option>
+            <option value="8">LIDOCAINE HCL/DICLOFENAC SODIUM 4.5%-1% · 99G &nbsp;·&nbsp; $791 practice share</option>
+            <option value="9">Lidocaine oint 0.05 · 35.44 grams &nbsp;·&nbsp; $235 practice share</option>
+            <option value="10">Lidocaine oint 5% · 177.2 grams &nbsp;·&nbsp; $1192 practice share</option>
+            <option value="11">Lidocaine patch 5% · 60 &nbsp;·&nbsp; $424 practice share</option>
+            <option value="12">LIDOCAINE/MENTHOL 4%-1% · 30 &nbsp;·&nbsp; $1040 practice share</option>
+            <option value="13">Lidopro Ointment · 99 grams &nbsp;·&nbsp; $401 practice share</option>
+            <option value="14">Lidopro Patch 4% Lido / 1% Menthol · 30 &nbsp;·&nbsp; $1287 practice share</option>
+            <option value="15">Lidopro Patch 4% Lido / 1% Menthol · 60 &nbsp;·&nbsp; $2578 practice share</option>
+            <option value="16">METHYL SALICYLATE/MENTHOL/CAPSAICIN/LIDOCAINE 27.5%-10%-0.0325%-4% · 99 &nbsp;·&nbsp; $429 practice share</option>
+            <option value="17">Zylotrol Gel 4% Lido / 1% Menthol · 102 &nbsp;·&nbsp; $350 practice share</option>
+            <option value="18">Zylotrol Gel 4% Lido / 1% Menthol · 204 &nbsp;·&nbsp; $703 practice share</option>
+            <option value="19">Zylotrol Patch 4% Lido / 1% Menthol · 30 &nbsp;·&nbsp; $1141 practice share</option>
+            <option value="20">Zylotrol Patch 4% Lido / 1% Menthol · 60 &nbsp;·&nbsp; $2286 practice share</option>
         </select>
         <div class="fig"><span class="b"></span><span class="n"></span></div>
       </div></div>
       <div class="tot2">
-        <div><p class="l">Billed</p><p class="v" id="n-b"></p><p class="was">came through: $671</p></div>
-        <div><p class="l">To the practice</p><p class="v" id="n-n"></p><p class="was">came through: $335</p></div>
+        <div><p class="l">Billed</p><p class="v" id="n-b"></p><p class="was">as sent: $671</p></div>
+        <div><p class="l">Practice share</p><p class="v" id="n-n"></p><p class="was">as sent: $335</p></div>
       </div>
     </div>
 
@@ -313,6 +312,21 @@
         instruction, so we are not calling your office every time?</p>
       <p class="small">Before you answer: the 1.5% we carry is a <b>solution</b>, not a gel, so this changes
         the form as well as the strength. Entirely your call, and nothing changes until you say so.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><span class="snum">4</span><h2>Keep this on your phone</h2></div>
+    <p class="snote">It lives at a web address rather than in a file, so it is always the current version.
+      Two taps and it sits on your home screen like an app.</p>
+    <div class="rulebox">
+      <div class="r"><span class="mark"></span><p><b>iPhone.</b> Tap the share button at the bottom of
+        Safari, the square with the arrow coming out of it. Scroll down the list and tap
+        <b>Add to Home Screen</b>, then <b>Add</b>.</p></div>
+      <div class="r"><span class="mark"></span><p><b>Android.</b> Tap the three dots at the top right of
+        Chrome, then <b>Add to Home screen</b>, then <b>Install</b> or <b>Add</b>.</p></div>
+      <div class="r"><span class="mark"></span><p><b>Either one.</b> If you would rather not, just bookmark
+        it, or leave the text where it is and open it from there.</p></div>
     </div>
   </section>
 
@@ -339,7 +353,7 @@ function recalc() {
       const o = CATS[el.dataset.cat][+el.querySelector('select').value];
       b += o.b; n += o.net;
       el.querySelector('.b').textContent = 'bills $' + o.b.toLocaleString(undefined, {maximumFractionDigits:0});
-      el.querySelector('.n').textContent = '$' + o.net.toLocaleString(undefined, {maximumFractionDigits:0}) + ' to the practice';
+      el.querySelector('.n').textContent = 'practice share $' + o.net.toLocaleString(undefined, {maximumFractionDigits:0}) ;
     }
     document.getElementById(pkg + '-b').textContent = '$' + Math.round(b).toLocaleString();
     document.getElementById(pkg + '-n').textContent = '$' + Math.round(n).toLocaleString();
