@@ -83,44 +83,9 @@
   .notice p + p { margin-top:8px; }
   .notice b { color:#33405A; }
 
-  .gate { max-width:520px; margin:0 auto; background:var(--plate); padding:38px 26px 32px; }
-  .gate h1 { font-size:25px; margin:0 0 10px; }
-  .gate p { font-size:15px; line-height:1.6; color:var(--muted); margin:0 0 18px; }
-  .gate label { display:block; font-size:11px; letter-spacing:.09em; text-transform:uppercase;
-    color:var(--faint); font-weight:600; margin:0 0 7px; }
-  .gate input { width:100%; font-family:var(--sans); font-size:16px; color:var(--ink); padding:12px 13px;
-    border:1px solid var(--rule); border-radius:9px; background:#fff; margin:0 0 10px; }
-  .gate input:focus-visible { outline:2px solid var(--gold); outline-offset:1px; }
-  .gate button { width:100%; font-family:var(--sans); font-size:16px; font-weight:600; color:#fff;
-    background:var(--navy); border:0; border-radius:9px; padding:14px; cursor:pointer; }
-  .gate button:disabled { opacity:.55; cursor:default; }
-  .msg { margin:14px 0 0; font-size:14px; line-height:1.55; }
-  .msg.bad { color:#B0453A; } .msg.ok { color:var(--gold-ink); }
-  #ask { margin-top:20px; padding-top:18px; border-top:1px solid var(--rule); }
-  #ask h2 { font-size:17px; font-weight:700; color:var(--navy); margin:0 0 8px; }
 </style>
 
-<div class="gate" id="gate">
-  <p class="eyebrow">MDconcierge &middot; private</p>
-  <h1>Spine, Joint &amp; Brain Center</h1>
-  <p>Put in the email address this was sent to and it opens.</p>
-  <label for="g-email">Your email address</label>
-  <input id="g-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
-  <button id="g-go" onclick="ask()">Open</button>
-  <p class="msg" id="g-msg"></p>
-  <div id="ask" hidden>
-    <h2>Ask Eric for access</h2>
-    <p>This one is not open to that address. Leave your details and Eric will be told straight away.
-      Nothing opens until he approves it.</p>
-    <input id="r-first" placeholder="First name" autocomplete="given-name">
-    <input id="r-last" placeholder="Last name" autocomplete="family-name">
-    <input id="r-prac" placeholder="Practice" autocomplete="organization">
-    <button id="r-go" onclick="request()">Send the request</button>
-    <p class="msg" id="r-msg"></p>
-  </div>
-</div>
-
-<div id="content" hidden>
+<div id="content">
 <div class="sheet">
   <p class="eyebrow">For the office &middot; Spine, Joint &amp; Brain Center</p>
   <h1>Where a work comp script goes, and what to put on it</h1>
@@ -352,37 +317,3 @@
 </div>
 </div>
 
-<script>
-var FN = 'https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/doc-access';
-var PACKET = 'sjb';
-var KEY = 'mdc-sjb-email';
-function el(i) { return document.getElementById(i); }
-function post(b) { return fetch(FN, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(b) }).then(function(r){ return r.json(); }); }
-function unlock(e) { try { localStorage.setItem(KEY, e); } catch (x) {} el('gate').hidden = true; el('content').hidden = false; }
-function ask() {
-  var e = (el('g-email').value || '').trim().toLowerCase(), m = el('g-msg'), b = el('g-go');
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) { m.className = 'msg bad'; m.textContent = 'That does not look like an email address.'; return; }
-  b.disabled = true; m.className = 'msg'; m.textContent = 'One moment.';
-  post({ action:'check', packet:PACKET, email:e }).then(function(j) {
-    b.disabled = false;
-    if (j && j.ok && j.allowed) { unlock(e); return; }
-    if (j && j.pending) { m.className = 'msg ok'; m.textContent = 'Your request is with Eric. You will hear as soon as he approves it.'; return; }
-    m.className = 'msg bad'; m.textContent = 'That address is not on the list for this one.';
-    el('ask').hidden = false;
-  }).catch(function() { b.disabled = false; m.className = 'msg bad'; m.textContent = 'Something went wrong. Try again, or call Eric on 570 817 7569.'; });
-}
-function request() {
-  var e = (el('g-email').value || '').trim().toLowerCase(), m = el('r-msg'), b = el('r-go');
-  var fn = (el('r-first').value || '').trim(), ln = (el('r-last').value || '').trim(), pr = (el('r-prac').value || '').trim();
-  if (!fn || !ln) { m.className = 'msg bad'; m.textContent = 'Your name, so Eric knows who is asking.'; return; }
-  b.disabled = true; m.className = 'msg'; m.textContent = 'Sending.';
-  post({ action:'request', packet:PACKET, email:e, name:(fn + ' ' + ln).trim(), practice:pr || 'Spine, Joint &amp; Brain Center' }).then(function() {
-    m.className = 'msg ok'; m.textContent = 'Sent. Eric has it and will be in touch.';
-  }).catch(function() { b.disabled = false; m.className = 'msg bad'; m.textContent = 'That did not send. Call Eric on 570 817 7569.'; });
-}
-(function() {
-  var sv = ''; try { sv = localStorage.getItem(KEY) || ''; } catch (x) {}
-  if (sv) { el('g-email').value = sv; post({ action:'check', packet:PACKET, email:sv }).then(function(j){ if (j && j.ok && j.allowed) unlock(sv); }).catch(function(){}); }
-  el('g-email').addEventListener('keydown', function(ev) { if (ev.key === 'Enter') ask(); });
-})();
-</script>
