@@ -1,0 +1,388 @@
+<title>Work Comp Script Routine</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+  /* One fixed light palette: this is screenshotted, printed and taped by a monitor. */
+  :root {
+    --navy:#0F1E3D; --navy-soft:#33405A; --gold:#C8922A; --gold-wash:#FBF3E2; --gold-ink:#8A6414;
+    --ink:#1A2233; --muted:#5D6B82; --faint:#8794A8;
+    --ground:#EEF2F8; --plate:#FFFFFF; --rule:#DAE3EF; --rule-soft:#EAF0F7;
+    --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  }
+  body { background:var(--ground); color:var(--ink); font-family:var(--sans); }
+  .sheet { max-width:760px; margin:0 auto; background:var(--plate); padding:32px 24px 28px; }
+  .eyebrow { font-family:var(--mono); font-size:11px; letter-spacing:.13em; text-transform:uppercase;
+    color:var(--gold); margin:0 0 10px; font-weight:600; }
+  h1 { font-size:29px; line-height:1.13; font-weight:700; color:var(--navy); margin:0 0 8px; letter-spacing:-.02em; }
+  .sub { margin:0 0 30px; color:var(--muted); font-size:15.5px; line-height:1.6; }
+  .sub b { color:var(--ink); }
+
+  section { margin:0 0 34px; }
+  .shead { display:flex; align-items:center; gap:11px; margin:0 0 6px; }
+  .snum { font-family:var(--mono); font-size:12px; font-weight:600; color:#fff; background:var(--navy);
+    width:25px; height:25px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+  .shead h2 { margin:0; font-size:21px; font-weight:700; color:var(--navy); letter-spacing:-.01em; }
+  .snote { margin:0 0 16px 36px; font-size:14.5px; color:var(--muted); line-height:1.6; }
+
+  .cats { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:640px) { .cats { grid-template-columns:1fr; } }
+  .cat { border:1px solid var(--rule); border-radius:11px; overflow:hidden; break-inside:avoid; }
+  .cat h3 { margin:0; padding:10px 14px; background:#F5F8FC; border-bottom:1px solid var(--rule-soft);
+    font-size:13.5px; font-weight:700; color:var(--navy);
+    display:flex; justify-content:space-between; align-items:baseline; }
+  .cat h3 span { font-family:var(--mono); font-size:11px; color:var(--faint); font-weight:500; }
+  .cat ul { margin:0; padding:8px 14px 12px; list-style:none; }
+  .cat li { font-size:13.5px; line-height:1.45; padding:4px 0; color:var(--ink);
+    border-bottom:1px solid var(--rule-soft); }
+  .cat li:last-child { border-bottom:0; }
+  .cat li b { color:var(--navy-soft); font-weight:600; }
+  .cat .q { font-family:var(--mono); font-size:11.5px; color:var(--faint); }
+
+  .pharm { border-left:3px solid var(--gold); background:var(--gold-wash); padding:15px 18px;
+    border-radius:0 10px 10px 0; margin:0 0 13px; }
+  .pharm p { margin:0; font-size:16px; line-height:1.6; color:var(--ink); }
+  .pharm b { color:var(--navy); }
+  .pharm .m { font-family:var(--mono); font-size:14px; }
+
+  .steps { counter-reset:s; margin:0; padding:0; list-style:none; }
+  .steps li { counter-increment:s; position:relative; padding:0 0 0 46px; margin:0 0 18px; }
+  .steps li::before { content:counter(s); position:absolute; left:0; top:-2px;
+    width:31px; height:31px; border-radius:50%; background:var(--gold); color:#fff;
+    font-family:var(--mono); font-size:14px; font-weight:600;
+    display:flex; align-items:center; justify-content:center; }
+  .steps h4 { margin:4px 0 5px; font-size:16.5px; font-weight:700; color:var(--navy); }
+  .steps p { margin:0; font-size:14.5px; line-height:1.6; color:var(--navy-soft); }
+  .steps p + p { margin-top:6px; }
+
+  .six { margin:0; padding:0; list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:0 18px; }
+  @media (max-width:560px) { .six { grid-template-columns:1fr; } }
+  .six li { font-size:15px; padding:9px 0; border-bottom:1px solid var(--rule-soft); color:var(--ink); font-weight:600; }
+
+  .rulebox { border:1px solid var(--rule); border-radius:12px; padding:18px 20px; }
+  .r { display:flex; gap:12px; align-items:flex-start; padding:10px 0; border-top:1px solid var(--rule-soft); }
+  .r:first-of-type { border-top:0; padding-top:0; }
+  .r .mark { flex:0 0 auto; width:8px; height:8px; border-radius:50%; background:var(--gold); margin-top:7px; }
+  .r p { margin:0; font-size:15px; line-height:1.55; }
+  .r b { color:var(--navy); }
+
+  .callout { border-left:4px solid var(--gold); background:var(--gold-wash); padding:16px 18px;
+    border-radius:0 10px 10px 0; margin:18px 0 0; }
+  .callout p { margin:0; font-size:15px; line-height:1.6; color:var(--ink); }
+  .callout p + p { margin-top:9px; }
+  .callout b { color:var(--navy); }
+
+  .notice { border:1px solid #C9D4E3; border-left:4px solid #5D6B82; background:#F7F9FC;
+    border-radius:0 10px 10px 0; padding:16px 18px; margin:26px 0 0; }
+  .notice h4 { margin:0 0 8px; font-size:13px; font-weight:700; color:#33405A;
+    letter-spacing:.03em; text-transform:uppercase; }
+  .notice p { margin:0; font-size:12.5px; line-height:1.65; color:#5D6B82; }
+  .notice p + p { margin-top:8px; }
+  .notice b { color:#33405A; }
+
+  .gate { max-width:520px; margin:0 auto; background:var(--plate); padding:38px 26px 32px; }
+  .gate h1 { font-size:25px; margin:0 0 10px; }
+  .gate p { font-size:15px; line-height:1.6; color:var(--muted); margin:0 0 18px; }
+  .gate label { display:block; font-size:11px; letter-spacing:.09em; text-transform:uppercase;
+    color:var(--faint); font-weight:600; margin:0 0 7px; }
+  .gate input { width:100%; font-family:var(--sans); font-size:16px; color:var(--ink); padding:12px 13px;
+    border:1px solid var(--rule); border-radius:9px; background:#fff; margin:0 0 10px; }
+  .gate input:focus-visible { outline:2px solid var(--gold); outline-offset:1px; }
+  .gate button { width:100%; font-family:var(--sans); font-size:16px; font-weight:600; color:#fff;
+    background:var(--navy); border:0; border-radius:9px; padding:14px; cursor:pointer; }
+  .gate button:disabled { opacity:.55; cursor:default; }
+  .msg { margin:14px 0 0; font-size:14px; line-height:1.55; }
+  .msg.bad { color:#B0453A; } .msg.ok { color:var(--gold-ink); }
+  #ask { margin-top:20px; padding-top:18px; border-top:1px solid var(--rule); }
+  #ask h2 { font-size:17px; font-weight:700; color:var(--navy); margin:0 0 8px; }
+</style>
+
+<div class="gate" id="gate">
+  <p class="eyebrow">MDconcierge &middot; private</p>
+  <h1>Spine, Joint &amp; Brain Center</h1>
+  <p>Put in the email address this was sent to and it opens.</p>
+  <label for="g-email">Your email address</label>
+  <input id="g-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com">
+  <button id="g-go" onclick="ask()">Open</button>
+  <p class="msg" id="g-msg"></p>
+  <div id="ask" hidden>
+    <h2>Ask Eric for access</h2>
+    <p>This one is not open to that address. Leave your details and Eric will be told straight away.
+      Nothing opens until he approves it.</p>
+    <input id="r-first" placeholder="First name" autocomplete="given-name">
+    <input id="r-last" placeholder="Last name" autocomplete="family-name">
+    <input id="r-prac" placeholder="Practice" autocomplete="organization">
+    <button id="r-go" onclick="request()">Send the request</button>
+    <p class="msg" id="r-msg"></p>
+  </div>
+</div>
+
+<div id="content" hidden>
+<div class="sheet">
+  <p class="eyebrow">For the office &middot; Spine, Joint &amp; Brain Center</p>
+  <h1>Where a work comp script goes, and what to put on it</h1>
+  <p class="sub">The pharmacy, the four steps for sending it, and the six things that hold a prescription
+    up if they are missing. <b>Nothing here changes what Dr. Grossinger prescribes.</b> He decides that,
+    every time, for every patient.</p>
+
+  <section>
+    <div class="shead"><span class="snum">1</span><h2>The pharmacy</h2></div>
+    <p class="snote">This is the whole change. Everything else about a work comp prescription stays as it is.</p>
+    <div class="pharm">
+      <p><b>Excel Pharmacy</b><br>
+        <span class="m">354 W Lancaster Ave, Suite 120<br>Haverford, PA 19041<br>
+        Phone 877 272 7983 &nbsp;&middot;&nbsp; Fax 877 274 1122</span></p>
+    </div>
+    <div class="callout">
+      <p><b>Widen the pharmacy search past your local area first.</b> This is the step offices miss.
+        Most systems only list pharmacies near you until you turn that off, and a mail order pharmacy
+        will not appear until you do.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><span class="snum">2</span><h2>Sending it</h2></div>
+    <ol class="steps">
+      <li><h4>Search the pharmacy directory for Excel Pharmacy</h4>
+        <p>Check the Haverford address, not just the name.</p></li>
+      <li><h4>Save it as the patient's preferred pharmacy</h4>
+        <p>Then refills go to the same place without anyone having to remember.</p></li>
+      <li><h4>E-prescribe it, exactly as you would to any other pharmacy</h4>
+        <p>Or fax to 877 274 1122 with a completed demographic sheet.</p></li>
+      <li><h4>Include the six items below</h4>
+        <p>A prescription missing any of them is the one that sits.</p></li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="shead"><span class="snum">3</span><h2>The six things that hold a script up</h2></div>
+    <p class="snote">On the demographic sheet, or in the notes if you are e-prescribing.</p>
+    <div class="rulebox">
+      <ul class="six">
+        <li>Diagnosis code</li>
+        <li>Claim number</li>
+        <li>Allergies, or NKA</li>
+        <li>Date of injury</li>
+        <li>Work comp carrier</li>
+        <li>Adjuster, with a phone number</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><span class="snum">4</span><h2>What happens after you send it</h2></div>
+    <div class="callout">
+      <p>Excel's advocate team calls the patient within 24 hours to confirm insurance, the prescription
+        and the delivery address. <b>The call comes from area code 484 or 267</b>, which is worth telling
+        the patient, otherwise they let it ring.</p>
+      <p>From there it ships to their home, usually next day. No copay and nothing out of pocket on
+        covered work comp medications, no trip to a counter, and no prior authorization landing on you.</p>
+      <p><b>Nothing is stocked here, handled here, or billed from here.</b> MDRx does the billing and
+        the collections.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><span class="snum">5</span><h2>What the program carries</h2></div>
+    <p class="snote">Everything below is covered, in 30 day supplies. Use it to check that what
+      Dr. Grossinger has written is carried, and in what pack size. <b>It is not a list of what to
+      prescribe.</b> If something is not here, ask before you send rather than substituting.</p>
+    <div class="cats">
+    <div class="cat">
+      <h3>Anti-inflammatories, oral<span>6</span></h3>
+      <ul>
+        <li>CELECOXIB <b>200MG</b> <span class="q">60</span></li>
+        <li>IBUPROFEN/FAMOTIDINE <b>800MG/26.6MG</b> <span class="q">90</span></li>
+        <li>Meloxicam <b>7.5mg</b> <span class="q">30</span></li>
+        <li>MELOXICAM <b>15MG</b> <span class="q">30</span></li>
+        <li>MELOXICAM <b>7.5MG</b> <span class="q">60</span></li>
+        <li>Naproxen <b>550mg</b> <span class="q">60</span></li>
+      </ul>
+    </div>
+    <div class="cat">
+      <h3>Stomach protection<span>4</span></h3>
+      <ul>
+        <li>Esomeprazole <b>20mg</b> <span class="q">30</span></li>
+        <li>Esomeprazole <b>40mg</b> <span class="q">30</span></li>
+        <li>OMEPRAZOLE <b>20MG</b> <span class="q">30</span></li>
+        <li>RABEPRAZOLE <b>20MG</b> <span class="q">30</span></li>
+      </ul>
+    </div>
+    <div class="cat">
+      <h3>Topicals<span>22</span></h3>
+      <ul>
+        <li>Diclofenac Gel <b>1%</b> <span class="q">200g</span></li>
+        <li>Diclofenac Gel <b>0.03</b> <span class="q">200g</span></li>
+        <li>DICLOFENAC SODIUM GEL <b>3%</b> <span class="q">100</span></li>
+        <li>DICLOFENAC SODIUM SOLUTION <b>2%</b> <span class="q">112</span></li>
+        <li>Diclofenac Solution <b>1.5%</b> <span class="q">150ML</span></li>
+        <li>Diclofenac Solution <b>1.5%</b> <span class="q">300ML</span></li>
+        <li>LIDOCAINE <b>5%</b> <span class="q">30</span></li>
+        <li>LIDOCAINE <b>5%</b> <span class="q">177</span></li>
+        <li>LIDOCAINE HCL/DICLOFENAC SODIUM <b>4.5%-1%</b> <span class="q">99G</span></li>
+        <li>Lidocaine oint <b>0.05</b> <span class="q">35.44 grams</span></li>
+        <li>Lidocaine oint <b>5%</b> <span class="q">177.2 grams</span></li>
+        <li>Lidocaine patch <b>5%</b> <span class="q">60</span></li>
+        <li>LIDOCAINE/MENTHOL <b>4%-1%</b> <span class="q">30</span></li>
+        <li>Lidopro Ointment <span class="q">99 grams</span></li>
+        <li>Lidopro Patch <b>4% Lido / 1% Menthol</b> <span class="q">30</span></li>
+        <li>Lidopro Patch <b>4% Lido / 1% Menthol</b> <span class="q">60</span></li>
+        <li>METHYL SALICYLATE/MENTHOL/CAPSAICIN/LIDOCAINE <b>27.5%-10%-0.0325%-4%</b> <span class="q">99</span></li>
+        <li>Mupirocin cream <b>2%</b> <span class="q">30gm</span></li>
+        <li>Zylotrol Gel <b>4% Lido / 1% Menthol</b> <span class="q">102</span></li>
+        <li>Zylotrol Gel <b>4% Lido / 1% Menthol</b> <span class="q">204</span></li>
+        <li>Zylotrol Patch <b>4% Lido / 1% Menthol</b> <span class="q">30</span></li>
+        <li>Zylotrol Patch <b>4% Lido / 1% Menthol</b> <span class="q">60</span></li>
+      </ul>
+    </div>
+    <div class="cat">
+      <h3>Muscle relaxants<span>8</span></h3>
+      <ul>
+        <li>Baclofen <b>10mg</b> <span class="q">60</span></li>
+        <li>Baclofen <b>10mg</b> <span class="q">90</span></li>
+        <li>Baclofen <b>20mg</b> <span class="q">90</span></li>
+        <li>CYCLOBENZAPRINE <b>7.5MG</b> <span class="q">90</span></li>
+        <li>CYCLOBENZAPRINE <b>10MG</b> <span class="q">90</span></li>
+        <li>METAXALONE <b>800MG</b> <span class="q">90</span></li>
+        <li>Methocarbamol <b>500 Mg</b> <span class="q">90</span></li>
+        <li>TIZANIDINE HCL <b>4MG</b> <span class="q">90</span></li>
+      </ul>
+    </div>
+    <div class="cat">
+      <h3>Neuropathic agents<span>11</span></h3>
+      <ul>
+        <li>BUPROPION HCL ER <b>150MG</b> <span class="q">60</span></li>
+        <li>Duloxetine <b>60mg</b> <span class="q">30</span></li>
+        <li>DULOXETINE HCL <b>30MG</b> <span class="q">30</span></li>
+        <li>DULOXETINE HCL <b>30MG</b> <span class="q">60</span></li>
+        <li>Gabapentin <b>300mg</b> <span class="q">60</span></li>
+        <li>GABAPENTIN <b>400MG</b> <span class="q">90</span></li>
+        <li>GABAPENTIN <b>600MG</b> <span class="q">90</span></li>
+        <li>PREGABALIN <b>75MG</b> <span class="q">90</span></li>
+        <li>PREGABALIN <b>50MG</b> <span class="q">90</span></li>
+        <li>TOPIRAMATE <b>50MG</b> <span class="q">60</span></li>
+        <li>VENLAFAXINE HCL ER <b>150MG</b> <span class="q">60</span></li>
+      </ul>
+    </div>
+    <div class="cat">
+      <h3>Analgesics<span>5</span></h3>
+      <ul>
+        <li>ACETAMINOPHEN/CODEINE <b>300MG/30MG</b> <span class="q">30</span></li>
+        <li>Lubiprostone (Amitiza) <b>24mcg</b> <span class="q">60</span></li>
+        <li>Tramadol <b>50mg</b> <span class="q">90</span></li>
+        <li>TRAMADOL <b>50MG</b> <span class="q">60</span></li>
+        <li>Tramadol ER <b>300mg</b> <span class="q">30</span></li>
+      </ul>
+    </div>
+    <div class="cat">
+      <h3>Antibiotics<span>4</span></h3>
+      <ul>
+        <li>CIPROFLOXACIN <b>500MG</b> <span class="q">20</span></li>
+        <li>CLINDAMYCIN HCL <b>300MG</b> <span class="q">28</span></li>
+        <li>DOXYCYCLINE HYCLATE <b>100MG</b> <span class="q">30</span></li>
+        <li>LEVOFLOXACIN <b>750MG</b> <span class="q">14</span></li>
+      </ul>
+    </div>
+    <div class="cat">
+      <h3>Corticosteroid<span>1</span></h3>
+      <ul>
+        <li>Methylprednisolone dose pack <b>4MG</b> <span class="q">21</span></li>
+      </ul>
+    </div>
+    <div class="cat">
+      <h3>Stool softeners<span>2</span></h3>
+      <ul>
+        <li>Docusate <b>100mg</b> <span class="q">60</span></li>
+        <li>Laxacin (docusate/senna) <b>50mg/8.6mg</b> <span class="q">60</span></li>
+      </ul>
+    </div>
+    <div class="cat">
+      <h3>Sleep<span>7</span></h3>
+      <ul>
+        <li>Eszopiclone <b>3mg</b> <span class="q">30</span></li>
+        <li>ESZOPICLONE <b>1MG</b> <span class="q">30</span></li>
+        <li>ESZOPICLONE <b>2MG</b> <span class="q">30</span></li>
+        <li>RAMELTEON <b>8MG</b> <span class="q">30</span></li>
+        <li>Zolpidem <b>5mg</b> <span class="q">60</span></li>
+        <li>ZOLPIDEM TARTRATE <b>5MG</b> <span class="q">30</span></li>
+        <li>ZOLPIDEM TARTRATE <b>10MG</b> <span class="q">30</span></li>
+      </ul>
+    </div>
+    <div class="cat">
+      <h3>Anti nausea<span>2</span></h3>
+      <ul>
+        <li>ONDANSETRON <b>8MG</b> <span class="q">30</span></li>
+        <li>SUMATRIPTAN <b>100MG</b> <span class="q">9</span></li>
+      </ul>
+    </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><span class="snum">6</span><h2>Keep this on your phone</h2></div>
+    <p class="snote">It lives at a web address rather than in a file, so it is always current.</p>
+    <div class="rulebox">
+      <div class="r"><span class="mark"></span><p><b>iPhone.</b> Tap the share button at the bottom of
+        Safari, the square with the arrow. Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</p></div>
+      <div class="r"><span class="mark"></span><p><b>Android.</b> Tap the three dots at the top right of
+        Chrome, then <b>Add to Home screen</b>, then <b>Install</b> or <b>Add</b>.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="shead"><span class="snum">7</span><h2>Anything at all, ask before you send</h2></div>
+    <div class="callout">
+      <p><b>Eric Weiscarger</b> &middot; MDconcierge<br>(570) 817-7569 &middot; eric@mdconcierge.net</p>
+      <p>Call or text any time during the day. If it is about whether a medication is carried, text is fastest.</p>
+    </div>
+  </section>
+
+  <div class="notice">
+    <h4>Please read</h4>
+    <p><b>Eric Weiscarger and MDconcierge are consultants to this practice on its workers' compensation
+      pharmacy program. We are not clinicians and we are not a pharmacy.</b> Nothing here is medical advice
+      or a recommendation about how to treat any patient. What to prescribe, for which patient, at what
+      strength and what quantity, is entirely the prescriber's own clinical judgment.</p>
+    <p>The list sets out what the program covers and its pack sizes. It does not replace the pharmacist's
+      review at the point of fill.</p>
+  </div>
+</div>
+</div>
+
+<script>
+var FN = 'https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/doc-access';
+var PACKET = 'sjb';
+var KEY = 'mdc-sjb-email';
+function el(i) { return document.getElementById(i); }
+function post(b) { return fetch(FN, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(b) }).then(function(r){ return r.json(); }); }
+function unlock(e) { try { localStorage.setItem(KEY, e); } catch (x) {} el('gate').hidden = true; el('content').hidden = false; }
+function ask() {
+  var e = (el('g-email').value || '').trim().toLowerCase(), m = el('g-msg'), b = el('g-go');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) { m.className = 'msg bad'; m.textContent = 'That does not look like an email address.'; return; }
+  b.disabled = true; m.className = 'msg'; m.textContent = 'One moment.';
+  post({ action:'check', packet:PACKET, email:e }).then(function(j) {
+    b.disabled = false;
+    if (j && j.ok && j.allowed) { unlock(e); return; }
+    if (j && j.pending) { m.className = 'msg ok'; m.textContent = 'Your request is with Eric. You will hear as soon as he approves it.'; return; }
+    m.className = 'msg bad'; m.textContent = 'That address is not on the list for this one.';
+    el('ask').hidden = false;
+  }).catch(function() { b.disabled = false; m.className = 'msg bad'; m.textContent = 'Something went wrong. Try again, or call Eric on 570 817 7569.'; });
+}
+function request() {
+  var e = (el('g-email').value || '').trim().toLowerCase(), m = el('r-msg'), b = el('r-go');
+  var fn = (el('r-first').value || '').trim(), ln = (el('r-last').value || '').trim(), pr = (el('r-prac').value || '').trim();
+  if (!fn || !ln) { m.className = 'msg bad'; m.textContent = 'Your name, so Eric knows who is asking.'; return; }
+  b.disabled = true; m.className = 'msg'; m.textContent = 'Sending.';
+  post({ action:'request', packet:PACKET, email:e, name:(fn + ' ' + ln).trim(), practice:pr || 'Spine, Joint &amp; Brain Center' }).then(function() {
+    m.className = 'msg ok'; m.textContent = 'Sent. Eric has it and will be in touch.';
+  }).catch(function() { b.disabled = false; m.className = 'msg bad'; m.textContent = 'That did not send. Call Eric on 570 817 7569.'; });
+}
+(function() {
+  var sv = ''; try { sv = localStorage.getItem(KEY) || ''; } catch (x) {}
+  if (sv) { el('g-email').value = sv; post({ action:'check', packet:PACKET, email:sv }).then(function(j){ if (j && j.ok && j.allowed) unlock(sv); }).catch(function(){}); }
+  el('g-email').addEventListener('keydown', function(ev) { if (ev.key === 'Enter') ask(); });
+})();
+</script>
