@@ -289,7 +289,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" data-biz="rx" onclick="showView('deals',this)"><span class="ni-ic">🎯</span> Deals</button>
     <button class="ni" data-biz="rx" onclick="showView('linkedin',this)"><span class="ni-ic">🤝</span> LinkedIn queue</button>
     <button class="ni" data-biz="rx" onclick="showView('dispensing',this)"><span class="ni-ic">🧮</span> Dispensing Tools</button>
-    <button class="ni" data-biz="rx" onclick="openPresenter()" title="Opens the dispensing model in a clean tab. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary</button>
+    <button class="ni" data-biz="rx" onclick="openPresenter()" title="Opens the dispensing model in a clean tab. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary <span style="opacity:.6;font-size:11px;">MDRx</span></button>
+    <button class="ni" data-biz="rx" onclick="openPresenterPdrx()" title="The PDRx price book on the chosen state’s fee schedule. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary <span style="opacity:.6;font-size:11px;">PDRx</span></button>
     <button class="ni" data-biz="rx" onclick="showView('calendar',this)"><span class="ni-ic">🗓️</span> Calendar</button>
     <button class="ni" data-biz="rx" onclick="showView('booking',this)"><span class="ni-ic">📅</span> Booking &amp; Availability <span class="nb" id="booking-pending" style="display:none;">0</span></button>
     <button class="ni" data-biz="rx" onclick="showView('pipeline',this)"><span class="ni-ic">📊</span> Pipeline <span class="nb" id="pipe-due" style="display:none;">0</span></button>
@@ -1296,6 +1297,11 @@ async function funOpenProvider(id){
 // the watermark reads "MDconcierge · Live working session" rather than another practice's name.
 const PRESENTER_LINK='https://mdconcierge.net/pharmacy-model.html?t=bb2eab1360fab913ac8d712a7b6a5458';
 function openPresenter(){ window.open(PRESENTER_LINK,'_blank','noopener'); }
+// The PDRx twin. Same page mechanics, its own price book and its own split, so a PDRx doctor is
+// never shown Pennsylvania economics off the MDRx book. The link carries program='pdrx', which is
+// what makes formulary-access hand back pdrx_formulary rather than mdconcierge_formulary.
+const PRESENTER_LINK_PDRX='https://mdconcierge.net/pharmacy-model-pdrx.html?t=ca64189d84f3edd390dcc65409493b3f';
+function openPresenterPdrx(){ window.open(PRESENTER_LINK_PDRX,'_blank','noopener'); }
 
 // ---- Dispensing tools -----------------------------------------------------------------
 // Two tools, deliberately separate, because MDRx and PDRx are different pharmacies with
