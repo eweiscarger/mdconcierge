@@ -288,6 +288,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" data-biz="rx" onclick="showView('funnel',this)"><span class="ni-ic">🎯</span> Funnel Engagement <span class="nb" id="funnel-hot" style="display:none;">0</span></button>
     <button class="ni" data-biz="rx" onclick="showView('deals',this)"><span class="ni-ic">🎯</span> Deals</button>
     <button class="ni" data-biz="rx" onclick="showView('linkedin',this)"><span class="ni-ic">🤝</span> LinkedIn queue</button>
+    <button class="ni" data-biz="rx" onclick="showView('dispensing',this)"><span class="ni-ic">🧮</span> Dispensing Tools</button>
     <button class="ni" data-biz="rx" onclick="openPresenter()" title="Opens the dispensing model in a clean tab. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary</button>
     <button class="ni" data-biz="rx" onclick="showView('calendar',this)"><span class="ni-ic">🗓️</span> Calendar</button>
     <button class="ni" data-biz="rx" onclick="showView('booking',this)"><span class="ni-ic">📅</span> Booking &amp; Availability <span class="nb" id="booking-pending" style="display:none;">0</span></button>
@@ -494,6 +495,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   <div class="view" id="view-deals"></div>
 
   <div class="view" id="view-linkedin"></div>
+
+  <div class="view" id="view-dispensing"></div>
 
   <div class="view" id="view-access">
     <div class="panel" style="margin-bottom:16px;">
@@ -1260,7 +1263,7 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={cockpit:'Daily Cockpit',leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',calendar:'Calendar',booking:'Booking & Availability',pipeline:'Pipeline',replies:'Replies',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',deals:'Deals',linkedin:'LinkedIn Queue',access:'Access Log',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={cockpit:'Daily Cockpit',leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',calendar:'Calendar',booking:'Booking & Availability',pipeline:'Pipeline',replies:'Replies',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',deals:'Deals',linkedin:'LinkedIn Queue',dispensing:'Dispensing Tools',access:'Access Log',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
@@ -1277,6 +1280,7 @@ function showView(v,btn){
   if(v==='access'){loadAccessLog();loadAccessRequests();}
   if(v==='linkedin')loadLinkedIn();
   if(v==='deals')loadDeals();
+  if(v==='dispensing')loadDispensing();
 }
 // Clicking a physician here jumps straight to their full record: what they did, what we
 // sent back, and what happens next. Same destination as the CRM board.
@@ -1292,6 +1296,224 @@ async function funOpenProvider(id){
 // the watermark reads "MDconcierge · Live working session" rather than another practice's name.
 const PRESENTER_LINK='https://mdconcierge.net/pharmacy-model.html?t=bb2eab1360fab913ac8d712a7b6a5458';
 function openPresenter(){ window.open(PRESENTER_LINK,'_blank','noopener'); }
+
+// ---- Dispensing tools -----------------------------------------------------------------
+// Two tools, deliberately separate, because MDRx and PDRx are different pharmacies with
+// different formularies, different fee-schedule geography and different economics. They were
+// one tool once, priced off a single polluted table, and it quoted brand AWP on generics.
+//
+//   MDRx  Excel Pharmacy formulary. Pennsylvania only. AWP + 10 percent.
+//         The physician's entity buys the medication up front and receives 65 percent of
+//         collections:            net = 0.65C - G
+//   PDRx  PDRx formulary. Licensed in 49 states, operating in 37+, so the fee schedule is
+//         chosen per state. Claim purchase fees come out of collections, then net is split
+//         evenly with Elite Care:  net = 0.5 x (C - G)
+//
+// The two programs do NOT carry the same fee, and this is the thing that gets confused:
+//   MDRx  $6.50 a medication, dispensing and shipping combined. Eric, 2026-09-03.
+//   PDRx  $5.00 pharmacy dispense fee plus ACTUAL shipping, $7 to $10. Shipping is an input
+//         because it is actual, not a flat rate. It defaults to the top of the range so a
+//         quote errs low rather than high.
+// Sources: RULES.md section 9 and PHARMACY-ECONOMICS.md. Fee schedules are the Optum Workers'
+// Compensation Pharmacy Resource Guide, March 2026.
+const MDRX_FEE = 6.50, PDRX_DISPENSE = 5.00, PDRX_SHIP_DEFAULT = 10.00;
+
+// The MDRx formulary is the 9/2 MDRx-Excel MASTER, carried here rather than read from
+// mdconcierge_formulary. That table also holds 74 rows from a July load that belong to neither
+// source, and one of them prices cyclobenzaprine at $4,075. Two sources only, Eric 2026-09-04:
+// Excel's revised list, and Young's list built for MVO and folded in. Rebuild this constant
+// whenever build_master.mjs runs. Skarjel and Narcosoft are absent because Young sent them back
+// unpriced, so they cannot be quoted until she prices them.
+const MDRX_MASTER=[{"p":"ACETAMINOPHEN/CODEINE (TYLENOL #3) 300MG/30MG \u00b7 30","r":"Oral","a":59.92,"c":24.76,"s":"Excel","cls":"III"},{"p":"Baclofen 10mg \u00b7 60","r":"Oral","a":428.16,"c":59.4,"s":"Young","cls":""},{"p":"Baclofen 10mg \u00b7 90","r":"Oral","a":642.23,"c":89.1,"s":"Young","cls":""},{"p":"Baclofen 20mg \u00b7 90","r":"Oral","a":465.01,"c":31.5,"s":"Young","cls":""},{"p":"BUPROPION HCL ER (APLENZIN) 150MG \u00b7 60","r":"Oral","a":286.4,"c":22.0,"s":"Excel","cls":"NS"},{"p":"CELECOXIB (CELEBREX) 200MG \u00b7 60","r":"Oral","a":454.88,"c":13.2,"s":"Excel","cls":"NS"},{"p":"CIPROFLOXACIN (CIPRO) 500MG \u00b7 20","r":"Oral","a":103.82,"c":12.59,"s":"Excel","cls":"NS"},{"p":"CLINDAMYCIN HCL (CLEOCIN HCL) 300MG \u00b7 28","r":"Oral","a":104.07,"c":9.53,"s":"Excel","cls":"NS"},{"p":"CYCLOBENZAPRINE (FEXMID) 7.5MG \u00b7 90","r":"Oral","a":564.99,"c":101.13,"s":"Excel","cls":"NS"},{"p":"CYCLOBENZAPRINE (FLEXERIL) 10MG \u00b7 90","r":"Oral","a":104.22,"c":13.5,"s":"Excel","cls":"NS"},{"p":"Docusate 100mg \u00b7 60","r":"Oral","a":2.48,"c":0.81,"s":"Young","cls":""},{"p":"DOXYCYCLINE HYCLATE (VIBRAMYCIN) 100MG \u00b7 30","r":"Oral","a":184.38,"c":12.49,"s":"Excel","cls":"NS"},{"p":"Duloxetine 60mg \u00b7 30","r":"Oral","a":259.1,"c":9.0,"s":"Young","cls":""},{"p":"DULOXETINE HCL (CYMBALTA) 30MG \u00b7 30","r":"Oral","a":235.55,"c":9.0,"s":"Excel","cls":"NS"},{"p":"DULOXETINE HCL (CYMBALTA) 30MG \u00b7 60","r":"Oral","a":471.09,"c":18.0,"s":"Excel","cls":"NS"},{"p":"Esomeprazole 20mg \u00b7 30","r":"Oral","a":297.77,"c":12.0,"s":"Young","cls":""},{"p":"Esomeprazole 40mg \u00b7 30","r":"Oral","a":297.77,"c":14.33,"s":"Young","cls":""},{"p":"ESZOPICLONE (LUNESTA) 1MG \u00b7 30","r":"Oral","a":364.5,"c":12.9,"s":"Excel","cls":"CIV"},{"p":"ESZOPICLONE (LUNESTA) 2MG \u00b7 30","r":"Oral","a":364.84,"c":13.5,"s":"Excel","cls":"CIV"},{"p":"Eszopiclone 3mg \u00b7 30","r":"Oral","a":401.32,"c":18.3,"s":"Young","cls":""},{"p":"GABAPENTIN (NEURONTIN) 400MG \u00b7 90","r":"Oral","a":144.59,"c":20.7,"s":"Excel","cls":"NS"},{"p":"GABAPENTIN (NEURONTIN) 600MG \u00b7 90","r":"Oral","a":227.61,"c":17.82,"s":"Excel","cls":"NS"},{"p":"Gabapentin 300mg \u00b7 60","r":"Oral","a":87.85,"c":10.8,"s":"Young","cls":""},{"p":"IBUPROFEN/FAMOTIDINE (DUEXIS) 800MG/26.6MG \u00b7 90","r":"Oral","a":998.0,"c":104.99,"s":"Excel","cls":"NS"},{"p":"Laxacin (docusate/senna) 50mg/8.6mg \u00b7 60","r":"Oral","a":130.02,"c":30.0,"s":"Young","cls":""},{"p":"LEVOFLOXACIN (LEVAQUIN) 750MG \u00b7 14","r":"Oral","a":505.64,"c":9.89,"s":"Excel","cls":"NS"},{"p":"Lubiprostone (Amitiza) 24mcg \u00b7 60","r":"Oral","a":440.84,"c":47.8,"s":"Young","cls":""},{"p":"MELOXICAM (MOBIC) 15MG \u00b7 30","r":"Oral","a":145.5,"c":5.13,"s":"Excel","cls":"NS"},{"p":"MELOXICAM (MOBIC) 7.5MG \u00b7 60","r":"Oral","a":190.2,"c":8.54,"s":"Excel","cls":"NS"},{"p":"Meloxicam 7.5mg \u00b7 30","r":"Oral","a":412.44,"c":54.5,"s":"Young","cls":""},{"p":"METAXALONE (SKELAXIN) 800MG \u00b7 90","r":"Oral","a":745.04,"c":72.0,"s":"Excel","cls":"NS"},{"p":"Methocarbamol 500 Mg \u00b7 90","r":"Oral","a":47.77,"c":8.1,"s":"Young","cls":""},{"p":"Methylprednisolone dose pack 4MG \u00b7 21","r":"Oral","a":38.1,"c":7.99,"s":"Young","cls":""},{"p":"Naproxen 550mg \u00b7 60","r":"Oral","a":352.67,"c":26.76,"s":"Young","cls":""},{"p":"OMEPRAZOLE (PRILOSEC) 20MG \u00b7 30","r":"Oral","a":124.55,"c":5.1,"s":"Excel","cls":"NS"},{"p":"ONDANSETRON (ZOFRAN) 8MG \u00b7 30","r":"Oral","a":1179.95,"c":15.88,"s":"Excel","cls":"NS"},{"p":"PREGABALIN (LYRICA) 50MG \u00b7 90","r":"Oral","a":800.6,"c":30.06,"s":"Excel","cls":"CV"},{"p":"PREGABALIN (LYRICA) 75MG \u00b7 90","r":"Oral","a":689.3,"c":31.5,"s":"Excel","cls":"CV"},{"p":"RABEPRAZOLE (ACIPHEX) 20MG \u00b7 30","r":"Oral","a":343.59,"c":18.33,"s":"Excel","cls":"NS"},{"p":"RAMELTEON (ROZEREM) 8MG \u00b7 30","r":"Oral","a":419.84,"c":69.06,"s":"Excel","cls":"NS"},{"p":"SUMATRIPTAN (IMITREX) 100MG \u00b7 9","r":"Oral","a":226.26,"c":17.0,"s":"Excel","cls":"NS"},{"p":"TIZANIDINE HCL (ZANAFLEX) 4MG \u00b7 90","r":"Oral","a":309.3,"c":60.12,"s":"Excel","cls":"NS"},{"p":"TOPIRAMATE (TOPAMAX) 50MG \u00b7 60","r":"Oral","a":305.93,"c":13.59,"s":"Excel","cls":"NS"},{"p":"TRAMADOL (ULTRAM) 50MG \u00b7 60","r":"Oral","a":49.97,"c":8.7,"s":"Excel","cls":"CIV"},{"p":"Tramadol 50mg \u00b7 90","r":"Oral","a":82.08,"c":13.5,"s":"Young","cls":""},{"p":"Tramadol ER 300mg \u00b7 30","r":"Oral","a":334.65,"c":105.99,"s":"Young","cls":""},{"p":"VENLAFAXINE HCL ER (EFFEXOR XR) 150MG \u00b7 60","r":"Oral","a":304.92,"c":30.0,"s":"Excel","cls":"NS"},{"p":"Zolpidem 5mg \u00b7 60","r":"Oral","a":611.16,"c":30.0,"s":"Young","cls":""},{"p":"ZOLPIDEM TARTRATE (AMBIEN) 10MG \u00b7 30","r":"Oral","a":277.8,"c":10.5,"s":"Excel","cls":"CIV"},{"p":"ZOLPIDEM TARTRATE (AMBIEN) 5MG \u00b7 30","r":"Oral","a":277.8,"c":15.0,"s":"Excel","cls":"CIV"},{"p":"Diclofenac Gel 0.03 \u00b7 200g","r":"Topical","a":2594.81,"c":139.98,"s":"Young","cls":""},{"p":"Diclofenac Gel 1% \u00b7 200g","r":"Topical","a":534.09,"c":89.0,"s":"Young","cls":""},{"p":"DICLOFENAC SODIUM GEL (SOLARAZE) 3% \u00b7 100","r":"Topical","a":1179.46,"c":69.99,"s":"Excel","cls":"NS"},{"p":"DICLOFENAC SODIUM SOLUTION (PENNSAID) 2% \u00b7 112","r":"Topical","a":2686.35,"c":120.0,"s":"Excel","cls":"NS"},{"p":"Diclofenac Solution 1.5% \u00b7 150ML","r":"Topical","a":1750.84,"c":164.99,"s":"Young","cls":""},{"p":"Diclofenac Solution 1.5% \u00b7 300ML","r":"Topical","a":3501.67,"c":329.98,"s":"Young","cls":""},{"p":"LIDOCAINE (LIDOCAINE 5% PATCH) 5% \u00b7 30","r":"Topical","a":314.87,"c":84.99,"s":"Excel","cls":"NS"},{"p":"LIDOCAINE (XYLOCAINE GEL) 5% \u00b7 177","r":"Topical","a":1983.25,"c":60.0,"s":"Excel","cls":"NS"},{"p":"LIDOCAINE HCL/DICLOFENAC SODIUM (DICLONA GEL) 4.5%-1% \u00b7 99G","r":"Topical","a":1173.29,"c":67.5,"s":"Excel","cls":"NS"},{"p":"Lidocaine oint 0.05 \u00b7 35.44 grams","r":"Topical","a":348.33,"c":14.95,"s":"Young","cls":""},{"p":"Lidocaine oint 5% \u00b7 177.2 grams","r":"Topical","a":1741.63,"c":74.95,"s":"Young","cls":""},{"p":"Lidocaine patch 5% \u00b7 60","r":"Topical","a":753.54,"c":169.98,"s":"Young","cls":""},{"p":"LIDOCAINE/MENTHOL (LIDOPRO PATCH) 4%-1% \u00b7 30","r":"Topical","a":1612.8,"c":167.5,"s":"Excel","cls":"OTC"},{"p":"Lidopro Ointment \u00b7 99 grams","r":"Topical","a":609.49,"c":46.99,"s":"Young","cls":""},{"p":"Lidopro Patch 4% Lido / 1% Menthol \u00b7 30","r":"Topical","a":1960.24,"c":170.0,"s":"Young","cls":""},{"p":"Lidopro Patch 4% Lido / 1% Menthol \u00b7 60","r":"Topical","a":3920.49,"c":340.0,"s":"Young","cls":""},{"p":"METHYL SALICYLATE/MENTHOL/CAPSAICIN/LIDOCAINE (LIDOPRO OINTMENT) 27.5%-10%-0.0325%-4% \u00b7 99","r":"Topical","a":639.17,"c":36.99,"s":"Excel","cls":"OTC"},{"p":"Mupirocin cream 2% \u00b7 30gm","r":"Topical","a":457.12,"c":34.2,"s":"Young","cls":""},{"p":"Zylotrol Gel 4% Lido / 1% Menthol \u00b7 102","r":"Topical","a":549.31,"c":60.0,"s":"Young","cls":""},{"p":"Zylotrol Gel 4% Lido / 1% Menthol \u00b7 204","r":"Topical","a":1098.62,"c":120.0,"s":"Young","cls":""},{"p":"Zylotrol Patch 4% Lido / 1% Menthol \u00b7 30","r":"Topical","a":1756.33,"c":170.0,"s":"Young","cls":""},{"p":"Zylotrol Patch 4% Lido / 1% Menthol \u00b7 60","r":"Topical","a":3512.65,"c":340.0,"s":"Young","cls":""}];
+const FEE_SCHED_SOURCE = 'Optum Workers&rsquo; Compensation Pharmacy Resource Guide, March 2026';
+const FEE_SCHED={AK:[1,10,1,5,'AWP + $10.00'],AL:[1.05,15.22,1.05,11.71,'AWPx(1+0.05) + $15.22'],AR:[1,5.13,1,5.13,'AWP + $5.13'],AZ:[0.75,7,0.85,7,'AWPx(1-0.25) + $7.00'],CA:[null,null,null,null,'Medi-Cal based drug rate, dispensing fee $10.05'],CO:[1,4,1,4,'AWP + $4.00'],CT:[1,8,1,5,'AWP + $8.00'],DC:[null,null,null,null,'U&C'],DE:[0.62,4.1,0.681,3.29,'AWPx(1-0.38) + $4.10'],FL:[1,4.18,1,4.18,'AWP + $4.18'],GA:[1,7.25,1,4.83,'AWP + $7.25'],HI:[1.4,0,1.4,0,'AWPx(1+0.40)'],IA:[null,null,null,null,'Reasonable'],ID:[1,8,1,5,'AWP + $8.00'],IL:[null,null,null,null,'Reasonable'],IN:[null,null,null,null,'Reasonable'],KS:[0.85,5,0.9,3,'AWPx(1-0.15) + $5.00'],KY:[0.85,5,0.9,5,'AWPx(1-0.15) + $5.00'],LA:[1.4,11.81,1.1,11.81,'AWPx(1+0.40) + $11.81'],MA:[null,null,null,null,'min (FUL, MMAC, AAC, U&C) + $10.02'],MD:[null,null,null,null,'Relative value or reasonable'],ME:[null,null,null,null,'U&C'],MI:[0.9,5.5,0.9,3.5,'AWPx(1-0.10) + $5.50'],MN:[0.88,3.65,0.88,3.65,'AWPx(1-0.12) + $3.65'],MO:[null,null,null,null,'U&C'],MS:[0.95,5,1,5,'AWPx(1-0.05) + $5.00'],MT:[0.75,3,0.9,3,'AWPx(1-0.25) + $3.00'],NC:[0.95,0,0.95,0,'AWPx(1-0.05)'],ND:[null,null,null,null,'WAC markup + $5.00'],NE:[null,null,null,null,'Actual charge or reasonable'],NH:[null,null,null,null,'Reasonable'],NJ:[null,null,null,null,'U&C'],NM:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00'],NV:[1,13.7,1,13.7,'AWP + $13.70'],NY:[0.8,5,0.88,4,'AWPx(1-0.20) + $5.00'],OH:[0.85,3.5,0.85,3.5,'AWPx(1-0.15) + $3.50'],OK:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00'],OR:[0.835,2,0.835,2,'AWPx(1-0.165) + $2.00'],PA:[1.1,0,1.1,0,'AWPx(1+0.10)'],RI:[0.9,0,0.9,0,'AWPx(1-0.10)'],SC:[1,5,1,5,'AWP + $5.00'],SD:[null,null,null,null,'U&C'],TN:[1,5.1,1,5.1,'AWP + $5.10'],TX:[1.25,4,1.09,4,'AWPx(1+0.25) + $4.00'],UT:[null,null,null,null,'Reasonable'],VA:[null,null,null,null,'Prevailing community rate'],VT:[1,3.15,1,3.15,'AWP + $3.15'],WA:[0.5,4.5,0.9,4.5,'AWPx(1-0.50) + $4.50'],WI:[1,3,1,3,'AWP + $3.00'],WV:[null,null,null,null,'U&C'],WY:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00']};
+
+let DISP_TAB = 'mdrx', DISP_FORM = { mdrx: [], pdrx: [] }, DISP_RESULT = null;
+
+async function loadDispensing(){
+  const host = document.getElementById('view-dispensing');
+  if(!DISP_FORM.mdrx.length){
+    // Excel + Young, straight from the master. No database read, so nothing here can be
+    // polluted by another table and nothing here writes to one.
+    DISP_FORM.mdrx = MDRX_MASTER.map((x,i) => ({ id:'m'+i, product:x.p, route:x.r, awp:x.a, cost:x.c, src:x.s, cls:x.cls }));
+  }
+  if(!DISP_FORM.pdrx.length){
+    host.innerHTML = '<div class="card" style="padding:18px;color:var(--muted);">Loading the PDRx formulary…</div>';
+    try{
+      const b = await sbClient.from('pdrx_formulary').select('*').order('route').order('product');
+      DISP_FORM.pdrx = (b.data || []).map(x => ({ id:x.id, product:x.product, route:x.route, awp:x.awp, cost:x.cost, src:'PDRx', cls:'' }));
+    }catch(e){ host.innerHTML = '<div class="card" style="padding:18px;color:#c0392b;">Could not load the PDRx formulary. Press Refresh.</div>'; return; }
+  }
+  dispRender();
+}
+
+function dispTab(t){ DISP_TAB = t; DISP_RESULT = null; dispRender(); }
+function dispRows(){ return DISP_FORM[DISP_TAB] || []; }
+function dispById(id){ return dispRows().find(f => String(f.id) === String(id)); }
+function dispMoney(n){ return (typeof mdrxMoney === 'function') ? mdrxMoney(n) : ('$' + (Number(n)||0).toLocaleString(undefined,{maximumFractionDigits:0})); }
+
+function dispRender(){
+  const isM = DISP_TAB === 'mdrx';
+  const f = 'padding:7px 9px;border:1px solid var(--border2);border-radius:7px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
+  const tabBtn = (k,label,sub) => `<button class="ib" onclick="dispTab('${k}')" style="${DISP_TAB===k?'background:#08214C;color:#fff;border-color:#08214C;':''}padding:10px 16px;text-align:left;">
+      <div style="font-weight:700;font-size:14px;">${label}</div><div style="font-size:11px;opacity:.75;">${sub}</div></button>`;
+
+  const states = Object.keys(FEE_SCHED).sort().map(s => {
+    const v = FEE_SCHED[s];
+    return `<option value="${s}"${s==='DE'?' selected':''}${v[0]===null?' disabled':''}>${s} — ${v[4]}${v[0]===null?' (no schedule)':''}</option>`;
+  }).join('');
+
+  document.getElementById('view-dispensing').innerHTML = `
+  <div class="card" style="padding:18px;">
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+      ${tabBtn('mdrx','MDRx · Excel Pharmacy','Pennsylvania only · practice keeps 65% of collections')}
+      ${tabBtn('pdrx','PDRx · Elite Care','37+ states · net split evenly after claim purchase fees')}
+    </div>
+
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">
+      <label style="font-size:12px;color:var(--muted);">Patients / month<br><input id="dp-pat" type="number" value="1" min="0" oninput="dispCompute()" style="${f}width:100px;" title="1 shows what a single patient is worth. Set the real number for a specific practice."></label>
+      ${isM
+        ? `<label style="font-size:12px;color:var(--muted);">Fee schedule<br><input value="Pennsylvania — AWP + 10%" disabled style="${f}width:230px;opacity:.75;"></label>`
+        : `<label style="font-size:12px;color:var(--muted);">State fee schedule<br><select id="dp-state" onchange="dispCompute()" style="${f}min-width:330px;">${states}</select></label>`}
+      ${isM ? '' : `<label style="font-size:12px;color:var(--muted);">Shipping / fill<br>$<input id="dp-ship" type="number" value="${PDRX_SHIP_DEFAULT.toFixed(2)}" min="0" step="0.5" oninput="dispCompute()" style="${f}width:80px;" title="actual shipping, $7 to $10"></label>`}
+      <label style="font-size:12px;color:var(--muted);">Orals collected<br><input id="dp-oc" type="number" value="100" min="0" max="100" oninput="dispCompute()" style="${f}width:80px;"> %</label>
+      <label style="font-size:12px;color:var(--muted);">Topicals collected<br><input id="dp-tc" type="number" value="100" min="0" max="100" oninput="dispCompute()" style="${f}width:80px;"> %</label>
+    </div>
+
+    <div id="dp-lines" style="margin-bottom:8px;"></div>
+    <button class="ib" onclick="dispAddLine()">+ Add a product</button>
+    <div id="dp-out" style="margin-top:14px;"></div>
+
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="ib" onclick="dispPDF()">⬇ Export PDF</button>
+      <button class="ib" onclick="dispCSV()">⬇ Export CSV</button>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;">
+      ${isM
+        ? `${dispRows().length} products on the MDRx&ndash;Excel MASTER of 2 September: ${dispRows().filter(x=>x.src==='Excel').length} from Excel&rsquo;s revised list, ${dispRows().filter(x=>x.src==='Young').length} from Young&rsquo;s list. Skarjel and Narcosoft are not here because Young returned them unpriced.`
+        : `${dispRows().length} products on the PDRx formulary.`}
+      ${isM ? 'Dispensing and shipping is $6.50 a medication.' : 'Claim purchase fees are the medication cost, a $5.00 dispense fee and actual shipping of $7 to $10.'}
+      Fee schedules from the ${FEE_SCHED_SOURCE}.
+      Good-faith estimate. The carrier decides what it pays and when, and nothing here is a
+      recommendation about how to treat anyone.
+    </p>
+  </div>`;
+  dispAddLine(); dispAddLine(); dispCompute();
+}
+
+function dispAddLine(){
+  const c = document.getElementById('dp-lines'); if(!c) return;
+  const f = 'padding:6px 8px;border:1px solid var(--border2);border-radius:7px;background:var(--card,#0d1830);color:var(--text);font-size:13px;';
+  // The source is on the option itself, so it is never a mystery where a price came from.
+  const opt = (r) => `<optgroup label="${r}">` + dispRows().filter(x => x.route === r)
+    .map(x => `<option value="${x.id}">${ehtml(x.product)}${x.src && x.src !== 'PDRx' ? '  · ' + x.src : ''}${x.cls && x.cls !== 'NS' && x.cls !== 'None' ? '  · ' + x.cls : ''}</option>`).join('') + '</optgroup>';
+  const d = document.createElement('div');
+  d.className = 'dp-line';
+  d.style.cssText = 'display:flex;gap:6px;margin-bottom:6px;align-items:center;';
+  d.innerHTML = `<select class="dp-prod" onchange="dispCompute()" style="${f}flex:1;min-width:220px;">
+      <option value="">— pick a product —</option>${opt('Oral')}${opt('Topical')}</select>
+    <input class="dp-units" type="number" value="1" min="0" step="0.5" oninput="dispCompute()" title="units per patient per month" style="${f}width:70px;">
+    <button class="ib" onclick="this.closest('.dp-line').remove();dispCompute()">✕</button>`;
+  c.appendChild(d);
+}
+
+// One place where money is worked out, so the two tools cannot drift apart.
+function dispCompute(){
+  const isM = DISP_TAB === 'mdrx';
+  const num = id => { const el = document.getElementById(id); return el ? (parseFloat(el.value)||0) : 0; };
+  const patients = num('dp-pat'), oc = num('dp-oc')/100, tc = num('dp-tc')/100;
+  // MDRx is one combined figure; PDRx is the dispense fee plus whatever shipping actually costs.
+  const perMed = isM ? MDRX_FEE : (PDRX_DISPENSE + (num('dp-ship') || PDRX_SHIP_DEFAULT));
+
+  let mult = 1.10, fee = 0, schedLabel = 'Pennsylvania, AWP + 10 percent', st = 'PA';
+  if(!isM){
+    const sel = document.getElementById('dp-state');
+    st = sel ? sel.value : 'DE';
+    const v = FEE_SCHED[st] || [null,null,null,null,''];
+    mult = v[0]; fee = v[1]; schedLabel = st + ', ' + v[4];
+  }
+
+  const lines = [];
+  let billed = 0, cogs = 0, fills = 0;
+  document.querySelectorAll('#dp-lines .dp-line').forEach(row => {
+    const id = (row.querySelector('.dp-prod')||{}).value;
+    const units = parseFloat((row.querySelector('.dp-units')||{}).value) || 0;
+    const p = dispById(id); if(!p || !units) return;
+    if(mult === null) return;                                   // state with no published schedule
+    const perFill = (Number(p.awp)||0) * mult + fee;            // what the carrier is billed
+    const rate = p.route === 'Oral' ? oc : tc;                  // collection assumption
+    const collected = perFill * rate * units * patients;
+    const g = ((Number(p.cost)||0) + perMed) * units * patients;
+    billed += perFill * units * patients; cogs += g; fills += units * patients;
+    lines.push({ product: p.product, route: p.route, units, perFill, collected, cogs: g });
+  });
+  const collected = lines.reduce((s,l) => s + l.collected, 0);
+  // The only place the two programs differ in arithmetic.
+  const practice = isM ? (0.65 * collected - cogs) : (0.5 * (collected - cogs));
+  DISP_RESULT = { program: isM?'MDRx':'PDRx', state: st, schedLabel, patients, lines, billed, collected, cogs, practice, annual: practice*12, fills, perMed };
+
+  const out = document.getElementById('dp-out'); if(!out) return;
+  if(mult === null){
+    out.innerHTML = `<div style="background:rgba(176,69,58,.12);border:1px solid #B0453A;border-radius:10px;padding:14px;color:#e08b80;font-size:13px;">
+      <b>${st} does not publish a pharmacy fee schedule.</b> ${ehtml((FEE_SCHED[st]||[])[4]||'')}.
+      Reimbursement there is usual and customary or a reasonableness standard, so it cannot be modeled from AWP.
+      Quote this one from the pharmacy&rsquo;s own experience, not from this tool.</div>`;
+    return;
+  }
+  const formula = isM
+    ? '65% of collections, less cost of goods and $6.50 a medication &nbsp;<code>0.65C &minus; G</code>'
+    : 'collections less claim purchase fees, then split evenly with Elite Care &nbsp;<code>0.5 &times; (C &minus; G)</code>';
+  const feeNote = isM
+    ? 'Dispensing and shipping $6.50 a medication.'
+    : ('Claim purchase fees: medication cost, $' + PDRX_DISPENSE.toFixed(2) + ' dispense fee and $' + (perMed-PDRX_DISPENSE).toFixed(2) + ' shipping, $' + perMed.toFixed(2) + ' a fill. Deducted from collections, which average about 60 days.');
+  out.innerHTML = `<div style="background:rgba(45,106,79,.1);border:1px solid #2D6A4F;border-radius:10px;padding:14px;">
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Estimated practice share · ${DISP_RESULT.program}</div>
+    <div style="font-size:26px;font-weight:800;color:${practice<0?'#c0392b':'#2ecc8a'};">${dispMoney(practice)}<span style="font-size:13px;color:var(--muted);font-weight:400;"> / month</span></div>
+    <div style="font-size:15px;font-weight:700;color:${practice<0?'#c0392b':'#2ecc8a'};">${dispMoney(practice*12)}<span style="font-size:12px;color:var(--muted);font-weight:400;"> / year</span></div>
+    <div style="font-size:11.5px;color:var(--muted2);margin-top:9px;line-height:1.7;">
+      Billed ${dispMoney(billed)}/mo · <b>Collected ${dispMoney(collected)}/mo</b> · Cost of goods and fees ${dispMoney(cogs)}/mo · ${Math.round(fills)} fills/mo<br>
+      Fee schedule: ${ehtml(schedLabel)}<br>${feeNote}<br>Practice share: ${formula}
+    </div>
+    ${practice<0?'<div style="margin-top:8px;font-size:12px;color:#c0392b;"><b>This mix loses money.</b> What the schedule pays does not cover the medication plus the fees.</div>':''}
+  </div>`;
+}
+
+function dispDoc(){
+  const q = DISP_RESULT; if(!q || !q.lines.length) return '';
+  const rows = q.lines.map(l => `<tr><td style="padding:3px 10px 3px 0;">${l.product}</td><td style="padding:3px 10px;">${l.route}</td><td style="padding:3px 0;text-align:right;">${l.units}</td></tr>`).join('');
+  return `<h2 style="font-family:Georgia,serif;color:#08214C;margin:0 0 4px;">Workers&rsquo; Compensation Medication Dispensing Analysis</h2>
+    <p style="color:#333;">${q.patients} patients per month · ${q.schedLabel}</p>
+    <table style="border-collapse:collapse;margin:10px 0;font-size:13px;"><tr><th style="text-align:left;border-bottom:1px solid #ccc;padding-right:10px;">Product</th><th style="text-align:left;border-bottom:1px solid #ccc;padding:0 10px;">Route</th><th style="border-bottom:1px solid #ccc;">Units/pt</th></tr>${rows}</table>
+    <div style="background:#eef7f1;border:1px solid #2D6A4F;border-radius:8px;padding:14px;max-width:430px;">
+      <div style="font-size:12px;color:#555;text-transform:uppercase;">Estimated practice share</div>
+      <div style="font-size:26px;font-weight:800;color:#1e7a4d;">${dispMoney(q.practice)} <span style="font-size:14px;font-weight:400;color:#555;">/ month</span></div>
+      <div style="font-size:17px;font-weight:700;color:#1e7a4d;">${dispMoney(q.annual)} <span style="font-size:12px;font-weight:400;color:#555;">/ year</span></div>
+    </div>
+    <p style="font-size:11px;color:#777;margin-top:12px;line-height:1.6;">Good-faith estimate. The carrier decides what it pays and when, and no figure here is a promise of an amount.
+    Fee schedule from the ${FEE_SCHED_SOURCE}. The program is 100 percent mail order; the physician prescribes and an independent licensed mail-order pharmacy fills and ships to the patient.
+    MDconcierge is not a pharmacy and does not practice medicine. Nothing here is a recommendation about how to treat any patient.</p>
+    <p style="font-size:12px;color:#333;">Eric Weiscarger · MDconcierge · referrals@mdconcierge.net · mdconcierge.net</p>`;
+}
+function dispPDF(){
+  if(!DISP_RESULT || !DISP_RESULT.lines.length){ showToast('Pick at least one product first.'); return; }
+  const w = window.open('','_blank'); if(!w){ showToast('Allow pop-ups to export the PDF.'); return; }
+  w.document.write('<!doctype html><html><head><title>Dispensing Analysis</title></head><body style="font-family:Arial,sans-serif;padding:24px;color:#111;">'+dispDoc()+'</body></html>');
+  w.document.close(); setTimeout(()=>{ try{ w.print(); }catch(e){} }, 300);
+}
+function dispCSV(){
+  const q = DISP_RESULT; if(!q || !q.lines.length){ showToast('Pick at least one product first.'); return; }
+  const rows = [['WC Dispensing Analysis', q.program],['Fee schedule', q.schedLabel],['Patients/month', q.patients],[],
+    ['Product','Route','Units/patient','Billed/fill'],
+    ...q.lines.map(l => [l.product, l.route, l.units, l.perFill.toFixed(2)]), [],
+    ['Billed/month', Math.round(q.billed)],['Collected/month', Math.round(q.collected)],
+    ['Fees per fill', q.perMed.toFixed(2)],['Cost of goods and fees/month', Math.round(q.cogs)],['Practice share/month', Math.round(q.practice)],
+    ['Practice share/year', Math.round(q.annual)]];
+  const csv = rows.map(r => r.map(c => '"'+String(c==null?'':c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download = 'dispensing-analysis-'+q.program.toLowerCase()+'.csv'; a.click();
+}
+
 
 // ---- Funnel engagement view ----------------------------------------------
 const FUNNEL_BASE='https://mdconcierge.net/go.html';
