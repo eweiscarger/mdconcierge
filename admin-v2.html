@@ -1297,10 +1297,10 @@ async function funOpenProvider(id){
 // the watermark reads "MDconcierge · Live working session" rather than another practice's name.
 const PRESENTER_LINK='https://mdconcierge.net/pharmacy-model.html?t=bb2eab1360fab913ac8d712a7b6a5458';
 function openPresenter(){ window.open(PRESENTER_LINK,'_blank','noopener'); }
-// The PDRx twin. Same page mechanics, its own price book and its own split, so a PDRx doctor is
-// never shown Pennsylvania economics off the MDRx book. The link carries program='pdrx', which is
-// what makes formulary-access hand back pdrx_formulary rather than mdconcierge_formulary.
-const PRESENTER_LINK_PDRX='https://mdconcierge.net/pharmacy-model-pdrx.html?t=ca64189d84f3edd390dcc65409493b3f';
+// pdrx-model.html has existed since 27 August: PROGRAM='pdrx', a 50 percent share, PDRx's own
+// fees and every state selectable. It simply had no button. This is that button, on a presenter
+// token tied to no lead so walkthroughs never inflate a physician's engagement score.
+const PRESENTER_LINK_PDRX='https://mdconcierge.net/pdrx-model.html?t=ca64189d84f3edd390dcc65409493b3f';
 function openPresenterPdrx(){ window.open(PRESENTER_LINK_PDRX,'_blank','noopener'); }
 
 // ---- Dispensing tools -----------------------------------------------------------------
@@ -1308,7 +1308,7 @@ function openPresenterPdrx(){ window.open(PRESENTER_LINK_PDRX,'_blank','noopener
 // different formularies, different fee-schedule geography and different economics. They were
 // one tool once, priced off a single polluted table, and it quoted brand AWP on generics.
 //
-//   MDRx  Excel Pharmacy formulary. Pennsylvania only. AWP + 10 percent.
+//   MDRx  Excel Pharmacy formulary. Licensed in 16 states, listed in MDRX_STATES.
 //         The physician's entity buys the medication up front and receives 65 percent of
 //         collections:            net = 0.65C - G
 //   PDRx  PDRx formulary. Licensed in 49 states, operating in 37+, so the fee schedule is
@@ -1322,7 +1322,10 @@ function openPresenterPdrx(){ window.open(PRESENTER_LINK_PDRX,'_blank','noopener
 //         quote errs low rather than high.
 // Sources: RULES.md section 9 and PHARMACY-ECONOMICS.md. Fee schedules are the Optum Workers'
 // Compensation Pharmacy Resource Guide, March 2026.
-const MDRX_FEE = 6.50, PDRX_DISPENSE = 5.00, PDRX_SHIP_DEFAULT = 10.00;
+const MDRX_FEE = 6.50, PDRX_DISPENSE = 5.00, PDRX_SHIP_DEFAULT = 8.50;
+// The 16 states Excel is licensed in, mirrored from pharmacy-model.html so the two cannot drift.
+// PDRx is licensed in all 50, so it gets the whole table.
+const MDRX_STATES=['AL','AZ','CO','DC','FL','IN','KS','LA','MO','NE','NM','OK','PA','TX','VA','WI'];
 
 // The MDRx formulary is the 9/2 MDRx-Excel MASTER, carried here rather than read from
 // mdconcierge_formulary. That table also holds 74 rows from a July load that belong to neither
@@ -1367,12 +1370,14 @@ function dispRender(){
   // Every state is selectable. PDRx covers all 50, so a state that publishes no AWP formula
   // still has to be quotable: it drops to a manual multiplier the rep sets from what the
   // pharmacy actually collects there, rather than refusing to answer.
-  const states = Object.keys(FEE_SCHED).sort().map(s => {
-    const v = FEE_SCHED[s];
-    return `<option value="${s}"${s===DISP_STATE?' selected':''}>${s} — ${v[4]}${v[0]===null?' (set the rate)':''}</option>`;
+  const allowed = (isM ? MDRX_STATES : Object.keys(FEE_SCHED)).slice().sort();
+  if(!allowed.includes(DISP_STATE)) DISP_STATE = isM ? 'PA' : 'DE';
+  const states = allowed.map(s => {
+    const v = FEE_SCHED[s] || [];
+    return `<option value="${s}"${s===DISP_STATE?' selected':''}>${s} — ${v[4]||''}${v[0]===null?' (set the rate)':''}</option>`;
   }).join('');
   const cur = FEE_SCHED[DISP_STATE] || [];
-  const manual = !isM && cur[0] === null;
+  const manual = cur[0] === null;
 
   document.getElementById('view-dispensing').innerHTML = `
   <div class="card" style="padding:18px;">
@@ -1383,9 +1388,7 @@ function dispRender(){
 
     <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;">
       <label style="font-size:12px;color:var(--muted);">Patients / month<br><input id="dp-pat" type="number" value="1" min="0" oninput="dispCompute()" style="${f}width:100px;" title="1 shows what a single patient is worth. Set the real number for a specific practice."></label>
-      ${isM
-        ? `<label style="font-size:12px;color:var(--muted);">Fee schedule<br><input value="Pennsylvania — AWP + 10%" disabled style="${f}width:230px;opacity:.75;"></label>`
-        : `<label style="font-size:12px;color:var(--muted);">State fee schedule<br><select id="dp-state" onchange="DISP_STATE=this.value;dispRender();" style="${f}min-width:330px;">${states}</select></label>
+      ${`<label style="font-size:12px;color:var(--muted);">State fee schedule<br><select id="dp-state" onchange="DISP_STATE=this.value;dispRender();" style="${f}min-width:330px;">${states}</select></label>
            ${manual ? `<label style="font-size:12px;color:#c8922a;">AWP multiplier<br><input id="dp-mult" type="number" step="0.01" value="1.00" oninput="dispCompute()" style="${f}width:90px;border-color:#c8922a;"></label>
            <label style="font-size:12px;color:#c8922a;">Fee / Rx<br>$<input id="dp-fee" type="number" step="0.01" value="0.00" oninput="dispCompute()" style="${f}width:80px;border-color:#c8922a;"></label>` : ''}`}
       ${isM ? '' : `<label style="font-size:12px;color:var(--muted);">Shipping / fill<br>$<input id="dp-ship" type="number" value="${PDRX_SHIP_DEFAULT.toFixed(2)}" min="0" step="0.5" oninput="dispCompute()" style="${f}width:80px;" title="actual shipping, $7 to $10"></label>`}
@@ -1403,8 +1406,8 @@ function dispRender(){
     </div>
     <p style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;">
       ${isM
-        ? `${dispRows().length} products on the MDRx&ndash;Excel MASTER of 2 September: ${dispRows().filter(x=>x.src==='Excel').length} from Excel&rsquo;s revised list, ${dispRows().filter(x=>x.src==='Young').length} from Young&rsquo;s list. Skarjel and Narcosoft are not here because Young returned them unpriced.`
-        : `${dispRows().length} products on the PDRx formulary. PDRx covers all 50 states; ${Object.values(FEE_SCHED).filter(v=>v[0]!==null).length} publish an AWP formula and the rest are set by hand.`}
+        ? `${dispRows().length} products on the MDRx&ndash;Excel MASTER of 2 September: ${dispRows().filter(x=>x.src==='Excel').length} from Excel&rsquo;s revised list, ${dispRows().filter(x=>x.src==='Young').length} from Young&rsquo;s list. Excel is licensed in ${MDRX_STATES.length} states. Skarjel and Narcosoft are not here because Young returned them unpriced.`
+        : `${dispRows().length} products on the PDRx formulary. PDRx is licensed in all 50 states; ${Object.values(FEE_SCHED).filter(v=>v[0]!==null).length} publish an AWP formula and the rest are set by hand.`}
       ${isM ? 'Dispensing and shipping is $6.50 a medication.' : 'Claim purchase fees are the medication cost, a $5.00 dispense fee and actual shipping of $7 to $10.'}
       Fee schedules from the ${FEE_SCHED_SOURCE}.
       Good-faith estimate. The carrier decides what it pays and when, and nothing here is a
@@ -1438,8 +1441,8 @@ function dispCompute(){
   // MDRx is one combined figure; PDRx is the dispense fee plus whatever shipping actually costs.
   const perMed = isM ? MDRX_FEE : (PDRX_DISPENSE + (num('dp-ship') || PDRX_SHIP_DEFAULT));
 
-  let mult = 1.10, fee = 0, schedLabel = 'Pennsylvania, AWP + 10 percent', st = 'PA';
-  if(!isM){
+  let mult, fee, schedLabel, st;
+  {
     st = DISP_STATE;
     const v = FEE_SCHED[st] || [null,null,null,null,''];
     if(v[0] === null){
@@ -1468,7 +1471,7 @@ function dispCompute(){
   DISP_RESULT = { program: isM?'MDRx':'PDRx', state: st, schedLabel, patients, lines, billed, collected, cogs, practice, annual: practice*12, fills, perMed };
 
   const out = document.getElementById('dp-out'); if(!out) return;
-  const noSched = !isM && (FEE_SCHED[st]||[])[0] === null;
+  const noSched = (FEE_SCHED[st]||[])[0] === null;
   const formula = isM
     ? '65% of collections, less cost of goods and $6.50 a medication &nbsp;<code>0.65C &minus; G</code>'
     : 'collections less claim purchase fees, then split evenly with Elite Care &nbsp;<code>0.5 &times; (C &minus; G)</code>';
