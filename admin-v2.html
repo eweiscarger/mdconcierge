@@ -1334,7 +1334,7 @@ const MDRX_MASTER=[{"p":"ACETAMINOPHEN/CODEINE (TYLENOL #3) 300MG/30MG \u00b7 30
 const FEE_SCHED_SOURCE = 'Optum Workers&rsquo; Compensation Pharmacy Resource Guide, March 2026';
 const FEE_SCHED={AK:[1,10,1,5,'AWP + $10.00'],AL:[1.05,15.22,1.05,11.71,'AWPx(1+0.05) + $15.22'],AR:[1,5.13,1,5.13,'AWP + $5.13'],AZ:[0.75,7,0.85,7,'AWPx(1-0.25) + $7.00'],CA:[null,null,null,null,'Medi-Cal based drug rate, dispensing fee $10.05'],CO:[1,4,1,4,'AWP + $4.00'],CT:[1,8,1,5,'AWP + $8.00'],DC:[null,null,null,null,'U&C'],DE:[0.62,4.1,0.681,3.29,'AWPx(1-0.38) + $4.10'],FL:[1,4.18,1,4.18,'AWP + $4.18'],GA:[1,7.25,1,4.83,'AWP + $7.25'],HI:[1.4,0,1.4,0,'AWPx(1+0.40)'],IA:[null,null,null,null,'Reasonable'],ID:[1,8,1,5,'AWP + $8.00'],IL:[null,null,null,null,'Reasonable'],IN:[null,null,null,null,'Reasonable'],KS:[0.85,5,0.9,3,'AWPx(1-0.15) + $5.00'],KY:[0.85,5,0.9,5,'AWPx(1-0.15) + $5.00'],LA:[1.4,11.81,1.1,11.81,'AWPx(1+0.40) + $11.81'],MA:[null,null,null,null,'min (FUL, MMAC, AAC, U&C) + $10.02'],MD:[null,null,null,null,'Relative value or reasonable'],ME:[null,null,null,null,'U&C'],MI:[0.9,5.5,0.9,3.5,'AWPx(1-0.10) + $5.50'],MN:[0.88,3.65,0.88,3.65,'AWPx(1-0.12) + $3.65'],MO:[null,null,null,null,'U&C'],MS:[0.95,5,1,5,'AWPx(1-0.05) + $5.00'],MT:[0.75,3,0.9,3,'AWPx(1-0.25) + $3.00'],NC:[0.95,0,0.95,0,'AWPx(1-0.05)'],ND:[null,null,null,null,'WAC markup + $5.00'],NE:[null,null,null,null,'Actual charge or reasonable'],NH:[null,null,null,null,'Reasonable'],NJ:[null,null,null,null,'U&C'],NM:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00'],NV:[1,13.7,1,13.7,'AWP + $13.70'],NY:[0.8,5,0.88,4,'AWPx(1-0.20) + $5.00'],OH:[0.85,3.5,0.85,3.5,'AWPx(1-0.15) + $3.50'],OK:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00'],OR:[0.835,2,0.835,2,'AWPx(1-0.165) + $2.00'],PA:[1.1,0,1.1,0,'AWPx(1+0.10)'],RI:[0.9,0,0.9,0,'AWPx(1-0.10)'],SC:[1,5,1,5,'AWP + $5.00'],SD:[null,null,null,null,'U&C'],TN:[1,5.1,1,5.1,'AWP + $5.10'],TX:[1.25,4,1.09,4,'AWPx(1+0.25) + $4.00'],UT:[null,null,null,null,'Reasonable'],VA:[null,null,null,null,'Prevailing community rate'],VT:[1,3.15,1,3.15,'AWP + $3.15'],WA:[0.5,4.5,0.9,4.5,'AWPx(1-0.50) + $4.50'],WI:[1,3,1,3,'AWP + $3.00'],WV:[null,null,null,null,'U&C'],WY:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00']};
 
-let DISP_TAB = 'mdrx', DISP_FORM = { mdrx: [], pdrx: [] }, DISP_RESULT = null;
+let DISP_TAB = 'mdrx', DISP_FORM = { mdrx: [], pdrx: [] }, DISP_RESULT = null, DISP_STATE = 'DE';
 
 async function loadDispensing(){
   const host = document.getElementById('view-dispensing');
@@ -1364,10 +1364,15 @@ function dispRender(){
   const tabBtn = (k,label,sub) => `<button class="ib" onclick="dispTab('${k}')" style="${DISP_TAB===k?'background:#08214C;color:#fff;border-color:#08214C;':''}padding:10px 16px;text-align:left;">
       <div style="font-weight:700;font-size:14px;">${label}</div><div style="font-size:11px;opacity:.75;">${sub}</div></button>`;
 
+  // Every state is selectable. PDRx covers all 50, so a state that publishes no AWP formula
+  // still has to be quotable: it drops to a manual multiplier the rep sets from what the
+  // pharmacy actually collects there, rather than refusing to answer.
   const states = Object.keys(FEE_SCHED).sort().map(s => {
     const v = FEE_SCHED[s];
-    return `<option value="${s}"${s==='DE'?' selected':''}${v[0]===null?' disabled':''}>${s} — ${v[4]}${v[0]===null?' (no schedule)':''}</option>`;
+    return `<option value="${s}"${s===DISP_STATE?' selected':''}>${s} — ${v[4]}${v[0]===null?' (set the rate)':''}</option>`;
   }).join('');
+  const cur = FEE_SCHED[DISP_STATE] || [];
+  const manual = !isM && cur[0] === null;
 
   document.getElementById('view-dispensing').innerHTML = `
   <div class="card" style="padding:18px;">
@@ -1380,7 +1385,9 @@ function dispRender(){
       <label style="font-size:12px;color:var(--muted);">Patients / month<br><input id="dp-pat" type="number" value="1" min="0" oninput="dispCompute()" style="${f}width:100px;" title="1 shows what a single patient is worth. Set the real number for a specific practice."></label>
       ${isM
         ? `<label style="font-size:12px;color:var(--muted);">Fee schedule<br><input value="Pennsylvania — AWP + 10%" disabled style="${f}width:230px;opacity:.75;"></label>`
-        : `<label style="font-size:12px;color:var(--muted);">State fee schedule<br><select id="dp-state" onchange="dispCompute()" style="${f}min-width:330px;">${states}</select></label>`}
+        : `<label style="font-size:12px;color:var(--muted);">State fee schedule<br><select id="dp-state" onchange="DISP_STATE=this.value;dispRender();" style="${f}min-width:330px;">${states}</select></label>
+           ${manual ? `<label style="font-size:12px;color:#c8922a;">AWP multiplier<br><input id="dp-mult" type="number" step="0.01" value="1.00" oninput="dispCompute()" style="${f}width:90px;border-color:#c8922a;"></label>
+           <label style="font-size:12px;color:#c8922a;">Fee / Rx<br>$<input id="dp-fee" type="number" step="0.01" value="0.00" oninput="dispCompute()" style="${f}width:80px;border-color:#c8922a;"></label>` : ''}`}
       ${isM ? '' : `<label style="font-size:12px;color:var(--muted);">Shipping / fill<br>$<input id="dp-ship" type="number" value="${PDRX_SHIP_DEFAULT.toFixed(2)}" min="0" step="0.5" oninput="dispCompute()" style="${f}width:80px;" title="actual shipping, $7 to $10"></label>`}
       <label style="font-size:12px;color:var(--muted);">Orals collected<br><input id="dp-oc" type="number" value="100" min="0" max="100" oninput="dispCompute()" style="${f}width:80px;"> %</label>
       <label style="font-size:12px;color:var(--muted);">Topicals collected<br><input id="dp-tc" type="number" value="100" min="0" max="100" oninput="dispCompute()" style="${f}width:80px;"> %</label>
@@ -1397,7 +1404,7 @@ function dispRender(){
     <p style="font-size:11px;color:var(--muted);margin-top:14px;line-height:1.6;">
       ${isM
         ? `${dispRows().length} products on the MDRx&ndash;Excel MASTER of 2 September: ${dispRows().filter(x=>x.src==='Excel').length} from Excel&rsquo;s revised list, ${dispRows().filter(x=>x.src==='Young').length} from Young&rsquo;s list. Skarjel and Narcosoft are not here because Young returned them unpriced.`
-        : `${dispRows().length} products on the PDRx formulary.`}
+        : `${dispRows().length} products on the PDRx formulary. PDRx covers all 50 states; ${Object.values(FEE_SCHED).filter(v=>v[0]!==null).length} publish an AWP formula and the rest are set by hand.`}
       ${isM ? 'Dispensing and shipping is $6.50 a medication.' : 'Claim purchase fees are the medication cost, a $5.00 dispense fee and actual shipping of $7 to $10.'}
       Fee schedules from the ${FEE_SCHED_SOURCE}.
       Good-faith estimate. The carrier decides what it pays and when, and nothing here is a
@@ -1433,10 +1440,12 @@ function dispCompute(){
 
   let mult = 1.10, fee = 0, schedLabel = 'Pennsylvania, AWP + 10 percent', st = 'PA';
   if(!isM){
-    const sel = document.getElementById('dp-state');
-    st = sel ? sel.value : 'DE';
+    st = DISP_STATE;
     const v = FEE_SCHED[st] || [null,null,null,null,''];
-    mult = v[0]; fee = v[1]; schedLabel = st + ', ' + v[4];
+    if(v[0] === null){
+      mult = num('dp-mult') || 1.00; fee = num('dp-fee') || 0;
+      schedLabel = st + ' publishes no fee schedule (' + v[4] + '). Rate set by hand: AWP x ' + mult.toFixed(2) + (fee ? ' + $' + fee.toFixed(2) : '');
+    } else { mult = v[0]; fee = v[1]; schedLabel = st + ', ' + v[4]; }
   }
 
   const lines = [];
@@ -1459,13 +1468,7 @@ function dispCompute(){
   DISP_RESULT = { program: isM?'MDRx':'PDRx', state: st, schedLabel, patients, lines, billed, collected, cogs, practice, annual: practice*12, fills, perMed };
 
   const out = document.getElementById('dp-out'); if(!out) return;
-  if(mult === null){
-    out.innerHTML = `<div style="background:rgba(176,69,58,.12);border:1px solid #B0453A;border-radius:10px;padding:14px;color:#e08b80;font-size:13px;">
-      <b>${st} does not publish a pharmacy fee schedule.</b> ${ehtml((FEE_SCHED[st]||[])[4]||'')}.
-      Reimbursement there is usual and customary or a reasonableness standard, so it cannot be modeled from AWP.
-      Quote this one from the pharmacy&rsquo;s own experience, not from this tool.</div>`;
-    return;
-  }
+  const noSched = !isM && (FEE_SCHED[st]||[])[0] === null;
   const formula = isM
     ? '65% of collections, less cost of goods and $6.50 a medication &nbsp;<code>0.65C &minus; G</code>'
     : 'collections less claim purchase fees, then split evenly with Elite Care &nbsp;<code>0.5 &times; (C &minus; G)</code>';
@@ -1480,6 +1483,7 @@ function dispCompute(){
       Billed ${dispMoney(billed)}/mo · <b>Collected ${dispMoney(collected)}/mo</b> · Cost of goods and fees ${dispMoney(cogs)}/mo · ${Math.round(fills)} fills/mo<br>
       Fee schedule: ${ehtml(schedLabel)}<br>${feeNote}<br>Practice share: ${formula}
     </div>
+    ${noSched?`<div style="margin-top:8px;font-size:12px;color:#c8922a;"><b>${ehtml(st)} publishes no pharmacy fee schedule.</b> ${ehtml((FEE_SCHED[st]||[])[4]||'')}. The multiplier above is yours, not the state&rsquo;s. Set it from what the pharmacy actually collects there before this number goes to anyone.</div>`:''}
     ${practice<0?'<div style="margin-top:8px;font-size:12px;color:#c0392b;"><b>This mix loses money.</b> What the schedule pays does not cover the medication plus the fees.</div>':''}
   </div>`;
 }
