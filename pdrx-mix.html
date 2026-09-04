@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="referrer" content="no-referrer">
-<title>Delaware and Pennsylvania, side by side &middot; MDconcierge</title>
+<title>Your Delaware and Pennsylvania mix &middot; MDconcierge</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--navy:#08214C;--blue:#2F5EA8;--cream:#F6F9FD;--border:#DCE6F2;--ink:#14213D;
@@ -56,16 +56,18 @@ b.hl{color:var(--navy);}
 
 <header>
   <p class="kicker">Private &middot; prepared for one practice</p>
-  <h1>The same prescriptions, two states</h1>
-  <p class="sub">Your practice sits close enough to the line that some of your work comp patients
-  are on Delaware claims and some are on Pennsylvania claims. Those two states pay very differently
-  for identical medication. This shows what that means for your panel.</p>
+  <h1>Your number depends on your mix</h1>
+  <p class="sub">You treat work comp patients on Delaware claims and work comp patients on
+  Pennsylvania claims. The two states pay differently for identical medication, so quoting you on
+  Delaware alone would understate what your practice actually sees. This blends the two, which is
+  the only way to get the number right.</p>
 </header>
 
 <div class="card">
-  <h2>One patient, one month</h2>
-  <p class="hint">The same five prescriptions in both columns. Same pack sizes, same pharmacy,
-  same cost of goods. The only line that changes is what the state&rsquo;s fee schedule pays.</p>
+  <h2>Why the mix matters</h2>
+  <p class="hint">The same five prescriptions priced on each schedule. Same pack sizes, same
+  pharmacy, same cost of goods. These are the two inputs the blend is built from, not a comparison
+  you have to act on.</p>
   <div class="doors">
     <div class="door de">
       <div class="top">Delaware claim</div>
@@ -92,15 +94,15 @@ b.hl{color:var(--navy);}
       </div>
     </div>
   </div>
-  <div class="same"><b>A Pennsylvania claim is worth 1.9 times a Delaware one</b>, on prescriptions
-  that are identical in every respect. Nothing about the patient, the treatment or the pharmacy
-  differs. The jurisdiction is fixed by the employer&rsquo;s coverage long before the patient
-  reaches you.</div>
+  <div class="same">The two differ because the fee schedules differ, and nothing else does. The
+  jurisdiction is fixed by the employer&rsquo;s coverage long before the patient reaches you, so
+  it is not something you choose or influence. It is simply a fact about your panel that has to be
+  in the arithmetic, or the arithmetic is wrong.</div>
 </div>
 
 <div class="card">
   <h2>Your panel</h2>
-  <p class="hint">Two numbers. The first you already know. The second is the interesting one.</p>
+  <p class="hint">Set these to your practice and the figure below is yours rather than a generic one.</p>
 
   <label class="ctl" for="pat">Work comp patients on treatment in a given month</label>
   <input id="pat" type="number" min="0" value="20" oninput="calc()">
@@ -122,12 +124,12 @@ b.hl{color:var(--navy);}
 </div>
 
 <div class="card">
-  <h2>Worth five minutes</h2>
-  <p class="hint" style="margin-bottom:0;">Most practices have never counted this, because until
-  now there was no reason to. The jurisdiction is on every claim form you already have. Pull your
-  last twenty work comp patients, count how many carry a Pennsylvania claim number, and the slider
-  above stops being a guess. That single number moves your figure by more than anything else on
-  this page.</p>
+  <h2>Making the mix exact</h2>
+  <p class="hint" style="margin-bottom:0;">The share above is the one number here that is still an
+  estimate, and it is the one that moves the figure most. It is on paperwork you already hold:
+  pull your last twenty work comp patients and count how many carry a Pennsylvania claim. Five
+  minutes, and the number above stops being an approximation and becomes your practice&rsquo;s.
+  Tell us what you find and we will set it.</p>
 </div>
 
 <p class="foot">
@@ -174,11 +176,11 @@ function calc(){
     money(pat*DE.g)+' &middot; net split evenly with the program';
   // The floor and ceiling matter more than any single guess at the mix.
   document.getElementById('cross').innerHTML=
-    'At '+Math.round(pat)+' patients a month your figure sits somewhere between <b class="hl">'+
-    money(pat*DE.net)+'</b> if every claim were Delaware and <b class="hl">'+money(pat*PA.net)+
-    '</b> if every one were Pennsylvania. <b class="hl">At about 34 percent Pennsylvania, half the '+
-    'money is coming from a third of the patients.</b> Below that the Delaware side carries it; '+
-    'above it, Pennsylvania does.';
+    'A Delaware-only estimate at '+Math.round(pat)+' patients a month would put this at <b class="hl">'+
+    money(pat*DE.net)+'</b>. That is the floor, and it is low for your practice, because it prices '+
+    'every patient as though no Pennsylvania claim ever came through the door. The ceiling, every '+
+    'claim Pennsylvania, is <b class="hl">'+money(pat*PA.net)+'</b>. Your real figure sits between '+
+    'them, at whatever your actual mix turns out to be.';
 }
 calc();
 </script>
