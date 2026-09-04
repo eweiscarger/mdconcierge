@@ -5,50 +5,59 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow,noarchive">
 <meta name="referrer" content="no-referrer">
-<title>Your Delaware and Pennsylvania mix &middot; MDconcierge</title>
+<title>Twenty patients a month &middot; MDconcierge</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{--navy:#08214C;--blue:#2F5EA8;--cream:#F6F9FD;--border:#DCE6F2;--ink:#14213D;
   --muted:#5C6B85;--faint:#8B97AC;--green:#1e7a4d;--gold:#C8922A;--gold-wash:#FBF3E2;}
 body{font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--cream);
   color:var(--ink);line-height:1.6;}
-.wrap{max-width:820px;margin:0 auto;padding:0 20px 70px;}
+.wrap{max-width:840px;margin:0 auto;padding:0 20px 70px;}
 header{text-align:center;padding:30px 0 6px;}
 .kicker{text-transform:uppercase;letter-spacing:2px;font-size:11px;color:var(--blue);font-weight:700;}
 h1{font-family:Georgia,serif;color:var(--navy);font-size:27px;margin:6px 0 4px;line-height:1.2;}
-.sub{color:var(--muted);font-size:14.5px;max-width:640px;margin:0 auto;}
+.sub{color:var(--muted);font-size:14.5px;max-width:660px;margin:0 auto;}
 .card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px 22px;margin:18px 0;}
 .card h2{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--navy);margin:0 0 3px;}
 .hint{font-size:12.5px;color:var(--muted);margin:0 0 14px;}
-.doors{display:flex;gap:14px;flex-wrap:wrap;}
-.door{flex:1 1 260px;border:1px solid var(--border);border-radius:11px;overflow:hidden;}
-.door .top{padding:11px 15px;font-weight:700;font-size:13px;color:#fff;}
-.door.de .top{background:#5C6B85;} .door.pa .top{background:var(--navy);}
-.door .body{padding:14px 15px;}
-.door .big{font-size:30px;font-weight:800;color:var(--green);line-height:1.1;}
-.door .lbl{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;}
-.door table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px;}
-.door td{padding:3px 0;color:var(--muted);}
-.door td.n{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink);}
-.same{background:var(--gold-wash);border-left:3px solid var(--gold);padding:11px 14px;
-  border-radius:0 7px 7px 0;font-size:13px;color:#8A6414;margin-top:14px;}
-label.ctl{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:5px;}
-input[type=number]{width:110px;padding:9px 11px;border:1px solid var(--border);border-radius:8px;
+.jx{display:flex;gap:7px;flex-wrap:wrap;}
+.jx button{padding:9px 15px;border:1px solid var(--border);border-radius:9px;background:#fff;
+  color:var(--muted);font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit;}
+.jx button:hover{border-color:var(--blue);color:var(--navy);}
+.jx button.on{background:var(--navy);border-color:var(--navy);color:#fff;}
+.mixrow{margin-top:13px;display:none;}
+.mixrow.show{display:block;}
+label.ctl{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px;}
+input[type=number]{width:96px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;
   font-size:15px;color:var(--ink);}
-input[type=range]{width:100%;margin:6px 0 2px;}
+input[type=range]{width:100%;margin:5px 0 0;}
 .scale{display:flex;justify-content:space-between;font-size:11px;color:var(--faint);}
+.pk{display:flex;gap:14px;flex-wrap:wrap;}
+.pkg{flex:1 1 300px;border:1px solid var(--border);border-radius:11px;overflow:hidden;}
+.pkg .top{padding:10px 15px;font-weight:700;font-size:13px;color:#fff;background:var(--navy);}
+.pkg .top span{font-weight:400;opacity:.75;font-size:11.5px;display:block;}
+.pkg table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.pkg td{padding:6px 15px;border-bottom:1px solid #EEF3F9;}
+.pkg td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.pkg .cat{color:var(--faint);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;}
+.pkg tr.sum td{font-weight:700;color:var(--navy);background:#F7FAFD;border-bottom:none;}
+.assume{display:flex;gap:20px;flex-wrap:wrap;}
+table.ramp{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px;}
+table.ramp th{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--faint);
+  text-align:left;padding:0 8px 7px;border-bottom:1px solid var(--border);font-weight:700;}
+table.ramp th.n,table.ramp td.n{text-align:right;font-variant-numeric:tabular-nums;}
+table.ramp td{padding:8px;border-bottom:1px solid #EEF3F9;}
+table.ramp tr.steady td{background:var(--gold-wash);font-weight:700;color:#8A6414;}
 .result{background:var(--navy);color:#fff;border-radius:12px;padding:18px 20px;margin-top:16px;}
 .result .big{font-size:38px;font-weight:800;line-height:1.1;}
 .result .sm{font-size:14px;opacity:.85;}
 .result .brk{font-size:12px;opacity:.72;margin-top:9px;line-height:1.6;}
-.bar{display:flex;height:26px;border-radius:7px;overflow:hidden;margin:13px 0 5px;}
-.bar div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;}
-.bar .de{background:#7C8AA3;} .bar .pa{background:#2F5EA8;}
-.note{font-size:12.5px;color:var(--muted);margin-top:12px;line-height:1.65;}
+.same{background:var(--gold-wash);border-left:3px solid var(--gold);padding:11px 14px;
+  border-radius:0 7px 7px 0;font-size:13px;color:#8A6414;margin-top:14px;}
 .foot{font-size:11.5px;color:var(--faint);line-height:1.65;border-top:1px solid var(--border);
   margin-top:26px;padding-top:16px;}
 b.hl{color:var(--navy);}
-@media(max-width:560px){.door{flex:1 1 100%;}}
+@media(max-width:600px){.pkg{flex:1 1 100%;}}
 </style>
 </head>
 <body>
@@ -56,131 +65,202 @@ b.hl{color:var(--navy);}
 
 <header>
   <p class="kicker">Private &middot; prepared for one practice</p>
-  <h1>Your number depends on your mix</h1>
-  <p class="sub">You treat work comp patients on Delaware claims and work comp patients on
-  Pennsylvania claims. The two states pay differently for identical medication, so quoting you on
-  Delaware alone would understate what your practice actually sees. This blends the two, which is
-  the only way to get the number right.</p>
+  <h1>What twenty patients a month looks like</h1>
+  <p class="sub">Two packages, priced on the program&rsquo;s own pack sizes. You treat work comp
+  patients on Delaware claims and on Pennsylvania claims, so the jurisdiction sits at the top and
+  everything below reprices when you change it. Nothing here is a recommendation about how to treat
+  anyone.</p>
 </header>
 
 <div class="card">
-  <h2>Why the mix matters</h2>
-  <p class="hint">The same five prescriptions priced on each schedule. Same pack sizes, same
-  pharmacy, same cost of goods. These are the two inputs the blend is built from, not a comparison
-  you have to act on.</p>
-  <div class="doors">
-    <div class="door de">
-      <div class="top">Delaware claim</div>
-      <div class="body">
-        <div class="lbl">Practice share</div>
-        <div class="big" id="de-net">$415</div>
-        <table>
-          <tr><td>Fee schedule</td><td class="n">AWP &minus;38% +$4.10</td></tr>
-          <tr><td>Collected</td><td class="n" id="de-c">$1,015</td></tr>
-          <tr><td>Medication, fees</td><td class="n" id="de-g">$185</td></tr>
-        </table>
-      </div>
-    </div>
-    <div class="door pa">
-      <div class="top">Pennsylvania claim</div>
-      <div class="body">
-        <div class="lbl">Practice share</div>
-        <div class="big" id="pa-net">$790</div>
-        <table>
-          <tr><td>Fee schedule</td><td class="n">AWP +10%</td></tr>
-          <tr><td>Collected</td><td class="n" id="pa-c">$1,764</td></tr>
-          <tr><td>Medication, fees</td><td class="n" id="pa-g">$185</td></tr>
-        </table>
-      </div>
-    </div>
+  <h2>Which claims</h2>
+  <p class="hint">A Delaware-only figure understates a practice that also sees Pennsylvania claims,
+  and a Pennsylvania-only figure overstates it. The mix is the honest one.</p>
+  <div class="jx">
+    <button type="button" data-jx="DE" onclick="setJx('DE')">Delaware</button>
+    <button type="button" data-jx="PA" onclick="setJx('PA')">Pennsylvania</button>
+    <button type="button" data-jx="MIX" class="on" onclick="setJx('MIX')">Mix</button>
   </div>
-  <div class="same">The two differ because the fee schedules differ, and nothing else does. The
-  jurisdiction is fixed by the employer&rsquo;s coverage long before the patient reaches you, so
-  it is not something you choose or influence. It is simply a fact about your panel that has to be
-  in the arithmetic, or the arithmetic is wrong.</div>
+  <div class="mixrow show" id="mixrow">
+    <label class="ctl">Share of your work comp patients on a Pennsylvania claim &mdash;
+      <b class="hl" id="pa-lbl">30%</b></label>
+    <input type="range" id="pa-share" min="0" max="100" value="30" oninput="setShare(this.value)">
+    <div class="scale"><span>all Delaware</span><span>half and half</span><span>all Pennsylvania</span></div>
+  </div>
+  <div class="same" id="jx-note"></div>
 </div>
 
 <div class="card">
-  <h2>Your panel</h2>
-  <p class="hint">Set these to your practice and the figure below is yours rather than a generic one.</p>
+  <h2>The two packages</h2>
+  <p class="hint">Grouped the way a spine practice actually runs: one package for the patient you
+  treat without surgery, one for the patient you operate on. Each line is a 30 day supply at the
+  program&rsquo;s pack size, with the practice share for that line. These are what the program
+  carries, not a suggestion about what to write.</p>
+  <div class="pk">
+    <div class="pkg">
+      <div class="top">Non-surgical patient<span>every month on treatment</span></div>
+      <table id="t-core"></table>
+    </div>
+    <div class="pkg">
+      <div class="top">Surgical patient<span>first month, then the package on the left</span></div>
+      <table id="t-surg"></table>
+    </div>
+  </div>
+</div>
 
-  <label class="ctl" for="pat">Work comp patients on treatment in a given month</label>
-  <input id="pat" type="number" min="0" value="20" oninput="calc()">
+<div class="card">
+  <h2>Your assumptions</h2>
+  <p class="hint">Three numbers, all yours to set.</p>
+  <div class="assume">
+    <div><label class="ctl">Work comp patients a month</label>
+      <input id="pat" type="number" min="0" value="20" oninput="calc()"></div>
+    <div><label class="ctl">Share who are surgical</label>
+      <input id="surg" type="number" min="0" max="100" value="40" oninput="calc()"> %</div>
+    <div><label class="ctl">Months a patient stays on treatment</label>
+      <input id="mos" type="number" min="1" max="12" value="3" oninput="calc()"></div>
+  </div>
 
-  <label class="ctl" style="margin-top:18px;" for="pa">Share of them whose claim is Pennsylvania
-    &mdash; <b class="hl" id="pa-lbl">35%</b></label>
-  <input id="pa" type="range" min="0" max="100" value="35" oninput="calc()">
-  <div class="scale"><span>all Delaware</span><span>half and half</span><span>all Pennsylvania</span></div>
+  <table class="ramp" id="ramp"></table>
 
   <div class="result">
-    <div class="lbl" style="font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.6px;">Practice share</div>
-    <div class="big" id="out">$10,900</div>
-    <div class="sm" id="outyr">$130,800 a year</div>
-    <div class="bar"><div class="de" id="bar-de">Delaware</div><div class="pa" id="bar-pa">Pennsylvania</div></div>
+    <div style="font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.6px;">Practice share once refills have stacked</div>
+    <div class="big" id="out">&mdash;</div>
+    <div class="sm" id="outyr"></div>
     <div class="brk" id="brk"></div>
   </div>
-
-  <p class="note" id="cross"></p>
-</div>
-
-<div class="card">
-  <h2>Making the mix exact</h2>
-  <p class="hint" style="margin-bottom:0;">The share above is the one number here that is still an
-  estimate, and it is the one that moves the figure most. It is on paperwork you already hold:
-  pull your last twenty work comp patients and count how many carry a Pennsylvania claim. Five
-  minutes, and the number above stops being an approximation and becomes your practice&rsquo;s.
-  Tell us what you find and we will set it.</p>
+  <p class="hint" style="margin:12px 0 0;">Month one is new patients only. The figure climbs as
+  refills stack behind them and levels off once the first group finishes treatment.</p>
 </div>
 
 <p class="foot">
 Private, prepared for one practice, and not for distribution.
 Reimbursement is the Delaware and Pennsylvania workers&rsquo; compensation <b>pharmacy</b> fee
-schedules as published in the Optum Workers&rsquo; Compensation Pharmacy Resource Guide, March 2026.
-Medication prices and acquisition costs are the PDRx formulary. Claim purchase fees are the
-medication, a $5.00 dispense fee and $8.50 shipping, deducted from collections, which average about
-sixty days. The practice is accountable for the cost of goods and the fees on every fill.<br><br>
+schedules as published in the Optum Workers&rsquo; Compensation Pharmacy Resource Guide, March 2026:
+Delaware pays average wholesale price less 38 percent plus $4.10, Pennsylvania pays average
+wholesale price plus 10 percent. Medication prices and acquisition costs are the PDRx formulary.
+Claim purchase fees are the medication, a $5.00 dispense fee and $8.50 shipping, deducted from
+collections, which average about sixty days. The practice is accountable for the cost of goods and
+the fees on every fill. Net income is divided evenly.<br><br>
 This is arithmetic on published schedules and a good-faith estimate, not a promise of an amount.
 The carrier decides what it pays and when. The program is 100 percent mail order: you prescribe,
 and an independent licensed mail-order pharmacy fills and ships to the patient. Nothing is
-dispensed in your office. MDconcierge is not a pharmacy and does not practice medicine.
-<b>Nothing here is a recommendation about how to treat any patient, or about which patients to
-see.</b> What to prescribe, for whom, and in what quantity is yours alone. Clinical questions go to
-the pharmacist.
+dispensed in your office. <b>MDconcierge is not a pharmacy and does not practice medicine.</b>
+Nothing in this document is a recommendation about how to treat any patient. What to prescribe, for
+whom, and in what quantity is yours alone. Clinical questions go to the pharmacist.
 </p>
 
 </div>
 
 <script>
-// Delaware and Pennsylvania on the same five-product month, PDRx formulary, 0.5 x (C - G).
-// Figures are fixed here on purpose: this page is shown on a phone and screenshotted, so it must
-// not depend on a live query that might not answer.
-var DE={c:1014.84,g:184.57,net:415.13}, PA={c:1764.15,g:184.57,net:789.79};
+// PDRx formulary, spine packages. AWP and acquisition cost per line; everything else is derived,
+// so the jurisdiction toggle reprices the whole page rather than swapping a stored number.
+var FEE = 5.00 + 8.50;                      // dispense fee plus shipping, per fill
+var CORE = [
+  {cat:'Anti-inflammatory',  p:'Meloxicam 15mg · 30',        awp:145.34,  cost:0.57},
+  {cat:'Muscle relaxant',    p:'Cyclobenzaprine 10mg · 60',  awp:69.45,   cost:1.50},
+  {cat:'Neuropathic',        p:'Gabapentin 300mg · 60',      awp:80.51,   cost:3.60},
+  {cat:'Stomach protection', p:'Omeprazole 20mg · 30',       awp:129.01,  cost:2.40},
+  {cat:'Topical',            p:'Diclofenac Gel 3% · 100gm',  awp:1179.46, cost:109.00}
+];
+var POSTOP = [
+  {cat:'Stool softener', p:'Laxacin 50mg/8.6mg · 60', awp:118.20, cost:10.50},
+  {cat:'Anti-nausea',    p:'Ondansetron 4mg · 30',    awp:743.35, cost:2.10}
+];
+var SCHED = { DE:{m:0.62, f:4.10, n:'Delaware'}, PA:{m:1.10, f:0, n:'Pennsylvania'} };
+var JX = 'MIX', SHARE = 0.30;
+
+function rate(){                            // the fee schedules are linear in AWP, so blending the
+  if(JX==='DE') return {m:SCHED.DE.m, f:SCHED.DE.f};   // multipliers gives the same answer as
+  if(JX==='PA') return {m:SCHED.PA.m, f:SCHED.PA.f};   // pricing each patient on his own state
+  return {m:(1-SHARE)*SCHED.DE.m + SHARE*SCHED.PA.m, f:(1-SHARE)*SCHED.DE.f};
+}
 function money(n){return '$'+Math.round(n).toLocaleString();}
+function share(r){ var q=rate(); return 0.5*((r.awp*q.m + q.f) - r.cost - FEE); }
+function sum(list){ var t=0; for(var i=0;i<list.length;i++) t+=share(list[i]); return t; }
+
+function drawPkg(id, list, extra){
+  var rows='', all=list.concat(extra||[]);
+  for(var i=0;i<all.length;i++){
+    var r=all[i];
+    rows += '<tr><td><div class="cat">'+r.cat+'</div>'+r.p+'</td><td class="n">'+money(share(r))+'</td></tr>';
+  }
+  rows += '<tr class="sum"><td>'+all.length+' fills</td><td class="n">'+money(sum(all))+'</td></tr>';
+  document.getElementById(id).innerHTML = rows;
+}
+
 function calc(){
   var pat=parseFloat(document.getElementById('pat').value)||0;
-  var x=(parseFloat(document.getElementById('pa').value)||0)/100;
-  document.getElementById('pa-lbl').textContent=Math.round(x*100)+'%';
-  var dePat=pat*(1-x), paPat=pat*x;
-  var deRev=dePat*DE.net, paRev=paPat*PA.net, tot=deRev+paRev;
-  document.getElementById('out').textContent=money(tot);
-  document.getElementById('outyr').textContent=money(tot*12)+' a year';
-  var pct = tot>0 ? paRev/tot : 0;
-  var bd=document.getElementById('bar-de'), bp=document.getElementById('bar-pa');
-  bd.style.width=((1-pct)*100)+'%'; bp.style.width=(pct*100)+'%';
-  bd.textContent=(1-pct)>0.14 ? 'Delaware '+Math.round((1-pct)*100)+'%' : '';
-  bp.textContent=pct>0.14 ? 'Pennsylvania '+Math.round(pct*100)+'%' : '';
+  var sx=(parseFloat(document.getElementById('surg').value)||0)/100;
+  var mos=Math.max(1,parseFloat(document.getElementById('mos').value)||1);
+  drawPkg('t-core', CORE); drawPkg('t-surg', CORE, POSTOP);
+
+  var core=sum(CORE), surg=sum(CORE.concat(POSTOP));
+  var m1 = pat*sx*surg + pat*(1-sx)*core;   // a surgical patient carries the extras in month one
+  var rf = pat*core;                        // and drops to the same package for every refill
+  var q=rate();
+  var billed=function(list){var t=0;for(var i=0;i<list.length;i++)t+=list[i].awp*q.m+q.f;return t;};
+  var bill1 = pat*sx*billed(CORE.concat(POSTOP)) + pat*(1-sx)*billed(CORE);
+  var billR = pat*billed(CORE);
+
+  // Accumulate every month, then render only the rows worth showing. These were one loop and
+  // the skip that shortened the table also skipped months out of the annual total.
+  var vals=[], bills=[], fillsBy=[];
+  for(var m=1;m<=12;m++){
+    var k=Math.min(m,mos);
+    vals.push(m1+(k-1)*rf);
+    bills.push(bill1+(k-1)*billR);
+    fillsBy.push(pat*(sx*(CORE.length+POSTOP.length)+(1-sx)*CORE.length)+(k-1)*pat*CORE.length);
+  }
+  var year=0; for(var i=0;i<12;i++) year+=vals[i];
+  var steady=vals[11];
+
+  var show=[]; for(var m=1;m<mos && m<=12;m++) show.push(m);   // the climb
+  show.push(Math.min(mos,12));                                  // and the level
+  var html='<tr><th>Month</th><th class="n">New</th><th class="n">Refilling</th><th class="n">Fills</th><th class="n">Collected</th><th class="n">Practice share</th></tr>';
+  for(var j=0;j<show.length;j++){
+    var m=show[j], k=Math.min(m,mos), last=(j===show.length-1);
+    html+='<tr'+(last?' class="steady"':'')+'><td>'+(last&&mos<12?m+' onward':'Month '+m)+
+      '</td><td class="n">'+Math.round(pat)+'</td><td class="n">'+Math.round(pat*(k-1))+
+      '</td><td class="n">'+Math.round(fillsBy[m-1])+'</td><td class="n">'+money(bills[m-1])+
+      '</td><td class="n">'+money(vals[m-1])+'</td></tr>';
+  }
+  document.getElementById('ramp').innerHTML=html;
+  document.getElementById('out').textContent=money(steady);
+  document.getElementById('outyr').textContent=money(year)+' across the first twelve months';
   document.getElementById('brk').innerHTML=
-    Math.round(dePat)+' Delaware patients at '+money(DE.net)+' = '+money(deRev)+' &middot; '+
-    Math.round(paPat)+' Pennsylvania patients at '+money(PA.net)+' = '+money(paRev)+
-    '<br>Collected '+money(dePat*DE.c+paPat*PA.c)+' a month &middot; medication and fees '+
-    money(pat*DE.g)+' &middot; net split evenly with the program';
-  // The floor and ceiling matter more than any single guess at the mix.
-  document.getElementById('cross').innerHTML=
-    'A Delaware-only estimate at '+Math.round(pat)+' patients a month would put this at <b class="hl">'+
-    money(pat*DE.net)+'</b>. That is the floor, and it is low for your practice, because it prices '+
-    'every patient as though no Pennsylvania claim ever came through the door. The ceiling, every '+
-    'claim Pennsylvania, is <b class="hl">'+money(pat*PA.net)+'</b>. Your real figure sits between '+
-    'them, at whatever your actual mix turns out to be.';
+    'Non-surgical package '+money(core)+' a patient a month &middot; surgical first month '+
+    money(surg)+' &middot; '+Math.round(sx*100)+'% surgical &middot; '+mos+' months on treatment';
+
+  var n=document.getElementById('jx-note');
+  if(JX==='MIX'){
+    n.innerHTML='Priced at <b>'+Math.round((1-SHARE)*100)+'% Delaware and '+Math.round(SHARE*100)+
+      '% Pennsylvania</b>. Delaware alone would put this at <b>'+money(steady*jxAt('DE')/jxAt())+
+      '</b> a month and Pennsylvania alone at <b>'+money(steady*jxAt('PA')/jxAt())+
+      '</b>. The jurisdiction is fixed by the employer&rsquo;s coverage long before the patient '+
+      'reaches you, so it is a fact about your panel rather than anything you choose.';
+  } else {
+    n.innerHTML='Every patient priced on the <b>'+SCHED[JX].n+'</b> schedule. If your panel carries '+
+      'claims from both states, the mix is the accurate one.';
+  }
+}
+// average practice share per core fill under a given jurisdiction, used only for the comparison line
+function jxAt(which){
+  var save=JX, out;
+  if(which) JX=which;
+  out=sum(CORE);
+  JX=save; return out;
+}
+function setJx(k){
+  JX=k;
+  var b=document.querySelectorAll('.jx button');
+  for(var i=0;i<b.length;i++) b[i].classList.toggle('on', b[i].dataset.jx===k);
+  document.getElementById('mixrow').classList.toggle('show', k==='MIX');
+  calc();
+}
+function setShare(v){
+  SHARE=(parseFloat(v)||0)/100;
+  document.getElementById('pa-lbl').textContent=Math.round(SHARE*100)+'%';
+  calc();
 }
 calc();
 </script>
