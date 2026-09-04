@@ -153,6 +153,19 @@ body.dead .wrap,body.dead .gate,body.dead #howto-body{display:none !important;}
   <div class="note">Please keep this one to yourself. It is not confidential, it is just not for circulating.</div>
 </section>
 
+<section class="step locked">
+  <span class="tag">Because you are on the line</span>
+  <h2>Delaware and Pennsylvania, side by side</h2>
+  <p>Some of your work comp patients are on Delaware claims and some are on Pennsylvania claims, and the two states pay very differently for identical medication. This one is specific to you; a practice in the middle of either state has no use for it.</p>
+  <ol class="how">
+    <li><b>The same five prescriptions are priced twice</b>, once on each state's workers' compensation pharmacy fee schedule. Same pack sizes, same pharmacy, same cost of goods. Only the schedule changes.</li>
+    <li><b>Set two numbers.</b> How many work comp patients are on treatment in a given month, and what share of them carry a Pennsylvania claim.</li>
+    <li><b>It shows the floor and the ceiling</b> as well as the blend, so you can see the range you are actually in rather than one number that depends on a guess.</li>
+  </ol>
+  <a class="btn ghost" id="mix" href="pdrx-mix.html">Open the two state comparison</a>
+  <div class="note">Nothing on it is a recommendation about treatment or about which patients to see. The jurisdiction is set by the employer's coverage long before the patient reaches you.</div>
+</section>
+
 <h3>The paperwork</h3>
 <div class="docs" id="docs"></div>
 
@@ -317,6 +330,7 @@ body.dead .wrap,body.dead .gate,body.dead #howto-body{display:none !important;}
     if(d.p){
       // The formulary tool identifies him from this and mints his own view.
       document.getElementById('formulary').href='pdrx-model.html?p='+encodeURIComponent(d.p);
+      var mx=document.getElementById('mix'); if(mx) mx.href='pdrx-mix.html?p='+encodeURIComponent(d.p);
     }
     if(d.intake){
       document.getElementById('intake').href='pdrx-intake.html#d='+d.intake;
