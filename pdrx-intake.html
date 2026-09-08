@@ -58,6 +58,13 @@ input.bad{border-color:var(--err);background:var(--err-bg);}
 .prog b{display:block;font-size:14.5px;color:var(--navy);}
 
 .foot{position:sticky;bottom:0;background:linear-gradient(to top,var(--cream) 72%,rgba(246,249,253,0));padding:18px 0 22px;}
+.rep-block{border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:0 10px 10px 0;
+  background:#fff;padding:12px 16px;margin:18px auto 0;max-width:420px;text-align:left;}
+.rep-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--faint,#8B97AC);font-weight:700;}
+.rep-name{font-size:15px;font-weight:700;color:var(--ink);margin-top:2px;}
+.rep-org{font-size:13px;color:var(--muted);}
+.rep-con{font-size:12.5px;color:var(--muted);margin-top:5px;}
+.rep-con a{color:var(--blue);text-decoration:none;font-weight:600;}
 .submit{background:var(--blue);color:#fff;font-family:inherit;font-size:15.5px;font-weight:700;border:none;border-radius:9px;padding:15px 30px;cursor:pointer;width:100%;}
 .submit:hover{background:#264c8a;}
 .submit:disabled{opacity:.55;cursor:not-allowed;}
@@ -80,6 +87,16 @@ input.bad{border-color:var(--err);background:var(--err-bg);}
   <h1>New account intake</h1>
   <p class="sub">Everything needed to open the account. It saves as you type, so you can stop and come back on the same device. Add only as many locations and providers as you actually have.</p>
   <div class="saved" id="saved"></div>
+  <!-- Whose form this is. It travels with the intake to the pharmacy, so the account is never
+       separated from the person who opened it. -->
+  <div class="rep-block">
+    <div class="rep-lbl">Submitted by</div>
+    <div class="rep-name">Eric Weiscarger</div>
+    <div class="rep-org">MDconcierge</div>
+    <div class="rep-con"><a href="tel:+15708177569">(570) 817-7569</a>
+      &nbsp;&middot;&nbsp; <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a>
+      &nbsp;&middot;&nbsp; mdconcierge.net</div>
+  </div>
 </header>
 
 <div id="form">
