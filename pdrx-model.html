@@ -71,9 +71,261 @@
     body{ background:#fff; } #conf{ background:#08214C !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     .noprint{ display:none !important; } .tablewrap{ max-height:none; } #wm div{ color:rgba(8,33,76,.07); }
   }
+
+  .sbtabs{ display:flex; gap:6px; margin:0 0 16px; border-bottom:1px solid var(--line);
+    flex-wrap:wrap; align-items:flex-end; }
+  .sbt{ padding:12px 20px; border:none; background:none; font-family:inherit; font-size:17px;
+    font-weight:800; letter-spacing:.2px; color:#8a94a4; cursor:pointer;
+    border-bottom:3px solid transparent; margin-bottom:-1px; }
+  .sbt:hover{ color:var(--navy); }
+  .sbt.on{ color:var(--navy); border-bottom-color:var(--navy); }
+  .sbcta{ display:flex; align-items:center; justify-content:space-between; gap:14px;
+    width:100%; margin:0 0 18px; padding:15px 20px; cursor:pointer; text-align:left;
+    font-family:inherit; font-size:15.5px; font-weight:800; letter-spacing:.4px;
+    color:#fff; background:var(--navy); border:none; border-radius:10px; }
+  .sbcta:hover{ background:#0d2c63; }
+  .sbcta .ar{ font-size:20px; font-weight:400; opacity:.85; }
 </style>
 </head>
 <body>
+<script>
+function sbTab(n){
+  document.getElementById('sb-tab1').style.display = n===1 ? '' : 'none';
+  document.getElementById('sb-tab2').style.display = n===2 ? '' : 'none';
+  var b=document.querySelectorAll('.sbt');
+  for(var i=0;i<b.length;i++) b[i].classList.toggle('on', i===n-1);
+  var c=document.querySelector('.sbcta'); if(c) c.style.display = n===1 ? '' : 'none';
+}
+function sbInit(){
+/* ---- scenario builder, injected as tab 2 ---- */
+(function(){
+  var PANE=document.getElementById('sb-tab2');
+  if(!PANE || PANE.dataset.ready) return;
+  PANE.dataset.ready='1';
+  var st=document.createElement('style'); st.textContent="#sb-tab2 *, #sb-tab2 *::before, #sb-tab2 *::after{box-sizing:border-box;margin:0;padding:0;}\n#sb-tab2{--navy:#08214C;--blue:#2F5EA8;--cream:#F6F9FD;--border:#DCE6F2;--ink:#14213D;\n  --muted:#5C6B85;--faint:#8B97AC;--green:#1e7a4d;--gold:#C8922A;--wash:#FBF3E2;}\n#sb-tab2{font-family:Inter,system-ui,-apple-system,'Segoe UI',sans-serif;background:var(--cream);color:var(--ink);line-height:1.55;}\n#sb-tab2 .wrap{max-width:1040px;margin:0 auto;padding:22px 20px 70px;}\n#sb-tab2 .pre{background:#FBF3E2;border:1px solid var(--gold);border-radius:9px;padding:10px 14px;font-size:12.5px;color:#8A6414;margin-bottom:18px;}\n#sb-tab2 h1{font-family:Georgia,serif;color:var(--navy);font-size:25px;margin:0 0 4px;}\n#sb-tab2 .sub{color:var(--muted);font-size:14px;margin-bottom:18px;}\n#sb-tab2 .card{background:#fff;border:1px solid var(--border);border-radius:13px;padding:17px 19px;margin-bottom:16px;}\n#sb-tab2 .card h2{font-size:11.5px;text-transform:uppercase;letter-spacing:1px;color:var(--navy);margin:0 0 3px;}\n#sb-tab2 .hint{font-size:12.5px;color:var(--muted);margin:0 0 13px;}\n#sb-tab2 .row{display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;}\n#sb-tab2 label.c{display:block;font-size:11.5px;color:var(--muted);font-weight:600;margin-bottom:4px;}\n#sb-tab2 select, #sb-tab2 input{padding:8px 10px;border:1px solid var(--border);border-radius:8px;font-size:14px;color:var(--ink);background:#fff;font-family:inherit;}\n#sb-tab2 input[type=number]{width:84px;}\n#sb-tab2 select{min-width:150px;}\n#sb-tab2 input[type=range]{width:230px;padding:0;}\n#sb-tab2 .two{display:flex;gap:16px;flex-wrap:wrap;}\n#sb-tab2 .pt{flex:1 1 420px;border:2px solid var(--border);border-radius:11px;overflow:hidden;cursor:pointer;background:#fff;}\n#sb-tab2 .pt.sel{border-color:var(--blue);}\n#sb-tab2 .pt .h{background:#7C8AA3;color:#fff;padding:9px 14px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center;}\n#sb-tab2 .pt.sel .h{background:var(--navy);}\n#sb-tab2 .pt .h span{font-weight:400;opacity:.85;font-size:11.5px;}\n#sb-tab2 .pt .b{padding:12px 14px;min-height:74px;}\n#sb-tab2 .pick div{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;padding:5px 0;border-bottom:1px solid #EEF3F9;}\n#sb-tab2 .pick .x{border:none;background:none;color:#b0453a;cursor:pointer;font-size:15px;line-height:1;padding:0 4px;}\n#sb-tab2 .pick .none{color:var(--faint);font-style:italic;border:none;justify-content:flex-start;}\n#sb-tab2 .tot{border-top:1px solid var(--border);margin-top:9px;padding-top:9px;font-size:13px;display:flex;justify-content:space-between;}\n#sb-tab2 .tot b{color:var(--navy);}\n#sb-tab2 .res{background:var(--navy);color:#fff;border-radius:12px;padding:17px 19px;}\n#sb-tab2 .res .big{font-size:37px;font-weight:800;line-height:1.05;}\n#sb-tab2 .res .sm{font-size:14px;opacity:.85;}\n#sb-tab2 .res .brk{font-size:12px;opacity:.72;margin-top:8px;line-height:1.65;}\n#sb-tab2 table{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px;}\n#sb-tab2 th{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--faint);text-align:left;padding:0 8px 6px;border-bottom:1px solid var(--border);}\n#sb-tab2 th.n, #sb-tab2 td.n{text-align:right;font-variant-numeric:tabular-nums;}\n#sb-tab2 th.s{cursor:pointer;user-select:none;}\n#sb-tab2 th.s:hover{color:var(--navy);}\n#sb-tab2 td{padding:6px 8px;border-bottom:1px solid #EEF3F9;}\n#sb-tab2 tr.cat td{background:#F0F4FA;font-weight:800;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--navy);}\n#sb-tab2 tr.lvl td{background:var(--wash);font-weight:700;color:#8A6414;}\n#sb-tab2 tr.on td{background:#EEF6FF;}\n#sb-tab2 .how{background:#fff;border-left:4px solid var(--blue);}\n#sb-tab2 .how h3:first-of-type{margin-top:4px;padding-top:0;border-top:none;}\n#sb-tab2 .how ol{margin:0 0 4px 18px;}\n#sb-tab2 .how li{font-size:13.5px;color:var(--ink);margin-bottom:7px;padding-left:3px;}\n#sb-tab2 .how h3{font-size:11.5px;text-transform:uppercase;letter-spacing:1px;color:var(--navy);margin:15px 0 7px;padding-top:13px;border-top:1px solid var(--border);}\n#sb-tab2 .how p{font-size:13.5px;color:var(--ink);margin-bottom:8px;}\n#sb-tab2 .how .cav{font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:9px;margin-top:11px;}\n#sb-tab2 .say{font-size:17px;line-height:2.05;color:var(--ink);max-width:640px;}\n#sb-tab2 .say input{width:62px;font-size:16px;font-weight:700;color:var(--navy);text-align:center;padding:5px 4px;\n  border:none;border-bottom:2px solid var(--blue);border-radius:0;background:#F4F8FE;margin:0 2px;}\n#sb-tab2 .say input:focus{outline:none;background:#E8F1FE;}\n#sb-tab2 .dv{margin:13px 0 0;padding:10px 13px;background:#EEF6FF;border-left:3px solid var(--blue);\n  border-radius:0 7px 7px 0;font-size:13.5px;color:var(--ink);line-height:1.6;}\n#sb-tab2 .swap{margin-top:10px;font-size:12.5px;color:var(--faint);}\n#sb-tab2 .lk{border:none;background:none;padding:0;font:inherit;color:var(--blue);cursor:pointer;text-decoration:underline;}\n#sb-tab2 h3.sec{font-size:11.5px;text-transform:uppercase;letter-spacing:1px;color:var(--navy);\n  margin:22px 0 4px;padding-top:15px;border-top:1px solid var(--border);}\n#sb-tab2 .cases{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;}\n#sb-tab2 .case{flex:1 1 300px;border:1px solid var(--border);border-radius:12px;padding:14px 16px;background:#fff;}\n#sb-tab2 .case.lead{flex:1 1 300px;background:var(--navy);border-color:var(--navy);color:#fff;}\n#sb-tab2 .case .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.9px;color:var(--faint);font-weight:700;}\n#sb-tab2 .case.lead .k{color:#9FB6DA;}\n#sb-tab2 .case .big{font-size:38px;font-weight:800;line-height:1.08;margin-top:3px;}\n#sb-tab2 .case .mid{font-size:25px;font-weight:800;line-height:1.15;margin-top:3px;color:var(--navy);}\n#sb-tab2 .case .sm{font-size:12.5px;opacity:.8;margin-top:2px;}\n#sb-tab2 .case .as{font-size:12px;margin-top:11px;padding-top:9px;border-top:1px solid var(--border);color:var(--muted);}\n#sb-tab2 .case .as div{display:flex;justify-content:space-between;align-items:center;padding:3px 0;}\n#sb-tab2 .case .as input{width:52px;padding:3px 4px;text-align:center;font-weight:700;font-size:13px;\n  color:var(--navy);border:1px solid var(--border);border-radius:6px;background:#fff;}\n#sb-tab2 .case .as b{font-weight:700;color:var(--navy);}\n#sb-tab2 .case.lead .as{border-top-color:#2A4676;color:#9FB6DA;}\n#sb-tab2 .case.lead .as b{color:#fff;}\n#sb-tab2 .case.lead .as input{color:#fff;background:#16336A;border-color:#2A4676;}\n#sb-tab2 .unit{margin-top:13px;padding:10px 13px;background:#F0F7F2;border-left:3px solid var(--green);\n  border-radius:0 7px 7px 0;font-size:13.5px;color:var(--ink);}\n#sb-tab2 .cash{border-top:1px solid var(--border);padding-top:10px;}\n#sb-tab2 .pr{padding:4px 11px;margin-left:7px;border:1px solid var(--border);border-radius:7px;background:#fff;\n  color:var(--blue);font-weight:600;font-size:12px;cursor:pointer;font-family:inherit;vertical-align:middle;}\n#sb-tab2 .pr:hover{background:#F0F6FF;}\n#sb-tab2 .stamp{display:none;}\n@media print{#sb-tab2{background:#fff;}\n#sb-tab2 .wrap{max-width:none;padding:0;}\n#sb-tab2 .pre, #sb-tab2 .pr, #sb-tab2 .swap, #sb-tab2 #q, #sb-tab2 #ftable, #sb-tab2 .hint, #sb-tab2 input[type=range]{display:none!important;}\n#sb-tab2 .how ol{display:none!important;}\n#sb-tab2 .stamp{display:block;font-size:12px;color:#444;border:1px solid #bbb;border-radius:8px;\n    padding:9px 12px;margin-bottom:14px;line-height:1.7;}\n#sb-tab2 .card{border:1px solid #bbb;break-inside:avoid;page-break-inside:avoid;}\n#sb-tab2 .case.lead, #sb-tab2 .res{-webkit-print-color-adjust:exact;print-color-adjust:exact;}\n#sb-tab2 .say input{border-bottom:1px solid #666;background:none;}\n#sb-tab2 a[href]:after{content:\"\";}}\n#sb-tab2 .seg{display:flex;gap:6px;}\n#sb-tab2 .seg .md{padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;}\n#sb-tab2 .seg .md.on{background:var(--navy);border-color:var(--navy);color:#fff;}\n#sb-tab2 .note{font-size:12px;color:var(--muted);margin-top:11px;line-height:1.6;}";
+  document.head.appendChild(st);
+  PANE.innerHTML="<div class=\"stamp\" id=\"sb-stamp\"></div>\n<p class=\"sub\">Build your two patients, say how many you see, and let the refills stack.\n  <button type=\"button\" class=\"pr\" onclick=\"window.print()\">Print</button>\n</p>\n\n<div class=\"card how\" id=\"sb-how\"><div class=\"howb\">\n  <ol>\n    <li><b>Pick your state.</b> Every figure on the page is priced on that state's workers' compensation pharmacy fee schedule. It is the single biggest reason two practices doing identical work see different numbers.</li>\n    <li><b>Build your two patients.</b> Click <i>Non-surgical patient</i>, then tick the medications you would normally write for one, in the formulary at the bottom. Click <i>Surgical patient</i> and tick the extras a post-operative patient gets on top of that. Both patients are yours to define; nothing is prefilled and nothing is suggested.</li>\n    <li><b>Say how many you see.</b> Either how many arrive each month, or how many you have on treatment right now. The page converts one to the other so you can see both.</li>\n    <li><b>Set how long they stay on treatment.</b> This is the refill stack, and it is the largest lever on the page.</li>\n  </ol>\n\n  <h3>The logic underneath</h3>\n  <p>The non-surgical package is what a patient receives <b>every month</b> they are on treatment. The surgical list is <b>first month only</b>, on top of that same package, because those are the post-operative items.</p>\n  <p>So a patient you started in January is still filling in March. At three months on treatment, three months of arrivals are all filling at once, which is why the steady-state figure is roughly three times the first month. The month by month table below shows it building.</p>\n  <p><b>Practice share</b> is what is left after the pharmacy is paid: what the carrier pays, less the cost of goods, then split evenly, and the cost of goods includes a $5.00 dispensing fee on every medication plus actual shipping of $7 to $10, charged once for the patient rather than once for each medication. It is collections less cost of goods, dispensing and shipping. What a carrier actually settles is set further down, separately for surgical and non-surgical claims, and the practice carries the cost of goods and the fees on every fill whatever the carrier pays. Carriers decide what they pay and when, so treat every figure here as a good-faith estimate on published schedules rather than a quote.</p>\n  <p class=\"cav\">MDconcierge is not a pharmacy and does not practise medicine. Nothing here recommends a medication or suggests what to prescribe. The lists are yours to build.</p>\n</div></div>\n\n<div class=\"card\">\n  <h2>Jurisdiction</h2>\n  <p class=\"hint\">Licensed in all 50 states. Picking a state sets the multiplier from its workers' compensation pharmacy fee schedule.</p>\n  <div class=\"row\">\n    <div style=\"display:none;\"><select id=\"sb-st\" onchange=\"SB.onState()\"></select></div>\n    <div id=\"sb-manual\" style=\"display:none;\"><label class=\"c\">AWP multiplier</label><input id=\"sb-mult\" type=\"number\" step=\"0.01\" value=\"1.00\" oninput=\"SB.recalc()\"></div>\n  </div>\n</div>\n\n<div class=\"card\">\n  <h2>Create patient</h2>\n  <p class=\"hint\">Click the patient you want to build, then tick medications in the formulary below and they drop into that one. The X removes a line. <b>Non-surgical repeats every month.</b> <b>Surgical is the first month only</b>, on top of the non-surgical package.</p>\n  <div class=\"two\">\n    <div class=\"pt sel\" data-box=\"core\"><div class=\"h\">Non-surgical patient <span>every month on treatment</span></div>\n      <div class=\"b\"><div id=\"sb-ln-core\" class=\"pick\"></div>\n        <div class=\"tot\"><span id=\"sb-n-core\"></span><b id=\"sb-v-core\">$0</b></div></div></div>\n    <div class=\"pt\" data-box=\"post\"><div class=\"h\">Surgical patient <span>extras in the first month, on top of the package</span></div>\n      <div class=\"b\"><div id=\"sb-ln-post\" class=\"pick\"></div>\n        <div class=\"tot\"><span id=\"sb-n-post\"></span><b id=\"sb-v-post\">$0</b></div></div></div>\n  </div>\n</div>\n\n<div class=\"card\">\n  <h2>How many, and for how long</h2>\n  <p class=\"hint\">Fill in the blanks the way you would say it out loud.</p>\n\n  <p class=\"say\"><span id=\"sb-w1\">Each month I see</span>\n    <input id=\"sb-ns\" type=\"number\" min=\"0\" value=\"8\" oninput=\"SB.recalc()\"> surgical\n    and <input id=\"sb-nn\" type=\"number\" min=\"0\" value=\"12\" oninput=\"SB.recalc()\"> non-surgical\n    <span id=\"sb-w2\">new workers&rsquo; compensation patients,</span>\n    and they stay on medication for about\n    <input id=\"sb-mo\" type=\"number\" min=\"1\" max=\"12\" value=\"3\" oninput=\"SB.recalc()\"> months.</p>\n  <input id=\"sb-mo-r\" type=\"range\" min=\"1\" max=\"12\" value=\"3\" oninput=\"document.getElementById('sb-mo').value=this.value;SB.recalc();\" style=\"width:100%;max-width:430px;margin:2px 0 0;\">\n\n  <p class=\"dv\" id=\"sb-derived\"></p>\n\n  <h3 class=\"sec\">What the carrier actually pays</h3>\n  <p class=\"hint\">Every one of these patients gets the medication, so the question is never how many sign up. It is what share of the billed dollars a carrier settles, and that runs differently for a surgical claim than a non-surgical one. Change the percentages in either box.</p>\n  <p class=\"note\">The rate follows the patient, not the pill: a surgical patient is billed at the surgical rate on his first month and on every refill after it.</p>\n  <p class=\"swap\">Counting it the other way round?\n    <button type=\"button\" class=\"lk\" data-mode=\"tot\">I would rather enter the patients I have on treatment right now</button>\n    <button type=\"button\" class=\"lk\" data-mode=\"new\" style=\"display:none;\">I would rather enter how many new patients arrive each month</button></p>\n  <table id=\"sb-ramp\"></table>\n  <div class=\"cases\">\n    <div class=\"case lead\">\n      <div class=\"k\">Expected</div>\n      <div class=\"big\" id=\"sb-c-md\">&mdash;</div>\n      <div class=\"sm\" id=\"sb-y-md\"></div>\n      <div class=\"as\">\n        <div><span>Surgical claims pay</span>\n          <b><input id=\"sb-rs-md\" type=\"number\" min=\"0\" max=\"100\" value=\"95\" oninput=\"SB.recalc()\">%</b></div>\n        <div><span>Non-surgical claims pay</span>\n          <b><input id=\"sb-rn-md\" type=\"number\" min=\"0\" max=\"100\" value=\"80\" oninput=\"SB.recalc()\">%</b></div>\n      </div>\n    </div>\n    <div class=\"case\">\n      <div class=\"k\">Upside</div>\n      <div class=\"big\" id=\"sb-c-hi\">&mdash;</div>\n      <div class=\"sm\" id=\"sb-y-hi\"></div>\n      <div class=\"as\">\n        <div><span>Surgical claims pay</span>\n          <b><input id=\"sb-rs-hi\" type=\"number\" min=\"0\" max=\"100\" value=\"100\" oninput=\"SB.recalc()\">%</b></div>\n        <div><span>Non-surgical claims pay</span>\n          <b><input id=\"sb-rn-hi\" type=\"number\" min=\"0\" max=\"100\" value=\"90\" oninput=\"SB.recalc()\">%</b></div>\n      </div>\n    </div>\n  </div>\n  <p class=\"unit\" id=\"sb-unit\"></p>\n  <div class=\"res\" style=\"margin-top:14px;\">\n    <div style=\"font-size:11px;opacity:.7;text-transform:uppercase;letter-spacing:.6px;\">How the expected case is built</div>\n    <div class=\"brk\" id=\"sb-brk\"></div>\n  </div>\n  <p class=\"note\" id=\"sb-cmp\"></p>\n  <p class=\"note cash\"><b>On timing.</b> None of this arrives on day one. There is onboarding before the first script is written, and a carrier takes its own time to pay it. Read the month figures as the shape of the thing once it is running, not as a calendar.</p>\n</div>\n\n<div class=\"card\">\n  <h2>The full formulary</h2>\n  <p class=\"hint\">Everything the programme carries, by category, priced on the state above. Tick a line to add it to whichever patient is selected.</p>\n  <input id=\"sb-q\" placeholder=\"Search by name, strength or size\" oninput=\"SB.drawTable()\" style=\"width:100%;max-width:420px;\">\n  <div style=\"overflow-x:auto;\"><table id=\"sb-ftable\"></table></div>\n  <p class=\"note\" id=\"sb-fcount\"></p>\n</div>";
+  function GID(id){ id=String(id); return document.getElementById(id.indexOf('sb-')===0 ? id : 'sb-'+id); }
+
+const F_DATA=[{"p":"Ondansetron 4mg · 30","g":"Anti Nausea","r":"Oral","a":743.35,"c":2.1},{"p":"Methylprednisolone DP 4MG · 21","g":"Corticosteroid","r":"Oral","a":34.64,"c":8.61},{"p":"Baclofen 10mg · 60","g":"Muscle Relaxants","r":"Oral","a":148.26,"c":6.6},{"p":"Baclofen 10mg · 90","g":"Muscle Relaxants","r":"Oral","a":222.39,"c":9.9},{"p":"Baclofen 20mg · 60","g":"Muscle Relaxants","r":"Oral","a":307.81,"c":8.7},{"p":"Baclofen 20mg · 90","g":"Muscle Relaxants","r":"Oral","a":461.72,"c":13.05},{"p":"Cyclobenzaprine 10mg · 60","g":"Muscle Relaxants","r":"Oral","a":69.45,"c":1.5},{"p":"Cyclobenzaprine 10mg · 90","g":"Muscle Relaxants","r":"Oral","a":104.17,"c":2.25},{"p":"Cyclobenzaprine 7.5mg · 30","g":"Muscle Relaxants","r":"Oral","a":188.33,"c":21},{"p":"Cyclobenzaprine 7.5mg · 60","g":"Muscle Relaxants","r":"Oral","a":376.66,"c":42},{"p":"Cyclobenzaprine 7.5mg · 90","g":"Muscle Relaxants","r":"Oral","a":564.99,"c":63},{"p":"Metaxaolone 800mg · 90","g":"Muscle Relaxants","r":"Oral","a":902.96,"c":100.8},{"p":"Methocarbamol 500 Mg · 120","g":"Muscle Relaxants","r":"Oral","a":60.95,"c":8.51},{"p":"Methocarbamol 750 Mg · 90","g":"Muscle Relaxants","r":"Oral","a":65.34,"c":7.2},{"p":"Tizanidine cap 4mg · 60","g":"Muscle Relaxants","r":"Oral","a":206.19,"c":16.2},{"p":"Tizanidine cap 4mg · 90","g":"Muscle Relaxants","r":"Oral","a":309.29,"c":24.3},{"p":"Tizanidine cap 6mg · 60","g":"Muscle Relaxants","r":"Oral","a":309.29,"c":15.6},{"p":"Tizanidine cap 6mg · 90","g":"Muscle Relaxants","r":"Oral","a":463.94,"c":23.4},{"p":"Tizanidine tab 4mg · 60","g":"Muscle Relaxants","r":"Oral","a":87.91,"c":3.6},{"p":"Tizanidine tab 4mg · 90","g":"Muscle Relaxants","r":"Oral","a":131.86,"c":5.4},{"p":"Duloxetine 30mg · 30","g":"Neuropathic Agents","r":"Oral","a":235.25,"c":4.8},{"p":"Duloxetine 30mg · 60","g":"Neuropathic Agents","r":"Oral","a":470.5,"c":11.58},{"p":"Duloxetine 60mg · 30","g":"Neuropathic Agents","r":"Oral","a":235.25,"c":5.7},{"p":"Duloxetine 60mg · 60","g":"Neuropathic Agents","r":"Oral","a":470.5,"c":11.58},{"p":"Gabapentin 100mg · 90","g":"Neuropathic Agents","r":"Oral","a":47.65,"c":3.87},{"p":"Gabapentin 300 mg · 90","g":"Neuropathic Agents","r":"Oral","a":120.76,"c":5.4},{"p":"Gabapentin 300mg · 60","g":"Neuropathic Agents","r":"Oral","a":80.51,"c":3.6},{"p":"Gabapentin 400mg · 90","g":"Neuropathic Agents","r":"Oral","a":143.74,"c":7.2},{"p":"Gabapentin 600mg · 90","g":"Neuropathic Agents","r":"Oral","a":227.35,"c":10.8},{"p":"Pregabalin 75mg · 30","g":"Neuropathic Agents","r":"Oral","a":252.82,"c":5.94},{"p":"Pregabalin 75mg · 60","g":"Neuropathic Agents","r":"Oral","a":505.64,"c":11.88},{"p":"Pregabalin 75mg · 90","g":"Neuropathic Agents","r":"Oral","a":758.46,"c":17.82},{"p":"Celecoxib 100mg · 30","g":"Nsaids","r":"Oral","a":138.5,"c":4.5},{"p":"Celecoxib 100mg · 60","g":"Nsaids","r":"Oral","a":276.99,"c":9},{"p":"Celecoxib 200mg · 30","g":"Nsaids","r":"Oral","a":227.17,"c":4.8},{"p":"Celecoxib 200mg · 60","g":"Nsaids","r":"Oral","a":454.35,"c":9.6},{"p":"Ibuprofen/Famotidine 800mg/26.6mg · 90","g":"Nsaids","r":"Oral","a":998,"c":153},{"p":"Meloxicam 15mg · 30","g":"Nsaids","r":"Oral","a":145.34,"c":0.57},{"p":"Meloxicam 7.5mg · 30","g":"Nsaids","r":"Oral","a":95.06,"c":0.51},{"p":"Meloxicam 7.5mg · 60","g":"Nsaids","r":"Oral","a":190.12,"c":1.02},{"p":"Tramadol 50mg · 60","g":"Pain","r":"Oral","a":47.76,"c":0.9},{"p":"Tramadol 50mg · 90","g":"Pain","r":"Oral","a":71.65,"c":1.35},{"p":"Tramadol ER 100mg · 30","g":"Pain","r":"Oral","a":109.16,"c":11.7},{"p":"Tramadol ER 200mg · 30","g":"Pain","r":"Oral","a":180.53,"c":19.5},{"p":"Tramadol ER 300mg · 30","g":"Pain","r":"Oral","a":304.23,"c":28.8},{"p":"Esomeprazole 20mg · 30","g":"Ppi Protectants","r":"Oral","a":270.72,"c":12.6},{"p":"Esomeprazole 40mg · 30","g":"Ppi Protectants","r":"Oral","a":270.72,"c":12.6},{"p":"Omeprazole 20mg · 30","g":"Ppi Protectants","r":"Oral","a":129.01,"c":2.4},{"p":"Omeprazole 20mg · 60","g":"Ppi Protectants","r":"Oral","a":285.02,"c":4.8},{"p":"Rabeprazole 20mg · 30","g":"Ppi Protectants","r":"Oral","a":343.43,"c":19.5},{"p":"Hibiclens · 236ml","g":"Pre/Post surgical combo","r":"Topical","a":5.54,"c":5.42},{"p":"Mupirocin cream 2% · 30gm","g":"Pre/Post surgical combo","r":"Topical","a":415.56,"c":34.79},{"p":"Narcosoft · 30","g":"Pre/Post surgical combo","r":"Oral","a":121.02,"c":13.86},{"p":"Ondansetron 4mg · 30","g":"Pre/Post surgical combo","r":"Oral","a":743.35,"c":2.1},{"p":"Skarjel · 50ml","g":"Pre/Post surgical combo","r":"Topical","a":240.56,"c":49.65},{"p":"Eszopiclone 2mg · 30","g":"Sleep","r":"Oral","a":364.43,"c":3.15},{"p":"Eszopiclone 3mg · 30","g":"Sleep","r":"Oral","a":364.43,"c":3.6},{"p":"Zolpidem 10mg · 30","g":"Sleep","r":"Oral","a":138.76,"c":0.9},{"p":"Zolpidem 5mg · 30","g":"Sleep","r":"Oral","a":138.76,"c":0.87},{"p":"Zolpidem 5mg · 60","g":"Sleep","r":"Oral","a":277.52,"c":1.74},{"p":"Docusate 100mg · 60","g":"Stool Softeners","r":"Oral","a":1.25,"c":0.96},{"p":"Laxacin (docusate/senna) 50mg/8.6mg · 60","g":"Stool Softeners","r":"Oral","a":118.2,"c":10.5},{"p":"Narcosoft · 60","g":"Stool Softeners","r":"Oral","a":242.05,"c":27.72},{"p":"Diclofenac Gel 1% · 100 gm","g":"Topicals","r":"Topical","a":58.35,"c":5.8},{"p":"Diclofenac Gel 1% · 300 gm","g":"Topicals","r":"Topical","a":175.05,"c":17.4},{"p":"Diclofenac Gel 3% · 100gm","g":"Topicals","r":"Topical","a":1179.46,"c":109},{"p":"Diclofenac pump 2% · 112gm","g":"Topicals","r":"Topical","a":2686.38,"c":200.48},{"p":"Diclofenac soln 1.5% · 150ml","g":"Topicals","r":"Topical","a":689.77,"c":72},{"p":"Diclonagel 4.5%Lidocaine/1%Diclofenac · 99gm","g":"Topicals","r":"Topical","a":1173.33,"c":35.15},{"p":"Lidocaine oint 5% · 100gm","g":"Topicals","r":"Topical","a":761.86,"c":28},{"p":"Lidocaine oint 5% · 50gm","g":"Topicals","r":"Topical","a":380.93,"c":14},{"p":"Lidocaine patch 5% · 30","g":"Topicals","r":"Topical","a":280.81,"c":90},{"p":"Zylotrol Gel 4% Lido / 1% Menthol · 118.3ml","g":"Topicals","r":"Topical","a":496,"c":32.88},{"p":"Zylotrol Gel 4% Lido / 1% Menthol · 236.6ml","g":"Topicals","r":"Topical","a":992,"c":65.76},{"p":"Zylotrol Patch 4% Lido / 1% Menthol · 30","g":"Topicals","r":"Topical","a":1570.5,"c":119.9}];
+const FEE_SCHED={AK:[1,10,1,5,'AWP + $10.00'],AL:[1.05,15.22,1.05,11.71,'AWPx(1+0.05) + $15.22'],AR:[1,5.13,1,5.13,'AWP + $5.13'],AZ:[0.75,7,0.85,7,'AWPx(1-0.25) + $7.00'],CA:[null,null,null,null,'Medi-Cal based drug rate, dispensing fee $10.05'],CO:[1,4,1,4,'AWP + $4.00'],CT:[1,8,1,5,'AWP + $8.00'],DC:[null,null,null,null,'U&C'],DE:[0.62,4.1,0.681,3.29,'AWPx(1-0.38) + $4.10'],FL:[1,4.18,1,4.18,'AWP + $4.18'],GA:[1,7.25,1,4.83,'AWP + $7.25'],HI:[1.4,0,1.4,0,'AWPx(1+0.40)'],IA:[null,null,null,null,'Reasonable'],ID:[1,8,1,5,'AWP + $8.00'],IL:[null,null,null,null,'Reasonable'],IN:[null,null,null,null,'Reasonable'],KS:[0.85,5,0.9,3,'AWPx(1-0.15) + $5.00'],KY:[0.85,5,0.9,5,'AWPx(1-0.15) + $5.00'],LA:[1.4,11.81,1.1,11.81,'AWPx(1+0.40) + $11.81'],MA:[null,null,null,null,'min (FUL, MMAC, AAC, U&C) + $10.02'],MD:[null,null,null,null,'Relative value or reasonable'],ME:[null,null,null,null,'U&C'],MI:[0.9,5.5,0.9,3.5,'AWPx(1-0.10) + $5.50'],MN:[0.88,3.65,0.88,3.65,'AWPx(1-0.12) + $3.65'],MO:[null,null,null,null,'U&C'],MS:[0.95,5,1,5,'AWPx(1-0.05) + $5.00'],MT:[0.75,3,0.9,3,'AWPx(1-0.25) + $3.00'],NC:[0.95,0,0.95,0,'AWPx(1-0.05)'],ND:[null,null,null,null,'WAC markup + $5.00'],NE:[null,null,null,null,'Actual charge or reasonable'],NH:[null,null,null,null,'Reasonable'],NJ:[null,null,null,null,'U&C'],NM:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00'],NV:[1,13.7,1,13.7,'AWP + $13.70'],NY:[0.8,5,0.88,4,'AWPx(1-0.20) + $5.00'],OH:[0.85,3.5,0.85,3.5,'AWPx(1-0.15) + $3.50'],OK:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00'],OR:[0.835,2,0.835,2,'AWPx(1-0.165) + $2.00'],PA:[1.1,0,1.1,0,'AWPx(1+0.10)'],RI:[0.9,0,0.9,0,'AWPx(1-0.10)'],SC:[1,5,1,5,'AWP + $5.00'],SD:[null,null,null,null,'U&C'],TN:[1,5.1,1,5.1,'AWP + $5.10'],TX:[1.25,4,1.09,4,'AWPx(1+0.25) + $4.00'],UT:[null,null,null,null,'Reasonable'],VA:[null,null,null,null,'Prevailing community rate'],VT:[1,3.15,1,3.15,'AWP + $3.15'],WA:[0.5,4.5,0.9,4.5,'AWPx(1-0.50) + $4.50'],WI:[1,3,1,3,'AWP + $3.00'],WV:[null,null,null,null,'U&C'],WY:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00']};
+const ALLOWED=Object.keys(FEE_SCHED);
+const DISP_FEE=5.00;   // dispensing, charged on every medication
+const SHIP_FEE=8.50;   // shipping, charged once per patient per shipment
+function NET(C,G){ return 0.5*(C-G); }
+
+var L={core:[],post:[]}, ACTIVE='core', SORT={k:'p',dir:1}, MODE='new';
+function money(n){ return '$'+Math.round(n).toLocaleString(); }
+
+function states(){
+  var a=ALLOWED.slice().sort(), sel=GID('sb-st');
+  sel.innerHTML=a.map(function(s){ var v=FEE_SCHED[s]||[];
+    return '<option value="'+s+'"'+(s==='PA'?' selected':'')+'>'+s+' — '+(v[4]||'')+(v[0]===null?' (set the rate)':'')+'</option>';
+  }).join('');
+}
+function rate(){
+  var st=GID('sb-st').value, v=FEE_SCHED[st]||[];
+  var manual=v[0]===null;
+  GID('sb-manual').style.display=manual?'':'none';
+  if(manual) return {m:parseFloat(GID('sb-mult').value)||1, f:0, label:st+', rate set by hand'};
+  return {m:v[0], f:v[1], label:st+', '+v[4]};
+}
+function onState(){ recalc(); drawTable(); }
+function setActive(k){
+  ACTIVE=k;
+  var c=PANE.querySelectorAll('.pt');
+  for(var i=0;i<c.length;i++) c[i].classList.toggle('sel', c[i].getAttribute('data-box')===k);
+  drawTable();
+}
+function drawPicked(){
+  ['core','post'].forEach(function(k){
+    var box=GID('ln-'+k);
+    if(!L[k].length){ box.innerHTML='<div class="none">nothing added yet</div>'; return; }
+    box.innerHTML=L[k].map(function(sel,i){
+      return '<div><span>'+F_DATA[sel].p+'</span><button class="x" data-drop="'+k+'" data-at="'+i+'">✕</button></div>';
+    }).join('');
+  });
+}
+function recalc(){
+  var r=rate();
+  var rd=function(id){ return Math.min(100,Math.max(0,+GID(id).value||0))/100; };
+  var CS=rd('rs-md'), CN=rd('rn-md');
+  var val=function(l){ var t=0; for(var i=0;i<l.length;i++) t+=F_DATA[l[i]].a*r.m+r.f; return t; };
+  // One shipment carries the whole month for that patient, so shipping is charged once here
+  // however many medications are in the box. Dispensing is charged on each one.
+  var cog=function(l){ if(!l.length) return 0;
+    var t=SHIP_FEE; for(var i=0;i<l.length;i++) t+=F_DATA[l[i]].c+DISP_FEE; return t; };
+  // A carrier paying 85 percent pays 85 percent of the BILL. The practice still bought the drug
+  // at full price and still owes the fee, so col scales C and never touches G.
+  var pv=function(l,c){ return NET(val(l)*c, cog(l)); };
+  var all=L.core.concat(L.post);
+  var non=pv(L.core,CN), sur=pv(all,CS);
+  GID('sb-n-core').textContent=L.core.length+' fills a month';
+  GID('sb-v-core').textContent=money(non)+' a patient';
+  GID('sb-n-post').textContent=L.post.length+' extra in month one';
+  GID('sb-v-post').textContent=money(sur)+' first month';
+
+  var a=+GID('sb-ns').value||0, b=+GID('sb-nn').value||0;
+  var mo=Math.min(12,Math.max(1,+GID('sb-mo').value||1));
+  GID('sb-mo-r').value=mo;
+  // Two ways a doctor counts his panel, and they are three times apart at three months.
+  //   new     he sees this many arrive each month. On treatment builds to new x months.
+  //   total   this many have an active prescription right now. New arrivals are total / months,
+  //           and only those carry the post-operative extras.
+  var ns, nn, onTx;
+  if(MODE==='new'){ ns=a; nn=b; onTx=(a+b)*mo; }
+  else { ns=a/mo; nn=b/mo; onTx=a+b; }
+  var arriv=Math.round(ns+nn), refill=Math.max(0,Math.round(onTx)-arriv);
+  GID('sb-w1').textContent = MODE==='new' ? 'Each month I see' : 'Right now I have';
+  GID('sb-w2').innerHTML   = MODE==='new'
+    ? 'new workers&rsquo; compensation patients,' : 'workers&rsquo; compensation patients on treatment,';
+  GID('sb-derived').innerHTML = MODE==='new'
+    ? '<b>'+arriv+' arrive a month and each one keeps filling for '+mo+' months.</b> So once it has filled up you have <b>'
+      + Math.round(onTx)+' patients filling at the same time</b>: '+arriv+' new that month and '+refill+' on refills.'
+    : '<b>'+Math.round(onTx)+' on treatment, spread over '+mo+' months, means about '+arriv+' arrive each month.</b>'
+      + ' The other '+refill+' are on refills. Only the '+arriv+' arriving carry the surgical first month extras.';
+  // One case is a claim. Three cases, with the worst one carrying the headline, is a range he
+  // can argue with. The bands are fixed and stated, so nothing here is a black box.
+  // The rate follows the patient. A surgical patient bills at the surgical rate in month one on
+  // core plus extras, and at the same rate on every refill of the core package afterwards.
+  var ser=function(cs,cn){
+    var sur1=pv(all,cs), refS=pv(L.core,cs), refN=pv(L.core,cn);
+    var m1=ns*sur1+nn*refN, rf=ns*refS+nn*refN, v=[], y=0;
+    for(var m=1;m<=12;m++){ var k=Math.min(m,mo); var x=m1+(k-1)*rf; v.push(x); y+=x; }
+    return { v:v, yr:y, steady:v[11], cs:cs, cn:cn };
+  };
+  var MD=ser(CS,CN);
+  var HI=ser(rd('rs-hi'),rd('rn-hi'));
+  var pct=function(x){ return Math.round(x*100)+'%'; };
+  var put=function(id,yid,c){
+    GID(id).textContent=money(c.steady)+' a month';
+    GID(yid).textContent=money(c.yr)+' across twelve months';
+  };
+  put('c-md','y-md',MD); put('c-hi','y-hi',HI);
+  var perPt=onTx>0 ? MD.steady/onTx : 0;
+  GID('sb-unit').innerHTML='Carry one number in your head: <b>'+money(perPt)+
+    ' a month per patient on the program</b>, on the expected case. Multiply it by whatever '+
+    'your own volume turns out to be.';
+  GID('sb-stamp').innerHTML='Built '+new Date().toLocaleDateString()+
+    ' &middot; '+r.label+' &middot; '+(MODE==='new'?arriv+' new patients a month':Math.round(onTx)+' patients on treatment')+
+    ' &middot; '+mo+' months on treatment &middot; '+L.core.length+' medications non-surgical, '+
+    L.post.length+' surgical extras &middot; expected case, carrier pays '+pct(MD.cs)+
+    ' of surgical and '+pct(MD.cn)+' of non-surgical dollars<br>Estimates on published fee schedules, not a quote. Carriers decide what they pay and when.';
+  var vals=MD.v, yr=MD.yr;
+  var show=[];
+  if(MODE==='new'){ for(var m=1;m<mo&&m<=12;m++) show.push(m); }
+  show.push(Math.min(mo,12));
+  var h='<tr><th>Month</th><th class="n">New on program</th><th class="n">Refilling</th>'+
+        '<th class="n">Practice share, expected</th></tr>';
+  for(var j=0;j<show.length;j++){
+    var m=show[j], k=Math.min(m,mo), last=j===show.length-1;
+    h+='<tr'+(last?' class="lvl"':'')+'><td>'+(last&&mo<12?m+' onward':'Month '+m)+'</td><td class="n">'+Math.round(ns+nn)+
+       '</td><td class="n">'+Math.round((ns+nn)*(k-1))+'</td><td class="n">'+money(vals[m-1])+'</td></tr>';
+  }
+  GID('sb-ramp').innerHTML=h;
+  GID('sb-brk').innerHTML='Collections less claim purchase fees, then split evenly &middot; '+r.label+' &middot; $'+DISP_FEE.toFixed(2)+
+    ' dispensing on each medication, $'+SHIP_FEE.toFixed(2)+' shipping once per patient a month<br>'+
+    'All '+Math.round(onTx)+' patients on treatment are filling &middot; the carrier settles '+
+    pct(MD.cs)+' of surgical and '+pct(MD.cn)+' of non-surgical dollars, and the practice carries '+
+    'the full cost of goods and fees on every fill either way';
+  GID('sb-cmp').innerHTML='One patient shown on his own is <b>'+money(non)+
+    '</b>. The same practice, same prices, with volume, refills and the rates above, is <b>'+
+    money(MD.steady)+'</b> a month.';
+}
+function drawTable(){
+  var r=rate();
+  var q=(GID('sb-q').value||'').toLowerCase().trim();
+  var rows=[];
+  for(var i=0;i<F_DATA.length;i++){
+    var x=F_DATA[i];
+    if(q && x.p.toLowerCase().indexOf(q)<0) continue;
+    var pays=x.a*r.m+r.f;
+    rows.push({i:i,p:x.p,g:x.g,rt:x.r,a:x.a,c:x.c,pays:pays,share:NET(pays,x.c+DISP_FEE)});
+  }
+  rows.sort(function(a,b){
+    if(SORT.k!=='p' && a.g!==b.g) return a.g.localeCompare(b.g);
+    if(SORT.k==='p' && a.g!==b.g) return a.g.localeCompare(b.g);
+    var va=a[SORT.k], vb=b[SORT.k];
+    if(typeof va==='string') return SORT.dir*va.localeCompare(vb);
+    return SORT.dir*(va-vb);
+  });
+  var stc=GID('sb-st').value;
+  var cols=[['p','Product',''],['rt','Route',''],['a','AWP','n'],['c','Cost','n'],
+            ['pays',stc+' fee schedule','n'],['share','Practice share','n']];
+  var h='<tr><th></th>';
+  for(var c=0;c<cols.length;c++) h+='<th class="s '+cols[c][2]+'" data-k="'+cols[c][0]+'">'+cols[c][1]+'</th>';
+  h+='</tr>';
+  var last='';
+  for(var j=0;j<rows.length;j++){
+    var x=rows[j];
+    if(x.g!==last){ h+='<tr class="cat"><td colspan="7">'+x.g+'</td></tr>'; last=x.g; }
+    var on=L[ACTIVE].indexOf(x.i)>=0;
+    h+='<tr'+(on?' class="on"':'')+'><td><input type="checkbox" data-tick="'+x.i+'"'+(on?' checked':'')+'></td>'+
+       '<td>'+x.p+'</td><td style="color:var(--muted);">'+x.rt+'</td><td class="n">'+money(x.a)+
+       '</td><td class="n" style="color:var(--muted);">'+money(x.c)+'</td><td class="n">'+money(x.pays)+
+       '</td><td class="n"><b style="color:'+(x.share<0?'#b0453a':'var(--green)')+';">'+money(x.share)+'</b></td></tr>';
+  }
+  GID('sb-ftable').innerHTML=h;
+  GID('sb-fcount').textContent=rows.length+' of '+F_DATA.length+
+    ' products, priced on '+r.label+'. Ticking adds to the '+(ACTIVE==='core'?'non-surgical':'surgical')+
+    ' patient. Practice share here is after cost of goods and the $'+DISP_FEE.toFixed(2)+
+    ' dispensing fee on that medication. Shipping of $'+SHIP_FEE.toFixed(2)+
+    ' is added once per patient a month, not once per medication, so it is not in these rows.';
+}
+PANE.addEventListener('change', function(ev){
+  var t=ev.target;
+  if(t.getAttribute && t.getAttribute('data-tick')!==null){
+    var i=+t.getAttribute('data-tick'), at=L[ACTIVE].indexOf(i);
+    if(t.checked){ if(at<0) L[ACTIVE].push(i); } else if(at>=0) L[ACTIVE].splice(at,1);
+    drawPicked(); recalc(); drawTable();
+  }
+});
+PANE.addEventListener('click', function(ev){
+  var t=ev.target;
+  if(t.getAttribute && t.getAttribute('data-drop')!==null){
+    L[t.getAttribute('data-drop')].splice(+t.getAttribute('data-at'),1);
+    drawPicked(); recalc(); drawTable(); return;
+  }
+  if(t.classList && t.classList.contains('lk')){
+    var was=MODE; MODE=t.getAttribute('data-mode');
+    // Carry the meaning across rather than the digits: 8 new a month is 24 on treatment, not 8.
+    var mo=Math.min(12,Math.max(1,+GID('sb-mo').value||1));
+    ['ns','nn'].forEach(function(id){
+      var el=GID(id), v=+el.value||0;
+      el.value = was==='new' ? Math.round(v*mo) : Math.round(v/mo);
+    });
+    var lk=PANE.querySelectorAll('.lk');
+    for(var i=0;i<lk.length;i++) lk[i].style.display = lk[i].getAttribute('data-mode')===MODE ? 'none' : '';
+    recalc(); return;
+  }
+  var th=t.closest? t.closest('th.s') : null;
+  if(th){ var k=th.getAttribute('data-k'); SORT.dir=(SORT.k===k?-SORT.dir:1); SORT.k=k; drawTable(); return; }
+  var card=t.closest? t.closest('.pt') : null;
+  if(card){ setActive(card.getAttribute('data-box')); }
+});
+
+
+  window.SB={recalc:recalc,onState:onState,drawTable:drawTable};
+  states(); drawPicked(); recalc(); drawTable();
+  // follow the one state selector the tool already has
+  var LIVE=document.getElementById('a-state');
+  if(LIVE){
+    var sync=function(){
+      var sel=GID('st'); if(!sel) return;
+      for(var i=0;i<sel.options.length;i++){
+        if(sel.options[i].value===LIVE.value){ sel.value=LIVE.value; break; }
+      }
+      onState();
+    };
+    LIVE.addEventListener('change', sync);
+    // the tool sets its own default state further down its init, after this runs,
+    // and assigning .value fires no event, so take the first reading once it has settled
+    setTimeout(sync, 0);
+  }
+})();
+}
+</script>
+
 <div id="wm"></div>
 <div id="app" class="above">
   <div class="state"><h1>Loading your analysis…</h1><p class="sub">One moment.</p></div>
@@ -396,17 +648,20 @@ function render(expires){
   window._OPTS = opts;
 
   app.innerHTML = `
-  <div id="conf">🔒 <b>CONFIDENTIAL</b> · Prepared exclusively for <b>${esc(REC.name||'')}</b>${REC.practice?' · '+esc(REC.practice):''}. Not for distribution.${expTxt?' This private link expires <b>'+expTxt+'</b>.':''}</div>
+  <div id="conf">🔒 <b>CONFIDENTIAL</b> · Not for distribution.${expTxt?' This private link expires <b>'+expTxt+'</b>.':''}</div>
   <div class="wrap">
     <header class="h">
       <div class="kicker">MDconcierge · PDRx Mail Order Pharmacy</div>
       <h1>Workers' Compensation Medication Dispensing Analysis</h1>
-      <div class="sub">Prepared for <b>${esc(forName)}</b> · <span id="basis-sub">Pennsylvania basis</span></div>
     </header>
+
+    <div class="sbtabs noprint"><button type="button" class="sbt on" onclick="sbTab(1)">Formulary</button><button type="button" class="sbt" onclick="sbTab(2)">Customize</button></div>
+    <button type="button" class="sbcta noprint" onclick="sbTab(2)">CLICK HERE FOR FURTHER CUSTOMIZATION FOR YOUR PRACTICE<span class="ar">&rarr;</span></button>
+    <div id="sb-tab1">
 
     <div class="card">
       <h2>How to use this</h2>
-      <p class="hint" style="margin-bottom:0;">Build your own medication mix below and the estimated practice revenue updates instantly. Every assumption is editable. The defaults are intentionally conservative (oral scripts modeled at 80% collections, topicals at 70%, and your practice keeping 50% of net). The practice carries the cost of the medication plus a per-Rx dispensing fee and shipping, all deducted before the split. The full formulary, including product cost, is at the bottom.</p>
+      <p class="hint" style="margin-bottom:0;">Build your own medication mix below and the estimated practice revenue updates instantly. Every assumption is editable. The practice carries the cost of the medication plus a per-Rx dispensing fee and shipping, all deducted before the split. The full formulary, including product cost, is at the bottom.</p>
     </div>
 
     <div class="card">
@@ -463,7 +718,6 @@ function render(expires){
         <select id="froute" onchange="applyForm()"><option value="">All routes</option><option value="Oral">Oral</option><option value="Topical">Topical</option></select>
         <button class="btn" onclick="clearForm()">Clear</button>
       </div>
-      <div id="kits"></div>
       <div class="tablewrap">
         <table id="ftable">
           <thead id="fhead"></thead>
@@ -473,11 +727,15 @@ function render(expires){
       <div id="selbar" class="noprint" style="display:none;"></div>
     </div>
 
+    </div>
+    <div id="sb-tab2" style="display:none;"></div>
+
     <p class="foot">Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. <span id="basis-foot">Pennsylvania basis</span>. Fee schedule data as of ${FS_ASOF}.<br>
     Eric Weiscarger · MDconcierge · <a href="mailto:eric@mdconcierge.net" style="color:var(--steel);">eric@mdconcierge.net</a> · mdconcierge.net</p>
   </div>`;
 
   document.getElementById('fs-key').innerHTML = fsKeyHtml();
+  try{ sbInit(); }catch(e){ console.error('scenario tab:', e); }
   renderFormHead();
   // Default to the doctor's own state when the CRM knows it, so the numbers are right on arrival.
   // Only default to their own state if we actually serve it, otherwise PA.
@@ -735,7 +993,6 @@ function applyForm(){
   if(k!=='category') rows.sort((a,b)=> String(a.category||'~').toLowerCase().localeCompare(String(b.category||'~').toLowerCase()));
   renderFormHead();
   fillFormTable(rows);
-  renderKits();
   const cnt=document.getElementById('fcount');
   if(cnt) cnt.textContent = rows.length===FORM.length ? '' : (rows.length+' of '+FORM.length+' shown');
 }
