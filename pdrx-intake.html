@@ -157,7 +157,12 @@ input.bad{border-color:var(--err);background:var(--err-bg);}
   'use strict';
   var SUPABASE_URL='https://pjdbzrzadlldojuvdrfj.supabase.co';
   var SUPABASE_KEY='sb_publishable_Syx-8oQDjnR-XYYMA2T-wQ_qyKuFdfL';
-  var SUBMIT_TYPE='pdrx_intake';
+  // submit_signup only accepts a fixed set of types and 'pdrx_intake' is not one of them, so
+  // every submission was silently failing the ok check and falling through to the mailto. It goes
+  // in as a provider signup, stamped in the payload so the watcher and the dashboard can tell a
+  // PDRx intake from a website import at a glance.
+  var SUBMIT_TYPE='provider';
+  var SUBMIT_KIND='pdrx_intake';
   var FALLBACK='referrals@mdconcierge.net';
   var KEY='pdrx_intake_draft_v1';
   var MAX_LOC=6, MAX_PROV=12;
@@ -387,6 +392,10 @@ input.bad{border-color:var(--err);background:var(--err-bg);}
     var ok=false;
     if(sb){
       try{
+        p.kind=SUBMIT_KIND;
+        p.program=p.program||'PDRx';
+        p.practice=p.practice||{};
+        if(!p.practice.name) p.practice.name=p.practice.legal_name||p.practice.dba||'';
         var r=await sb.rpc('submit_signup',{p_type:SUBMIT_TYPE,p_payload:p});
         ok=!!(r&&r.data&&r.data.ok&&!r.error);
       }catch(e){ ok=false; }
