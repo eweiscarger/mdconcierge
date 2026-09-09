@@ -790,7 +790,10 @@ function lineNet(f){
   const coll=(f.route==='Oral'?num('a-oc'):num('a-tc'))/100;
   const fee=num('a-df'), ship=num('a-ship');
   const paAwp=(Number(f.awp)||0)*mult;
-  return { fee:paAwp, net:(paAwp*coll-(Number(f.cost)||0)-fee-ship)*share };
+  // MDRx: the practice takes its share of the collection whatever it is, and pays cost and
+  // the fee out of that share every time. NOT share x (collection - cost - fee), which is
+  // the PDRx shape and pays the practice more than this deal does.
+  return { fee:paAwp, net: paAwp*coll*share - (Number(f.cost)||0) - fee - ship };
 }
 
 function renderMix(){
