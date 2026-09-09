@@ -67,7 +67,11 @@
     } catch (e) {}
   }
 
-  var target = dest + (token ? ("?p=" + encodeURIComponent(token)) : "");
+  // The tools authenticate on t/token and use p only for tracking. Forwarding p alone made
+  // formulary-access answer {"reason":"invalid"}, so every tool link sent through here landed on
+  // "This link is not valid". Both are passed now: t unlocks, p is the tracking token.
+  var q = token ? ("?t=" + encodeURIComponent(token) + "&p=" + encodeURIComponent(token)) : "";
+  var target = dest + q;
   window.location.replace(target);
 })();
 </script>
