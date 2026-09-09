@@ -3201,7 +3201,7 @@ async function mdrxLoadTimeline(id){
       </div>
       <div id="tl-ins-${n.id}" style="display:${i===0?'flex':'none'};flex-wrap:wrap;gap:5px;margin-top:6px;align-items:center;">
         <span style="font-size:11px;color:var(--muted);">Drop in:</span>
-        ${[['calendar','My calendar'],['model','Formulary tool'],['kits','Injection kits'],['deck','PDRx deck'],['overview','One page overview']]
+        ${[['calendar','My calendar'],['model','Formulary tool'],['kits','Injection kits'],['deck','PDRx deck'],['pdrxone','PDRX one pager'],['overview','One page overview']]
           .map(([k,lbl])=>`<button class="ib" style="padding:3px 9px;font-size:11px;" onclick="event.preventDefault();mdrxInsertLink(${n.id},'${k}')">+ ${lbl}</button>`).join('')}
         <span id="tl-saved-${n.id}" style="font-size:11px;color:var(--muted);margin-left:4px;"></span>
       </div>

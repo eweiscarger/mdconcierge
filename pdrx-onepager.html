@@ -1,0 +1,388 @@
+<meta name="robots" content="noindex,nofollow"/>
+<title>PDRx Mail Order Program</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600;900&display=swap"/>
+<style>:root{--hero:url(assets/pdrx/pdrx-dbe0e1aea6.jpg);}
+*{box-sizing:border-box;}
+:root{
+  --crimson:#ED174F; --teal:#3795AF; --navy:#0A2C69; --blue:#0055A5;
+  --ink:#12203A; --body:#46536B; --faint:#8B93A3;
+  --paper:#FFFFFF; --mist:#F2F5F9; --line:#DFE5ED;
+}
+body{margin:0;background:var(--paper);color:var(--body);
+  font-family:Poppins,system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-weight:300;font-size:15px;line-height:1.62;-webkit-font-smoothing:antialiased;}
+img{max-width:100%;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 34px;}
+
+/* ---- hero: their cover, capsules right, logo and headline left ---- */
+.hero{position:relative;overflow:hidden;background:var(--paper);}
+.hero .art{position:absolute;inset:0 0 0 34%;background-image:var(--hero);
+  background-size:cover;background-position:58% 62%;}
+.hero .art::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(90deg,#fff 0%,rgba(255,255,255,.97) 34%,rgba(255,255,255,0) 74%);}
+.hero .inner{position:relative;padding:34px 0 52px;}
+
+/* dual lockup: PDRX, the partner mark, and the one person to call */
+.lockup{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:0 0 30px;}
+.logo{display:block;}
+.logo.pdrx{width:172px;}
+.logo.mdc{width:118px;}
+.tie{width:1px;height:42px;background:var(--line);}
+.partner{display:flex;flex-direction:column;gap:5px;}
+.ptag{font-size:9.5px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);}
+/* Eric is the standing point of contact, so it sits on clear ground under the headline */
+.poc{margin:26px 0 0;display:inline-flex;flex-direction:column;gap:3px;
+  background:#fff;border-left:5px solid var(--crimson);padding:14px 22px 15px 17px;
+  box-shadow:0 2px 14px rgba(10,44,105,.09);}
+.poc .pl{font-size:10px;font-weight:600;letter-spacing:.19em;text-transform:uppercase;color:var(--teal);}
+.poc b{font-weight:900;font-size:22px;line-height:1.15;color:var(--navy);letter-spacing:-.01em;}
+.poc .pd{display:flex;align-items:center;gap:11px;flex-wrap:wrap;margin-top:2px;}
+.poc a{font-size:15px;font-weight:500;color:var(--ink);text-decoration:none;}
+.poc a:hover{color:var(--crimson);}
+.poc a:focus-visible{outline:2px solid var(--crimson);outline-offset:3px;}
+.poc .dot{width:5px;height:5px;border-radius:50%;background:var(--crimson);flex:none;}
+.kicker{font-size:11px;font-weight:500;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--teal);margin:0 0 12px;}
+h1{font-weight:900;font-size:clamp(34px,5.2vw,58px);line-height:.98;letter-spacing:-.022em;
+  color:var(--navy);margin:0;max-width:11ch;text-transform:uppercase;}
+h1 em{font-style:normal;color:var(--crimson);}
+.hero p.sub{font-size:16.5px;color:var(--body);max-width:38ch;margin:18px 0 0;}
+.rule{width:66px;height:5px;background:var(--crimson);margin:24px 0 0;}
+
+/* ---- claim strip ---- */
+.claims{background:var(--navy);color:#fff;}
+.claims ul{list-style:none;margin:0;padding:22px 0;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px 34px;}
+.claims li{font-size:13.5px;font-weight:500;color:#DCE6F6;padding-left:17px;position:relative;line-height:1.42;}
+.claims li::before{content:"";position:absolute;left:0;top:8px;width:7px;height:7px;
+  background:var(--crimson);border-radius:50%;}
+
+/* ---- section furniture ---- */
+section{padding:56px 0;}
+.eyebrow{font-size:10.5px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--crimson);margin:0 0 9px;}
+h2{font-weight:900;font-size:29px;letter-spacing:-.015em;color:var(--navy);
+  margin:0 0 26px;text-transform:uppercase;line-height:1.06;}
+h3{font-weight:600;color:var(--navy);margin:0;}
+
+/* ---- strengths over the cut-out clinicians ---- */
+.strength{background:var(--mist);position:relative;overflow:hidden;}
+.strength .cols{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:end;}
+.strength ul{list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:1fr 1fr;gap:0 26px;}
+.strength li{font-size:14.5px;font-weight:500;color:var(--ink);
+  padding:11px 0 11px 26px;border-bottom:1px solid var(--line);position:relative;}
+.strength li::before{content:"";position:absolute;left:0;top:19px;width:13px;height:2px;background:var(--teal);}
+.team{display:block;width:100%;margin-bottom:-56px;}
+@media(max-width:820px){ .strength .cols{grid-template-columns:1fr;} .team{display:none;}
+  .strength ul{grid-template-columns:1fr;} }
+
+/* ---- numbered flow: their 01-06 ---- */
+.flow{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);}
+.fs{background:#fff;padding:24px 22px 26px;display:flex;flex-direction:column;gap:9px;}
+.fs .n{font-weight:900;font-size:40px;line-height:1;color:var(--crimson);letter-spacing:-.04em;
+  font-variant-numeric:tabular-nums;}
+.fs p{margin:0;font-size:14px;color:var(--ink);font-weight:500;line-height:1.45;}
+.fs .sub{font-weight:300;color:var(--body);font-size:13px;padding-left:13px;
+  border-left:2px solid var(--teal);margin-top:7px;}
+@media(max-width:860px){ .flow{grid-template-columns:1fr;} }
+
+/* ---- money ---- */
+.money{display:grid;grid-template-columns:1fr 1fr 1.25fr;gap:22px;}
+.m{border-top:4px solid var(--teal);background:var(--mist);padding:22px 22px 24px;}
+.m.fee{border-top-color:var(--crimson);}
+.m.agr{border-top-color:var(--navy);}
+.m h3{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--body);margin-bottom:14px;}
+.m li{list-style:none;font-size:13.5px;color:var(--ink);padding:7px 0;border-bottom:1px solid var(--line);}
+.m ul{margin:0;padding:0;} .m li:last-child{border-bottom:none;}
+.m .huge{font-weight:900;font-size:38px;line-height:1;color:var(--crimson);letter-spacing:-.03em;}
+.m .cap{font-size:13px;margin:10px 0 0;}
+.m.agr b{color:var(--navy);font-weight:600;display:block;margin-bottom:2px;font-size:13.5px;}
+@media(max-width:860px){ .money{grid-template-columns:1fr;} }
+
+/* ---- operating detail ---- */
+.ops{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:26px 40px;}
+.op h3{font-size:12px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--teal);margin-bottom:6px;}
+.op p{margin:0;font-size:14px;color:var(--ink);}
+
+/* ---- roadmap: their ten icons ---- */
+.road{background:var(--navy);color:#fff;}
+.road h2{color:#fff;}
+.road .eyebrow{color:#7FB4C6;}
+.rl{list-style:none;margin:0;padding:0;display:grid;
+  grid-template-columns:repeat(5,1fr);gap:1px;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.14);}
+.rs{background:var(--navy);padding:20px 15px 21px;display:flex;flex-direction:column;gap:10px;}
+.rs .ic{width:44px;height:44px;background:#fff;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;}
+.rs .ic img{width:26px;height:26px;display:block;}
+.rs .n{font-weight:900;font-size:11px;letter-spacing:.14em;color:var(--crimson);
+  font-variant-numeric:tabular-nums;}
+.rs .t{font-size:13px;font-weight:500;color:#E4ECF8;line-height:1.36;}
+@media(max-width:900px){ .rl{grid-template-columns:repeat(2,1fr);} }
+
+/* ---- documents ---- */
+.docs{display:grid;grid-template-columns:1fr 1fr;gap:34px;}
+.docs ul{list-style:none;margin:0;padding:0;}
+.docs li{font-size:14px;color:var(--ink);padding:9px 0 9px 25px;position:relative;
+  border-bottom:1px solid var(--line);}
+.docs li::before{content:"";position:absolute;left:0;top:16px;width:9px;height:9px;
+  border:2px solid var(--crimson);}
+.note{background:var(--mist);border-left:4px solid var(--teal);padding:18px 20px;font-size:13.5px;}
+@media(max-width:760px){ .docs{grid-template-columns:1fr;} }
+
+/* ---- faq ---- */
+.faq{display:grid;grid-template-columns:1fr 1fr;gap:26px 40px;}
+.q h3{font-size:14px;font-weight:600;margin-bottom:4px;}
+.q p{margin:0;font-size:13.5px;}
+@media(max-width:760px){ .faq{grid-template-columns:1fr;} }
+
+/* ---- formulary, set as a printed drug list rather than a spreadsheet ---- */
+/* grid, not CSS columns: a column break inside a category used to overlap the next one */
+.form{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 34px;align-items:start;}
+.fcat{break-inside:avoid;margin:0 0 20px;}
+.fcat h3{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+  font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--navy);border-bottom:2px solid var(--crimson);padding-bottom:6px;margin-bottom:2px;}
+.fcat h3 i{font-style:normal;font-size:9.5px;letter-spacing:.12em;color:var(--teal);flex:none;}
+.fcat table{width:100%;border-collapse:collapse;}
+.fcat thead th{font-size:8.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--faint);text-align:left;padding:6px 0 4px;border-bottom:1px solid var(--line);}
+.fcat thead th:nth-child(2){text-align:right;}
+.fcat thead th:nth-child(3){text-align:right;width:62px;}
+.fcat td{font-size:12.5px;padding:4px 0;border-bottom:1px solid #EDF1F6;vertical-align:baseline;}
+.fcat .med{color:var(--ink);font-weight:500;}
+.fcat .str{text-align:right;color:var(--body);white-space:nowrap;padding-left:8px;}
+.fcat .qty{text-align:right;color:var(--teal);font-weight:500;
+  padding-left:10px;font-variant-numeric:tabular-nums;min-width:58px;}
+.fcount{margin:4px 0 26px;font-size:13.5px;color:var(--body);}
+.fcount b{color:var(--navy);font-weight:600;}
+@media(max-width:900px){ .form{grid-template-columns:repeat(2,1fr);} }
+@media(max-width:600px){ .form{grid-template-columns:1fr;} }
+@media print{ .fcat{margin-bottom:12px;} .fcat td{font-size:8pt;padding:2px 0;} }
+
+footer{background:var(--navy);color:#AFC2DE;padding:30px 0;font-size:13.5px;}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 26px;align-items:center;}
+footer b{color:#fff;font-weight:600;}
+footer .fl{width:96px;margin-right:8px;}
+
+@media print{
+  body{font-size:9.6pt;}
+  section{padding:16px 0;break-inside:avoid;}
+  .hero .inner{padding:14px 0 18px;} h1{font-size:30pt;}
+  .claims,.road,footer{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .fs,.m,.rs,.q,.op{break-inside:avoid;}
+  .team{display:none;} .strength .cols{grid-template-columns:1fr;}
+}
+@media (prefers-reduced-motion:reduce){ *{animation:none!important;transition:none!important;} }
+
+.kits{background:#F8FAFC;}
+.kgrid{display:grid;grid-template-columns:1.1fr .9fr;gap:38px;align-items:start;}
+.ksub{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--navy);border-bottom:2px solid var(--crimson);padding-bottom:6px;margin-bottom:4px;}
+.ktab{width:100%;border-collapse:collapse;}
+.ktab td{font-size:13px;padding:6px 0;border-bottom:1px solid var(--line);vertical-align:baseline;}
+.ktab .med{color:var(--ink);font-weight:500;white-space:nowrap;padding-right:14px;}
+.ktab .kd{color:var(--body);text-align:right;}
+.klist{list-style:none;margin:0;padding:0;columns:2;column-gap:26px;}
+.klist li{font-size:13px;color:var(--ink);font-weight:500;padding:6px 0;
+  border-bottom:1px solid var(--line);break-inside:avoid;}
+@media(max-width:820px){ .kgrid{grid-template-columns:1fr;gap:26px;} .klist{columns:1;} }
+@media print{ .kits{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .ktab td,.klist li{font-size:8.5pt;padding:2px 0;} }
+
+#pdrx-body[hidden]{display:none!important;}
+#pdrx-gate{position:fixed;inset:0;z-index:9999;background:var(--paper);
+  display:flex;align-items:center;justify-content:center;padding:30px;}
+#pdrx-gate .box{max-width:430px;text-align:center;}
+#pdrx-gate img{width:150px;margin:0 auto 22px;display:block;}
+#pdrx-gate h2{margin:0 0 10px;font-size:19px;text-transform:none;letter-spacing:-.01em;}
+#pdrx-gate p{margin:0;font-size:14px;color:var(--body);}
+#pdrx-gate a{color:var(--crimson);}
+#wm{position:fixed;inset:0;pointer-events:none;z-index:9998;overflow:hidden;}
+#wm div{position:absolute;font-size:13px;color:rgba(10,44,105,.06);
+  transform:rotate(-30deg);white-space:nowrap;font-weight:600;}
+@media print{ #wm div{color:rgba(10,44,105,.09);} #pdrx-gate{display:none!important;} }
+</style>
+
+<div id="wm" aria-hidden="true"></div>
+<div id="pdrx-gate"><div class="box">
+  <img src="assets/pdrx/pdrx-d233e43f24.svg" alt="PDRX"/>
+  <h2 id="g-h">Opening&hellip;</h2>
+  <p id="g-p">One moment.</p>
+</div></div>
+<div id="pdrx-body" hidden>
+<div class="hero"><div class="art"></div><div class="inner"><div class="wrap">
+  <div class="lockup">
+    <span class="partner"><img class="logo pdrx" src="assets/pdrx/pdrx-d233e43f24.svg" alt="PDRX"/><span class="ptag">MDconcierge Partner</span></span>
+    <span class="tie"></span>
+    <img class="logo mdc" src="assets/pdrx/pdrx-0d50eb4b65.png" alt="MDconcierge"/>
+  </div>
+  <p class="kicker">Workers&rsquo; Compensation &amp; PIP</p>
+  <h1>Home delivery <em>pharmacy</em></h1>
+  <p class="sub">Why work with PDRX, how the program runs, and what it takes to get started.</p>
+  <div class="poc">
+    <span class="pl">Your point of contact</span>
+    <b>Eric Weiscarger</b>
+    <span class="pd"><a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a><span class="dot"></span><a href="tel:+15708177569">570 817 7569</a></span>
+  </div>
+</div></div></div>
+<div class="claims"><div class="wrap"><ul><li>20 Year Track Record</li><li>Compliant and Safe Solution</li><li>Multiple Ways to Submit Prescriptions</li><li>Licensed in 49 States</li><li>Convenient for Patients</li><li>Increase Patient Compliance with Treatment Protocols</li></ul></div></div>
+<section class="strength"><div class="wrap">
+  <p class="eyebrow">Why work with PDRx</p><h2>Company strengths</h2>
+  <div class="cols"><ul><li>Licensed in 49 States</li><li>Operate in 37+ States</li><li>Over 800 Doctors Utilizing Program</li><li>20 Years in Workers&rsquo; Compensation and Auto</li><li>Low Cost of Medications</li><li>Collection Rate Historically Exceeding 90% of Billed Charges</li><li>Skilled Staff of Billers and Collectors</li><li>Strong Legal Support</li></ul>
+    <img class="team" src="assets/pdrx/pdrx-9188063e5f.png" alt=""/></div>
+</div></section>
+<section><div class="wrap">
+  <p class="eyebrow">How it works</p><h2>Mail order pharmacy with workers&rsquo; comp / PIP</h2>
+  <div class="flow"><div class="fs"><span class="n">01</span><p>PATIENT VISITS THE PHYSICIAN&rsquo;S OFFICE.</p></div>
+<div class="fs"><span class="n">02</span><p>PHYSICIAN PLACES DRUG ORDER with PDRX at the patient&rsquo;s direction.</p></div>
+<div class="fs"><span class="n">03</span><p>PDRX SHIPS DRUGS directly to the patient.</p></div>
+<div class="fs"><span class="n">04</span><p>PHYSICIAN PAYS PDRX fair market value (FMV) for assignment of drug receivable.</p></div>
+<div class="fs hot"><span class="n">05</span><p>PHYSICIAN ASSIGNS TO ELITE CARE the right to bill and collect for services.</p><p class="sub">5.1 &nbsp;Elite Care provides payment, billing, and collection services.</p><p class="sub">5.2 &nbsp;Elite Care bills the WC/PIP payor for the claim.</p></div>
+<div class="fs hot"><span class="n">06</span><p>WC/PIP PAYOR PAYS ELITE CARE.</p><p class="sub">6.1 &nbsp;Elite Care deposits payment into the physician&rsquo;s account (less Elite Care&rsquo;s fee).</p></div>
+</div>
+</div></section>
+<section style="background:#F8FAFC;"><div class="wrap">
+  <p class="eyebrow">PDRx / Elite Care</p><h2>Business model</h2>
+  <div class="money">
+    <div class="m fee"><h3>Claims purchase fee structure</h3><ul><li>Actual cost of medication Wholesale</li><li>$5.00 Pharmacy Dispense Fee</li><li>Actual cost of shipping &mdash; $7.00&ndash;$10.00 Avg</li><li>Deducted from Collections Avg 60 days</li></ul></div>
+    <div class="m"><h3>Management fee structure</h3><p class="huge">50%</p>
+      <p class="cap">of net income. Net income is calculated as Gross collections less claim purchase fees.</p></div>
+    <div class="m agr"><h3>Required agreements</h3><ul>
+      <li><b>Claims Purchase Agreement</b>Medical Clinic agrees to purchase claims from Pharmacy.</li>
+      <li><b>Elite Care Management Agreement</b>Elite Care Rx manages claims and provides full suite revenue cycle management: billing, collection, claims follow-up, legal support, A/R management, robust contract management.</li></ul></div>
+  </div>
+</div></section>
+<section><div class="wrap">
+  <p class="eyebrow">Operating detail</p><h2>How the program runs</h2>
+  <div class="ops"><div class="op"><h3>Medication purchasing power</h3><p>Direct purchasing relationships. Manufacturers and customers always pay wholesale with NO mark-up.</p></div>
+<div class="op"><h3>Prescribing options</h3><p>EMR script transfer (preferred), web-based portal, and fax.</p></div>
+<div class="op"><h3>Shipping</h3><p>The first script written for a patient is always sent overnight. Refills are filled on the 28th day to prevent delays or running out of medication. For special cases, such as surgical patients, include a note in the EMR script transfer, and the pharmacy can expedite shipping.</p></div>
+<div class="op"><h3>Communication</h3><p>Email is the preferred method of communication; however, we do have staff at the pharmacy from 8:00 AM&ndash;5:00 PM EST Monday&ndash;Friday.</p></div>
+<div class="op"><h3>Workers&rsquo; compensation network contracts</h3><p>Helios, Coventry, Express Scripts, Optum, My Matrix, Mitchell, Corvel, and many more.</p></div>
+</div>
+</div></section>
+<section class="road"><div class="wrap">
+  <p class="eyebrow">From signature to settlement</p><h2>Program roadmap</h2>
+  <ul class="rl"><li class="rs"><span class="ic"><img src="assets/pdrx/pdrx-8d1a2a4346.png" alt=""/></span><span class="n">STEP 01</span><span class="t">Account registration</span></li>
+<li class="rs"><span class="ic"><img src="assets/pdrx/pdrx-cfe4f85089.png" alt=""/></span><span class="n">STEP 02</span><span class="t">Implementation and training</span></li>
+<li class="rs"><span class="ic"><img src="assets/pdrx/pdrx-2adad41ad3.png" alt=""/></span><span class="n">STEP 03</span><span class="t">Go live</span></li>
+<li class="rs"><span class="ic"><img src="assets/pdrx/pdrx-c680c20523.png" alt=""/></span><span class="n">STEP 04</span><span class="t">Transmit to pharmacy via EMR</span></li>
+<li class="rs"><span class="ic"><img src="assets/pdrx/pdrx-ee82ed60d3.png" alt=""/></span><span class="n">STEP 05</span><span class="t">Send over demographics</span></li>
+<li class="rs"><span class="ic"><img src="assets/pdrx/pdrx-7429e9c871.png" alt=""/></span><span class="n">STEP 06</span><span class="t">Prescriptions mailed</span></li>
+<li class="rs"><span class="ic"><img src="assets/pdrx/pdrx-9cb73a8a35.png" alt=""/></span><span class="n">STEP 07</span><span class="t">Claim billed by Elite</span></li>
+<li class="rs"><span class="ic"><img src="assets/pdrx/pdrx-743ba2ffd6.png" alt=""/></span><span class="n">STEP 08</span><span class="t">Funds collected by Elite</span></li>
+<li class="rs"><span class="ic"><img src="assets/pdrx/pdrx-9675b12546.png" alt=""/></span><span class="n">STEP 09</span><span class="t">Accounting and reporting</span></li>
+<li class="rs"><span class="ic"><img src="assets/pdrx/pdrx-98f6647ef3.png" alt=""/></span><span class="n">STEP 10</span><span class="t">Delivery of payment and reports</span></li>
+</ul>
+</div></section>
+<section><div class="wrap">
+  <p class="eyebrow">Most commonly dispensed</p><h2>Formulary</h2>
+  <p class="fcount">The most commonly dispensed medications &mdash; <b>54 across 11 therapeutic categories</b>, in 75 pack sizes. Thousands more are available.</p>
+  <div class="form"><div class="fcat"><h3><span>NSAIDS</span><i>Oral</i></h3><table><thead><tr><th>Medication</th><th>Strength</th><th>Qty</th></tr></thead><tbody><tr><td class="med">Celecoxib</td><td class="str">100mg</td><td class="qty">30, 60</td></tr><tr><td class="med">Celecoxib</td><td class="str">200mg</td><td class="qty">30, 60</td></tr><tr><td class="med">Ibuprofen/Famotidine</td><td class="str">800mg/26.6mg</td><td class="qty">90</td></tr><tr><td class="med">Meloxicam</td><td class="str">15mg</td><td class="qty">30</td></tr><tr><td class="med">Meloxicam</td><td class="str">7.5mg</td><td class="qty">30, 60</td></tr></tbody></table></div><div class="fcat"><h3><span>Pain</span><i>Oral</i></h3><table><thead><tr><th>Medication</th><th>Strength</th><th>Qty</th></tr></thead><tbody><tr><td class="med">Tramadol</td><td class="str">50mg</td><td class="qty">60, 90</td></tr><tr><td class="med">Tramadol ER</td><td class="str">100mg</td><td class="qty">30</td></tr><tr><td class="med">Tramadol ER</td><td class="str">200mg</td><td class="qty">30</td></tr><tr><td class="med">Tramadol ER</td><td class="str">300mg</td><td class="qty">30</td></tr></tbody></table></div><div class="fcat"><h3><span>Muscle Relaxants</span><i>Oral</i></h3><table><thead><tr><th>Medication</th><th>Strength</th><th>Qty</th></tr></thead><tbody><tr><td class="med">Baclofen</td><td class="str">10mg</td><td class="qty">60, 90</td></tr><tr><td class="med">Baclofen</td><td class="str">20mg</td><td class="qty">60, 90</td></tr><tr><td class="med">Cyclobenzaprine</td><td class="str">10mg</td><td class="qty">60, 90</td></tr><tr><td class="med">Cyclobenzaprine</td><td class="str">7.5mg</td><td class="qty">30, 60, 90</td></tr><tr><td class="med">Metaxaolone</td><td class="str">800mg</td><td class="qty">90</td></tr><tr><td class="med">Methocarbamol</td><td class="str">500 Mg</td><td class="qty">120</td></tr><tr><td class="med">Methocarbamol</td><td class="str">750 Mg</td><td class="qty">90</td></tr><tr><td class="med">Tizanidine cap</td><td class="str">4mg</td><td class="qty">60, 90</td></tr><tr><td class="med">Tizanidine cap</td><td class="str">6mg</td><td class="qty">60, 90</td></tr><tr><td class="med">Tizanidine tab</td><td class="str">4mg</td><td class="qty">60, 90</td></tr></tbody></table></div><div class="fcat"><h3><span>Neuropathic Agents</span><i>Oral</i></h3><table><thead><tr><th>Medication</th><th>Strength</th><th>Qty</th></tr></thead><tbody><tr><td class="med">Duloxetine</td><td class="str">30mg</td><td class="qty">30, 60</td></tr><tr><td class="med">Duloxetine</td><td class="str">60mg</td><td class="qty">30, 60</td></tr><tr><td class="med">Gabapentin</td><td class="str">100mg</td><td class="qty">90</td></tr><tr><td class="med">Gabapentin</td><td class="str">300 mg</td><td class="qty">90</td></tr><tr><td class="med">Gabapentin</td><td class="str">300mg</td><td class="qty">60</td></tr><tr><td class="med">Gabapentin</td><td class="str">400mg</td><td class="qty">90</td></tr><tr><td class="med">Gabapentin</td><td class="str">600mg</td><td class="qty">90</td></tr><tr><td class="med">Pregabalin</td><td class="str">75mg</td><td class="qty">30, 60, 90</td></tr></tbody></table></div><div class="fcat"><h3><span>Topicals</span><i>Topical</i></h3><table><thead><tr><th>Medication</th><th>Strength</th><th>Qty</th></tr></thead><tbody><tr><td class="med">Diclofenac Gel</td><td class="str">1%</td><td class="qty">100 gm, 300 gm</td></tr><tr><td class="med">Diclofenac Gel</td><td class="str">3%</td><td class="qty">100gm</td></tr><tr><td class="med">Diclofenac pump</td><td class="str">2%</td><td class="qty">112gm</td></tr><tr><td class="med">Diclofenac soln</td><td class="str">1.5%</td><td class="qty">150ml</td></tr><tr><td class="med">Diclonagel</td><td class="str">4.5%Lidocaine/1%Diclofenac</td><td class="qty">99gm</td></tr><tr><td class="med">Lidocaine oint</td><td class="str">5%</td><td class="qty">50gm, 100gm</td></tr><tr><td class="med">Lidocaine patch</td><td class="str">5%</td><td class="qty">30</td></tr><tr><td class="med">Zylotrol Gel</td><td class="str">4% Lido / 1% Menthol</td><td class="qty">118.3ml, 236.6ml</td></tr><tr><td class="med">Zylotrol Patch</td><td class="str">4% Lido / 1% Menthol</td><td class="qty">30</td></tr></tbody></table></div><div class="fcat"><h3><span>Corticosteroid</span><i>Oral</i></h3><table><thead><tr><th>Medication</th><th>Strength</th><th>Qty</th></tr></thead><tbody><tr><td class="med">Methylprednisolone DP</td><td class="str">4MG</td><td class="qty">21</td></tr></tbody></table></div><div class="fcat"><h3><span>PPI Protectants</span><i>Oral</i></h3><table><thead><tr><th>Medication</th><th>Strength</th><th>Qty</th></tr></thead><tbody><tr><td class="med">Esomeprazole</td><td class="str">20mg</td><td class="qty">30</td></tr><tr><td class="med">Esomeprazole</td><td class="str">40mg</td><td class="qty">30</td></tr><tr><td class="med">Omeprazole</td><td class="str">20mg</td><td class="qty">30, 60</td></tr><tr><td class="med">Rabeprazole</td><td class="str">20mg</td><td class="qty">30</td></tr></tbody></table></div><div class="fcat"><h3><span>Stool Softeners</span><i>Oral</i></h3><table><thead><tr><th>Medication</th><th>Strength</th><th>Qty</th></tr></thead><tbody><tr><td class="med">Docusate</td><td class="str">100mg</td><td class="qty">60</td></tr><tr><td class="med">Laxacin (docusate/senna)</td><td class="str">50mg/8.6mg</td><td class="qty">60</td></tr><tr><td class="med">Narcosoft</td><td class="str">&mdash;</td><td class="qty">60</td></tr></tbody></table></div><div class="fcat"><h3><span>Anti Nausea</span><i>Oral</i></h3><table><thead><tr><th>Medication</th><th>Strength</th><th>Qty</th></tr></thead><tbody><tr><td class="med">Ondansetron</td><td class="str">4mg</td><td class="qty">30</td></tr></tbody></table></div><div class="fcat"><h3><span>Sleep</span><i>Oral</i></h3><table><thead><tr><th>Medication</th><th>Strength</th><th>Qty</th></tr></thead><tbody><tr><td class="med">Eszopiclone</td><td class="str">2mg</td><td class="qty">30</td></tr><tr><td class="med">Eszopiclone</td><td class="str">3mg</td><td class="qty">30</td></tr><tr><td class="med">Zolpidem</td><td class="str">10mg</td><td class="qty">30</td></tr><tr><td class="med">Zolpidem</td><td class="str">5mg</td><td class="qty">30, 60</td></tr></tbody></table></div><div class="fcat"><h3><span>Pre/Post surgical combo</span><i>Topical</i></h3><table><thead><tr><th>Medication</th><th>Strength</th><th>Qty</th></tr></thead><tbody><tr><td class="med">Hibiclens</td><td class="str">&mdash;</td><td class="qty">236ml</td></tr><tr><td class="med">Mupirocin cream</td><td class="str">2%</td><td class="qty">30gm</td></tr><tr><td class="med">Narcosoft</td><td class="str">&mdash;</td><td class="qty">30</td></tr><tr><td class="med">Ondansetron</td><td class="str">4mg</td><td class="qty">30</td></tr><tr><td class="med">Skarjel</td><td class="str">&mdash;</td><td class="qty">50ml</td></tr></tbody></table></div></div>
+</div></section>
+<section class="kits"><div class="wrap">
+  <p class="eyebrow">Single Use Injection Kits</p><h2>Injection kits</h2>
+  <p class="fcount">EnovaRX&trade; SUIK&trade; single-use kits &mdash; one kit, one injection, nothing drawn from a shared vial.</p>
+  <div class="kgrid">
+    <div class="kcol"><h3 class="ksub">Single ingredient</h3>
+      <table class="ktab"><tbody><tr><td class="med">Accucaine</td><td class="kd">Lidocaine HCl 1% &middot; 5mL</td></tr><tr><td class="med">Betaloan SUIK</td><td class="kd">Betamethasone Sod. Phosphate &amp; Acetate 6mg/mL &middot; 5mL</td></tr><tr><td class="med">DMT SUIK</td><td class="kd">Dexamethasone 10mg/mL &middot; 1mL</td></tr><tr><td class="med">DoubleDex</td><td class="kd">Dexamethasone 10mg/mL &middot; 1mL &times;2</td></tr><tr><td class="med">Marvona SUIK</td><td class="kd">Bupivacaine 0.5% &middot; 10mL</td></tr><tr><td class="med">Medroloan SUIK</td><td class="kd">40mg &middot; 1mL</td></tr><tr><td class="med">Medroloan II SUIK</td><td class="kd">40mg &middot; 1mL &times;2</td></tr><tr><td class="med">Toronova SUIK</td><td class="kd">Ketorolac 30mg/mL &middot; 1mL</td></tr><tr><td class="med">Toronova II SUIK</td><td class="kd">Ketorolac 30mg/mL &middot; 1mL &times;2</td></tr><tr><td class="med">Triloan SUIK</td><td class="kd">40mg &middot; 1mL</td></tr><tr><td class="med">Triloan II SUIK</td><td class="kd">40mg &middot; 1mL &times;2</td></tr></tbody></table></div>
+    <div class="kcol"><h3 class="ksub">Multi ingredient</h3>
+      <ul class="klist"><li>Bupivilog Kit</li><li>Lidolog Kit</li><li>MLK F1 Kit</li><li>MLK F2 Kit</li><li>MLK F3 Kit</li><li>MLK F4 Kit</li><li>Physicians EZ Use Joint, Tunnel &amp; Trigger Kit II</li><li>Betalido</li><li>Marbeta-25</li><li>Marbeta-L</li><li>Dexlido</li><li>Dexlido-M</li><li>Mardex-25</li><li>Ketorocaine-L</li><li>Ketorocaine-LM</li><li>Dyural-L</li><li>Dyural-LM</li><li>Dyural 80-LM</li><li>Multi-Specialty Kit</li><li>Physicians EZ Use M-Pred Kit</li></ul></div>
+  </div>
+</div></section>
+<section style="background:#F8FAFC;"><div class="wrap">
+  <p class="eyebrow">To get started</p><h2>Required documentation</h2>
+  <div class="docs"><ul><li>Copies of DEA and state license(s) for providers &amp; mid levels that will be prescribing</li><li>W-9 with tax identification number</li><li>Name of practice</li><li>Address, suite, city, state, zip</li><li>Full name of provider(s)</li><li>Email address of signer of the agreements</li><li>Contacts at provider&rsquo;s office: name, email, phone, title</li></ul>
+    <p class="note">Once we have the above information, we will send the agreements via ZohoSign. The person requesting the contract will be notified via text message once the agreements are sent and when the agreements are signed. We will also let you know when the agreements remain outstanding.</p></div>
+</div></section>
+<section><div class="wrap">
+  <p class="eyebrow">Questions</p><h2>Frequently asked</h2>
+  <div class="faq"><div class="q"><h3>How long does it take to receive medication?</h3><p>Typically, it takes between 24&ndash;48 hours to receive medication. If Meds are ordered on a Friday, they will generally be received the following Monday.</p></div>
+<div class="q"><h3>Do you ship controlled C2 pain meds?</h3><p>No, we believe that there is no place in pharmacy to ship C2s and that these types of meds should be dealt with by walk-in pharmacies.</p></div>
+<div class="q"><h3>What about surgical patients?</h3><p>If a surgical patient is indicated on the prescription, we can increase the shipping speed to next day or overnight. There will be an increase in cost for express delivery.</p></div>
+<div class="q"><h3>When are reports delivered?</h3><p>Accounting is based on a true calendar month that starts on the first day of each month and runs through the last day. Reports will be sent to you by the 15th of each month.</p></div>
+<div class="q"><h3>What are the payment options?</h3><p>Both check and ACH options are available. A client who wishes to be set up on ACH simply needs to provide a check with the routing number and account number.</p></div>
+<div class="q"><h3>What happens if the meds are stolen or the patient does not receive the meds?</h3><p>FedEx has images of delivery and tracking available. We will do everything on our end to ensure the patient receives the meds prescribed. In the event of theft or if a package is not delivered, we will express ship a replacement.</p></div>
+</div>
+</div></section>
+<footer><div class="wrap">
+  <span><b>Eric Weiscarger</b> &middot; MDconcierge</span><span>eric@mdconcierge.net</span><span>570 817 7569</span>
+</div></footer>
+</div>
+
+<script>
+(function(){
+  var FN = "https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/formulary-access";
+  var PROGRAM = 'pdrx';
+  var g = function(id){ return document.getElementById(id); };
+  var U = new URL(location.href);
+  // 'p' is the quote_links token: the packet links to the tools with p alone, so accept it.
+  function tok(){ return U.searchParams.get('t') || U.searchParams.get('token') || U.searchParams.get('p') || ''; }
+  function trk(){ return U.searchParams.get('p') || ''; }
+
+  function fail(msg, sub){
+    g('g-h').textContent = msg;
+    g('g-p').innerHTML = sub || 'Anything at all, <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a> or 570 817 7569.';
+  }
+  function watermark(name, email){
+    var wm = g('wm'); if(!wm) return; wm.innerHTML='';
+    var txt = (name || 'Confidential') + '  ·  ' + (email || '');
+    for(var r=0;r<14;r++) for(var c=0;c<4;c++){
+      var d=document.createElement('div'); d.textContent=txt;
+      d.style.top=(r*130-60)+'px'; d.style.left=(c*360-120)+'px'; wm.appendChild(d);
+    }
+  }
+  var VIEW_ID=null, T0=Date.now();
+  function dwell(){
+    if(!VIEW_ID) return;
+    var body = JSON.stringify({ token: tok(), view_id: VIEW_ID, dwell: Math.round((Date.now()-T0)/1000) });
+    try{
+      if(navigator.sendBeacon) navigator.sendBeacon(FN, new Blob([body],{type:'application/json'}));
+      else fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:body,keepalive:true}).catch(function(){});
+    }catch(e){}
+  }
+  function open_(data){
+    var REC = data.recipient || {}, V = data.viewer || REC;
+    VIEW_ID = data.view_id || null; T0 = Date.now();
+    watermark(V.name || REC.name, V.email || REC.email);
+    var gate = g('pdrx-gate'); if(gate) gate.parentNode.removeChild(gate);
+    g('pdrx-body').hidden = false;
+    setInterval(dwell, 30000);
+    addEventListener('pagehide', dwell); addEventListener('beforeunload', dwell);
+  }
+  async function post(body){
+    var r = await fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)});
+    return await r.json();
+  }
+  (async function(){
+    var t = tok();
+    if(!t) return fail('This link is not valid',
+      'This page opens only from the link Eric sent. If a colleague forwarded it to you, ask them for the original email and open it from there.');
+    var data;
+    try{ data = await post({ token:t, p:trk(), program:PROGRAM }); }
+    catch(e){ return fail('Could not open this page'); }
+    if(data && data.ok) return open_(data);
+    // The token knows who it was sent to, so accept that identity rather than asking.
+    if(data && data.reason === 'identify'){
+      try{ data = await post({ token:t, p:trk(), program:PROGRAM,
+        viewer:{ name: data.recipient_name || '', self:true } }); }
+      catch(e){ return fail('Could not open this page'); }
+      if(data && data.ok) return open_(data);
+    }
+    var why = (data && data.reason) || 'error';
+    if(why === 'expired') return fail('This link has expired');
+    if(why === 'revoked') return fail('This link is no longer active');
+    return fail('This link is not valid',
+      'This page opens only from the link Eric sent. If a colleague forwarded it to you, ask them for the original email and open it from there.');
+  })();
+})();
+</script>
+
