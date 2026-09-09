@@ -1316,13 +1316,13 @@ function openPresenterPdrx(){ window.open(PRESENTER_LINK_PDRX,'_blank','noopener
 //         evenly with Elite Care:  net = 0.5 x (C - G)
 //
 // The two programs do NOT carry the same fee, and this is the thing that gets confused:
-//   MDRx  $6.50 a medication, dispensing and shipping combined. Eric, 2026-09-03.
+//   MDRx  $8.17 a medication, dispensing and shipping combined. Eric, 2026-09-09.
 //   PDRx  $5.00 pharmacy dispense fee plus ACTUAL shipping, $7 to $10. Shipping is an input
 //         because it is actual, not a flat rate. It defaults to the top of the range so a
 //         quote errs low rather than high.
 // Sources: RULES.md section 9 and PHARMACY-ECONOMICS.md. Fee schedules are the Optum Workers'
 // Compensation Pharmacy Resource Guide, March 2026.
-const MDRX_FEE = 6.50, PDRX_DISPENSE = 5.00, PDRX_SHIP_DEFAULT = 8.50;
+const MDRX_FEE = 8.17, PDRX_DISPENSE = 5.00, PDRX_SHIP_DEFAULT = 8.50;
 // The 16 states Excel is licensed in, mirrored from pharmacy-model.html so the two cannot drift.
 // PDRx is licensed in all 50, so it gets the whole table.
 const MDRX_STATES=['AL','AZ','CO','DC','FL','IN','KS','LA','MO','NE','NM','OK','PA','TX','VA','WI'];
@@ -1408,7 +1408,7 @@ function dispRender(){
       ${isM
         ? `${dispRows().length} products on the MDRx&ndash;Excel MASTER of 2 September: ${dispRows().filter(x=>x.src==='Excel').length} from Excel&rsquo;s revised list, ${dispRows().filter(x=>x.src==='Young').length} from Young&rsquo;s list. Excel is licensed in ${MDRX_STATES.length} states. Skarjel and Narcosoft are not here because Young returned them unpriced.`
         : `${dispRows().length} products on the PDRx formulary. PDRx is licensed in all 50 states; ${Object.values(FEE_SCHED).filter(v=>v[0]!==null).length} publish an AWP formula and the rest are set by hand.`}
-      ${isM ? 'Dispensing and shipping is $6.50 a medication.' : 'Claim purchase fees are the medication cost, a $5.00 dispense fee and actual shipping of $7 to $10.'}
+      ${isM ? 'Dispensing and shipping is $8.17 a medication.' : 'Claim purchase fees are the medication cost, a $5.00 dispense fee and actual shipping of $7 to $10.'}
       Fee schedules from the ${FEE_SCHED_SOURCE}.
       Good-faith estimate. The carrier decides what it pays and when, and nothing here is a
       recommendation about how to treat anyone.
@@ -1473,10 +1473,10 @@ function dispCompute(){
   const out = document.getElementById('dp-out'); if(!out) return;
   const noSched = (FEE_SCHED[st]||[])[0] === null;
   const formula = isM
-    ? '65% of collections, less cost of goods and $6.50 a medication &nbsp;<code>0.65C &minus; G</code>'
+    ? '65% of collections, less cost of goods and $8.17 a medication &nbsp;<code>0.65C &minus; G</code>'
     : 'collections less claim purchase fees, then split evenly with Elite Care &nbsp;<code>0.5 &times; (C &minus; G)</code>';
   const feeNote = isM
-    ? 'Dispensing and shipping $6.50 a medication.'
+    ? 'Dispensing and shipping $8.17 a medication.'
     : ('Claim purchase fees: medication cost, $' + PDRX_DISPENSE.toFixed(2) + ' dispense fee and $' + (perMed-PDRX_DISPENSE).toFixed(2) + ' shipping, $' + perMed.toFixed(2) + ' a fill. Deducted from collections, which average about 60 days.');
   out.innerHTML = `<div style="background:rgba(45,106,79,.1);border:1px solid #2D6A4F;border-radius:10px;padding:14px;">
     <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Estimated practice share · ${DISP_RESULT.program}</div>
