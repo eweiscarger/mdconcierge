@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Mountain Valley Formulary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Nothing priced is written into this page. The workbooks and the readable version live in a
+   private bucket and are only ever reached through a signed URL that doc-access mints after an
+   approved email, and the dispensing tool gates itself the same way against its own token. A
+   practice's costs and margins are never in the source of a page on the open internet. */
+:root{
+  --ground:#F5F7F9; --surface:#FFFFFF; --ink:#12203A; --muted:#5C6A82; --faint:#8593A8;
+  --line:#DFE4EC; --rule:#EDF0F5; --navy:#08214C; --band:#EFF3F8;
+  --warn:#9B3B2E; --good:#1E7A4D;
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --ground:#0D1420; --surface:#141C2B; --ink:#E7ECF4; --muted:#9AA8BE; --faint:#75839A;
+  --line:#263144; --rule:#222C3D; --navy:#9FBCE8; --band:#1A2334;
+  --warn:#E08877; --good:#5FBF8E;
+}}
+:root[data-theme="dark"]{
+  --ground:#0D1420; --surface:#141C2B; --ink:#E7ECF4; --muted:#9AA8BE; --faint:#75839A;
+  --line:#263144; --rule:#222C3D; --navy:#9FBCE8; --band:#1A2334;
+  --warn:#E08877; --good:#5FBF8E;
+}
+*,*::before,*::after{box-sizing:border-box;}
+body{margin:0;background:var(--ground);color:var(--ink);
+  font-family:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.5;}
+.wrap{max-width:720px;margin:0 auto;padding:44px 20px 72px;}
+.kick{font-size:11px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted);font-weight:600;}
+h1{font-family:'Source Serif 4',Georgia,serif;font-weight:600;font-size:clamp(27px,4.4vw,36px);
+  line-height:1.12;margin:6px 0 8px;letter-spacing:-.01em;text-wrap:balance;}
+.sub{color:var(--muted);font-size:15px;margin:0 0 26px;max-width:60ch;}
+
+.gate{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;}
+.gate h2{font-family:'Source Serif 4',Georgia,serif;font-size:19px;margin:0 0 6px;font-weight:600;}
+.gate p{color:var(--muted);font-size:14px;margin:0 0 15px;}
+.row{display:flex;gap:9px;flex-wrap:wrap;}
+.row + .row{margin-top:9px;}
+input{flex:1;min-width:190px;padding:12px 14px;border:1px solid var(--line);border-radius:9px;
+  font:inherit;font-size:15px;background:var(--ground);color:var(--ink);}
+input:focus{outline:2px solid var(--navy);outline-offset:1px;}
+button{background:var(--navy);color:#fff;border:0;border-radius:9px;padding:12px 22px;
+  font:inherit;font-size:15px;font-weight:600;cursor:pointer;}
+button:disabled{opacity:.55;cursor:default;}
+.msg{font-size:13.5px;margin-top:12px;line-height:1.6;color:var(--muted);}
+.msg.bad{color:var(--warn);} .msg.good{color:var(--good);}
+.msg a{color:var(--navy);font-weight:600;}
+
+#panel{display:none;}
+.doc{display:flex;align-items:center;gap:14px;text-decoration:none;color:inherit;
+  background:var(--surface);border:1px solid var(--line);border-radius:12px;
+  padding:15px 17px;margin-bottom:10px;}
+.doc:hover{border-color:var(--navy);}
+.doc .ic{flex:none;width:46px;height:34px;border-radius:7px;background:var(--band);color:var(--navy);
+  display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;
+  letter-spacing:.06em;}
+.doc .t{flex:1;min-width:0;}
+.doc .n{display:block;font-weight:600;font-size:15px;}
+.doc .m{display:block;color:var(--muted);font-size:12.5px;margin-top:1px;}
+.doc .arw{color:var(--faint);font-size:18px;}
+
+.tool{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:22px;}
+.tool .th{background:var(--band);padding:16px 19px 15px;border-bottom:1px solid var(--line);}
+.tool .th h2{font-family:'Source Serif 4',Georgia,serif;font-size:18px;margin:0;font-weight:600;}
+.tool .th p{margin:4px 0 0;font-size:13.5px;color:var(--muted);}
+.tool .tb{padding:16px 19px 19px;}
+.tool ol{margin:0;padding-left:19px;}
+.tool li{font-size:13.5px;color:var(--muted);margin-bottom:7px;line-height:1.55;}
+.tool li b{color:var(--ink);font-weight:600;}
+.tool .go{display:inline-block;margin-top:8px;background:var(--navy);color:#fff;
+  text-decoration:none;font-size:14.5px;font-weight:600;padding:11px 20px;border-radius:9px;}
+footer{margin-top:32px;font-size:12.5px;color:var(--faint);}
+footer a{color:var(--muted);}
+#dead{display:none;padding:70px 20px;text-align:center;color:var(--muted);}
+body.dead #dead{display:block;}
+body.dead .wrap{display:none !important;}
+</style>
+</head>
+<body>
+
+<div id="dead">This link is not valid.</div>
+
+<div class="wrap">
+  <div class="kick">MDconcierge &middot; MDRx / Excel Pharmacy</div>
+  <h1>Mountain Valley&rsquo;s formulary, priced</h1>
+  <p class="sub">Every medication on your list, costed against the Pennsylvania workers&rsquo;
+    compensation pharmacy fee schedule. Prepared for Mountain Valley Orthopedics.</p>
+
+  <div class="gate" id="gate">
+    <h2>Your email, to open this</h2>
+    <p>These are your practice&rsquo;s costs and margins, so nothing here is public. Put in the
+      address this was sent to and it opens.</p>
+    <div class="row">
+      <input id="g-email" type="email" placeholder="you@practice.com" autocomplete="email">
+      <button id="g-go" type="button">Open</button>
+    </div>
+    <div class="row">
+      <input id="g-first" type="text" placeholder="First name" autocomplete="given-name">
+      <input id="g-last" type="text" placeholder="Last name" autocomplete="family-name">
+    </div>
+    <div class="row">
+      <input id="g-practice" type="text" placeholder="Practice" autocomplete="organization">
+    </div>
+    <div class="msg" id="g-msg"></div>
+  </div>
+
+  <div id="panel">
+    <div id="docs"></div>
+
+    <div class="tool">
+      <div class="th">
+        <h2>Model it against your own volume</h2>
+        <p>The same price book, live, with your formulary already loaded.</p>
+      </div>
+      <div class="tb">
+        <ol>
+          <li><b>It opens on your list</b>, at the prices in the file. Nothing to set up.</li>
+          <li><b>Take out anything you do not write</b>, and change the quantity on anything you
+            dispense in a different count. The arithmetic follows.</li>
+          <li><b>Add anything else</b> the pharmacy carries to see what carrying it would do.</li>
+          <li><b>Put your own numbers in.</b> Patients a month, and the share of claims you
+            actually collect. The defaults are ours. Yours are the ones that matter.</li>
+          <li><b>Read the month and the year</b>, and hold that against what this part of the
+            practice returns today.</li>
+        </ol>
+        <a class="go" id="toolink" href="#" style="display:none;">Open the dispensing tool &rarr;</a>
+      </div>
+    </div>
+
+    <footer>Prepared by Eric Weiscarger &middot; MDconcierge &middot;
+      <a href="mailto:eric@mdconcierge.net">eric@mdconcierge.net</a><br>
+      A good-faith estimate on published fee schedules, not a quote. The carrier decides what it
+      pays and when.</footer>
+  </div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+  var FN='https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1/doc-access';
+  var PACKET='mvo';
+  var DOCS=[
+    ['Your formulary, priced','formulary-priced','XLSX','the file you sent, filled in'],
+    ['The same thing to read','formulary-digital','PDF','print it or pass it round'],
+    ['Your original list','formulary-as-received','XLSX','as you sent it, untouched']
+  ];
+  function el(i){return document.getElementById(i);}
+  function post(b){return fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(b)}).then(function(r){return r.json();});}
+
+  /* Nothing renders until the link itself is recognized, so the address on its own is a dead
+     end. A forwarded link still carries the token: the colleague reaches the page and is then
+     asked who they are like anybody else, and Eric approves them or does not. */
+  function tok(){
+    var h=new URLSearchParams(String(location.hash||'').replace(/^#/,''));
+    var q=new URL(location.href).searchParams;
+    return h.get('p')||q.get('p')||'';
+  }
+  function guard(){
+    var p=tok();
+    if(!p){ document.body.classList.add('dead'); return Promise.resolve(false); }
+    return post({action:'link',p:p}).then(function(j){
+      if(j&&j.ok&&j.valid) return true;
+      document.body.classList.add('dead'); return false;
+    }).catch(function(){ document.body.classList.add('dead'); return false; });
+  }
+
+  var MINE='13,14,15,18,23,30,31,34,35,36,37,45,61,66,77,79,81,82,87,91,92,93,95,97,98,99,102,103,106,108,109,110,111,112,113,114,115,121,122,127,128,130,131,174,175,177,182,183,184,185,186,187';
+  var EMAIL='';
+  function paint(){
+    var a=el('toolink');
+    a.href='pharmacy-model.html?p='+encodeURIComponent(tok())+'&mine='+MINE;
+    a.style.display='';
+    el('docs').innerHTML=DOCS.map(function(r){
+      return '<a class="doc" href="#" data-doc="'+r[1]+'"><span class="ic">'+r[2]+'</span>'+
+             '<span class="t"><span class="n">'+r[0]+'</span><span class="m">'+r[3]+
+             '</span></span><span class="arw">→</span></a>';
+    }).join('');
+    Array.prototype.forEach.call(el('docs').querySelectorAll('a.doc'),function(a2){
+      a2.addEventListener('click',function(ev){
+        ev.preventDefault();
+        var n=a2.querySelector('.m'), was=n.textContent; n.textContent='opening…';
+        post({action:'open',packet:PACKET,email:EMAIL,doc:a2.getAttribute('data-doc')}).then(function(j){
+          n.textContent=was;
+          if(j&&j.ok&&j.url) window.open(j.url,'_blank','noopener'); else location.reload();
+        }).catch(function(){ n.textContent=was; });
+      });
+    });
+  }
+  function unlock(e){
+    EMAIL=e; try{localStorage.setItem('mdc_pkt_mvo',e);}catch(x){}
+    el('gate').style.display='none';
+    el('panel').style.display='block';
+    paint();
+  }
+  function ask(){
+    var e=(el('g-email').value||'').trim().toLowerCase(), m=el('g-msg'), b=el('g-go');
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){m.className='msg bad';m.textContent='That does not look like an email address.';return;}
+    b.disabled=true; m.className='msg'; m.textContent='Checking…';
+    post({action:'check',packet:PACKET,email:e}).then(function(j){
+      b.disabled=false;
+      if(j&&j.ok&&j.allowed){ m.textContent=''; unlock(e); return; }
+      if(j&&j.pending){ m.textContent='Your request is with Eric. You will hear as soon as he approves it.'; return; }
+      m.className='msg';
+      m.innerHTML='This was not sent to that address. <a href="#" id="g-req">Ask Eric for access</a>.';
+      el('g-req').addEventListener('click',function(ev){
+        ev.preventDefault();
+        var fn=el('g-first').value||'', ln=el('g-last').value||'', pr=el('g-practice').value||'';
+        if(!fn.trim()||!ln.trim()||!pr.trim()){ m.className='msg bad';
+          m.textContent='First name, last name and practice, so Eric knows who is asking.'; return; }
+        m.textContent='Sending…';
+        post({action:'request',packet:PACKET,email:e,name:(fn+' '+ln).trim(),practice:pr})
+          .then(function(){m.className='msg good';m.textContent='Sent. Eric has to approve it, and you will hear from him.';})
+          .catch(function(){m.className='msg bad';m.textContent='That did not go through.';});
+      });
+    }).catch(function(){b.disabled=false;m.className='msg bad';m.textContent='Could not reach the server.';});
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    guard().then(function(ok){
+      if(!ok) return;
+      el('g-go').addEventListener('click',ask);
+      el('g-email').addEventListener('keydown',function(e){if(e.key==='Enter')ask();});
+      var sv=''; try{sv=localStorage.getItem('mdc_pkt_mvo')||'';}catch(x){}
+      if(sv){ el('g-email').value=sv;
+        post({action:'check',packet:PACKET,email:sv}).then(function(j){if(j&&j.ok&&j.allowed)unlock(sv);}).catch(function(){}); }
+    });
+  });
+})();
+</script>
+</body>
+</html>
