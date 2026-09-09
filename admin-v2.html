@@ -2026,8 +2026,9 @@ function mdrxInsertLink(moveId, key){
   // at the very top means "he did not place it": put the link above the signature instead.
   let at=ta.selectionStart==null?ta.value.length:ta.selectionStart;
   if(at===0 && ta.value.trim()){
-    const sig=ta.value.search(/
-s*(Best|Thanks|Talk soon|Regards|Sincerely)/i);
+    const SIGNOFFS=['\nBest','\nThanks','\nTalk soon','\nRegards','\nSincerely'];
+    let sig=-1;
+    for(const s of SIGNOFFS){ const j=ta.value.indexOf(s); if(j>=0 && (sig<0||j<sig)) sig=j; }
     at = sig>0 ? sig : ta.value.length;
   }
   const end=(ta.selectionEnd==null||ta.selectionEnd<at)?at:ta.selectionEnd;
