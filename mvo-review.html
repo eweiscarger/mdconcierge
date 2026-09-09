@@ -118,6 +118,7 @@ body.dead .wrap{display:none !important;}
   is not priced says why on the row. Highlighted rows carry Young&rsquo;s notes in his own words.
   Her original is underneath it so you can see what she actually sent.</p>
   <div id="docs"></div>
+  <a class="doc" id="toolink" href="#" style="display:none;"><span class="ic">TOOL</span><span class="t"><span class="n">The same list, as a tool she can change</span><span class="m">Add or remove medications and the numbers move</span></span><span class="arw">&rarr;</span></a>
 </div>
 
 <div class="step locked">
@@ -180,8 +181,15 @@ body.dead .wrap{display:none !important;}
     }).catch(function(){ document.body.classList.add('dead'); return false; });
   }
 
+  var MINE='8,9,13,14,15,16,17,18,23,31,37,45,61,66,77,79,81,87,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,111,112,113,114,115,121,122,127,128,130';
+  function wireTool(){
+    var a=el('toolink'); if(!a) return;
+    a.href='pharmacy-model.html?p='+encodeURIComponent(tok())+'&mine='+MINE;
+    a.style.display='';
+  }
   var EMAIL='';
   function paint(){
+    wireTool();
     el('docs').innerHTML=DOCS.map(function(r){
       return '<a class="doc" href="#" data-doc="'+r[1]+'"><span class="ic">'+r[2]+'</span>'+
              '<span class="t"><span class="n">'+r[0]+'</span><span class="m">'+r[2]+' \u00b7 '+r[3]+
