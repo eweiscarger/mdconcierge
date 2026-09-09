@@ -69,7 +69,7 @@
   .pill{ display:inline-block; background:#eef3fb; color:var(--steel); font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; }
   @media print{
     body{ background:#fff; } #conf{ background:#08214C !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .noprint{ display:none !important; } .tablewrap{ max-height:none; } #wm div{ color:rgba(8,33,76,.07); }
+    .noprint{ display:none !important; } .moneycol{ display:none !important; } .tablewrap{ max-height:none; } #wm div{ color:rgba(8,33,76,.07); }
   }
 
   .sbtabs{ display:flex; gap:6px; margin:0 0 16px; border-bottom:1px solid var(--line);
@@ -708,7 +708,7 @@ function render(expires){
       <button class="btn solid" onclick="window.print()">⬇ Save / print this analysis</button>
     </div>
 
-    <div class="card">
+    <div class="card noprint">
       <h2>Full formulary <span id="basis-form" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;">· ${FORM.length} products</span></h2>
       ${HIDE_COST?`<p class="hint" style="margin:0 0 10px;">Product cost is left out of this copy because the sign-in was skipped. <a href="#" onclick="reIdentify();return false;" style="color:var(--steel);">Add your name and email</a> and it appears.</p>`:''}
       <p class="hint noprint" style="margin:0 0 8px;">Filter and sort to find what you dispense, tick the ones you want, then add them to your mix in one go. Click any column heading to sort.</p>
@@ -780,9 +780,9 @@ let MSEL = new Set();
 
 function mixCols(){
   return [{k:'product',label:'Product'},{k:'category',label:'Category'},{k:'route',label:'Route'},
-          {k:'awp',label:'MFG AWP',num:true}]
-    .concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}])
-    .concat([{k:'fee',label:feeLabel(),num:true},{k:'net',label:'Net / fill',num:true}]);
+          {k:'awp',label:'MFG AWP',num:true,cls:'moneycol'}]
+    .concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true,cls:'moneycol'}])
+    .concat([{k:'fee',label:feeLabel(),num:true,cls:'moneycol'},{k:'net',label:'Net / fill',num:true,cls:'moneycol'}]);
 }
 
 // One fill of one product, worked out exactly as the printed formulary works it out, so the
@@ -801,7 +801,7 @@ function renderMix(){
   const empty=document.getElementById('mixempty'), wrap=document.querySelector('#mtable');
   if(!head||!body) return;
   head.innerHTML='<tr><th style="width:34px;"></th>'
-    + mixCols().map(c=>`<th class="${c.num?'num':''}">${esc(c.label)}</th>`).join('')
+    + mixCols().map(c=>`<th class="${c.num?'num':''} ${c.cls||''}">${esc(c.label)}</th>`).join('')
     + '<th class="num" style="width:78px;">Units</th><th class="noprint" style="width:44px;"></th></tr>';
   const cols = mixCols().length + 3;
   let lastCat=null;
@@ -814,8 +814,8 @@ function renderMix(){
     return head2 + `<tr class="${MSEL.has(String(f.id))?'selrow':''}" onclick="toggleMixSel('${f.id}')">
       <td class="noprint" style="text-align:center;"><input type="checkbox" ${MSEL.has(String(f.id))?'checked':''} onclick="event.stopPropagation();toggleMixSel('${f.id}')"></td>
       <td>${esc(f.product)}${on?' <span style="font-size:10.5px;color:#8a94a4;border:1px solid #d7dee9;border-radius:3px;padding:1px 5px;">on formulary</span>':''}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
-      <td class="num">${money2(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money2(f.cost)}</td>`}
-      <td class="num">${money2(L.fee)}</td><td class="num net">${money2(L.net)}</td>
+      <td class="num moneycol">${money2(f.awp)}</td>${HIDE_COST?'':`<td class="num moneycol">${money2(f.cost)}</td>`}
+      <td class="num moneycol">${money2(L.fee)}</td><td class="num net moneycol">${money2(L.net)}</td>
       <td class="num"><input class="qty" type="number" min="0" step="0.5" value="${m.units}"
         onclick="event.stopPropagation();" oninput="setUnits('${f.id}',this.value)"></td>
       <td class="noprint" style="text-align:center;"><button class="rm" title="Remove from formulary"
@@ -913,7 +913,7 @@ function compute(){
     <div class="lbl">Estimated practice ancillary revenue</div>
     <div class="big">${money(practice)}<span style="font-size:15px;color:#547;font-weight:400;"> / month</span></div>
     <div class="yr">${money(practice*12)} / year</div>
-    <div class="brk">Gross collections ${money(gross)}/mo · Claims purchase fees ${money(cost)}/mo${feeCost?' (includes '+money(feeCost)+'/mo of dispensing and shipping)':''} · Net income ${money(net)}/mo · Management fee ${money(net-practice)}/mo · Practice keeps ${Math.round(share*100)}% of net${lines.length?' · '+lines.length+' medication'+(lines.length>1?'s':''):''}</div>
+    <div class="brk">Gross collections ${money(gross)}/mo <span class="moneycol">· Claims purchase fees ${money(cost)}/mo${feeCost?' (includes '+money(feeCost)+'/mo of dispensing and shipping)':''} </span>· Net income ${money(net)}/mo · Management fee ${money(net-practice)}/mo · Practice keeps ${Math.round(share*100)}% of net${lines.length?' · '+lines.length+' medication'+(lines.length>1?'s':''):''}</div>
     <div class="disc">${(fee||ship)?('Net of the $'+(fee+ship).toFixed(2)+' per Rx the practice pays for dispensing and shipping. '):''}Good-faith estimate; actual results vary by utilization, payer mix, and jurisdiction. <span id="basis-disc">${esc(basisLabel())}</span>.</div>`;
 }
 
@@ -946,12 +946,12 @@ function formCols(){
     {k:'product', label:'Product'},
     {k:'category',label:'Category'},
     {k:'route',   label:'Route'},
-    {k:'awp',     label:'MFG AWP', num:true},
+    {k:'awp',     label:'MFG AWP', num:true, cls:'moneycol'},
   // No per-unit reimbursement column. It reads as a fixed figure sitting next to each product when
   // it is nothing of the kind: it moves with whichever state is chosen at the top of the page, and
   // the estimate above already states what the basket collects at that state's rate.
-  ].concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true}])
-   .concat([{k:'fee',label:feeLabel(),num:true},{k:'net',label:'Net / fill',num:true}]);
+  ].concat(HIDE_COST?[]:[{k:'cost',label:'Product cost',num:true,cls:'moneycol'}])
+   .concat([{k:'fee',label:feeLabel(),num:true,cls:'moneycol'},{k:'net',label:'Net / fill',num:true,cls:'moneycol'}]);
 }
 // The two computed columns sort on what they display, not on a stored field.
 function fVal(f,k){
@@ -968,7 +968,7 @@ function renderFormHead(){
   h.innerHTML = '<tr><th style="width:34px;"></th>' + formCols().map(c=>{
     const on = FSORT.key===c.k;
     const arrow = on ? (FSORT.dir>0?' ▲':' ▼') : '';
-    return `<th class="${c.num?'num ':''}sortable" onclick="sortForm('${c.k}')" title="Sort by ${esc(c.label)}">${esc(c.label)}${arrow}</th>`;
+    return `<th class="${c.num?'num ':''}${c.cls?c.cls+' ':''}sortable" onclick="sortForm('${c.k}')" title="Sort by ${esc(c.label)}">${esc(c.label)}${arrow}</th>`;
   }).join('') + '</tr>';
 }
 function applyForm(){
@@ -1018,7 +1018,7 @@ function fillFormTable(rows){
     return head + `<tr class="${FSEL.has(String(f.id))?'selrow':''}" onclick="toggleSel('${f.id}')" title="${on?'Already on the formulary':''}">
     <td class="noprint" style="text-align:center;"><input type="checkbox" ${FSEL.has(String(f.id))?'checked':''} onclick="event.stopPropagation();toggleSel('${f.id}')"></td>
     <td>${esc(f.product)}${on?' <span style="font-size:10.5px;color:#8a94a4;border:1px solid #d7dee9;border-radius:3px;padding:1px 5px;">on formulary</span>':''}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
-    <td class="num">${money2(f.awp)}</td>${HIDE_COST?'':`<td class="num">${money2(f.cost)}</td>`}</tr>`;
+    <td class="num moneycol">${money2(f.awp)}</td>${HIDE_COST?'':`<td class="num moneycol">${money2(f.cost)}</td>`}</tr>`;
   }).join('');
 }
 function toggleSel(id){
