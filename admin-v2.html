@@ -2014,7 +2014,13 @@ function mdrxInsertLink(moveId, key){
   const ta=document.getElementById('tl-draft-'+moveId);
   if(!ta) return;
   const NL=String.fromCharCode(10);
-  const tok='{{'+key+'}}';
+  // The sender only expands the tokens it already knows. pdrxone is newer than the deployed
+  // function, and an unknown token made it give up on the whole body -- {{calendar}} then went
+  // out unexpanded and the gate refused the email for having no calendar link. So this one goes
+  // in already expanded, against the lead's own tracking token.
+  const tok = (key==='pdrxone' && MDRX_TOKEN)
+    ? 'https://mdconcierge.net/go.html?p='+encodeURIComponent(MDRX_TOKEN)+'&to=pdrxone'
+    : '{{'+key+'}}';
   // A draft he has not clicked into reports a cursor at 0, which used to drop the link ABOVE the
   // greeting. The gate then refuses the whole email for not opening on the greeting. So a cursor
   // at the very top means "he did not place it": put the link above the signature instead.
