@@ -175,7 +175,11 @@ body.dead .wrap{display:none !important;}
   var EMAIL='';
   function paint(){
     var a=el('toolink');
-    a.href='pharmacy-model.html?p='+encodeURIComponent(tok())+'&mine='+MINE;
+    // t= is what unlocks the tool; p= is only the tracking token. Sending p alone lands on
+    // the identify screen with nothing behind it. The formulary list rides in the fragment
+    // so it stays out of server logs and Referer headers.
+    a.href='pharmacy-model.html?t='+encodeURIComponent(tok())+
+           '&p='+encodeURIComponent(tok())+'#mine='+MINE;
     a.style.display='';
     el('docs').innerHTML=DOCS.map(function(r){
       return '<a class="doc" href="#" data-doc="'+r[1]+'"><span class="ic">'+r[2]+'</span>'+
