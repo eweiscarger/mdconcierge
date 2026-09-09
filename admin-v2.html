@@ -2015,8 +2015,16 @@ function mdrxInsertLink(moveId, key){
   if(!ta) return;
   const NL=String.fromCharCode(10);
   const tok='{{'+key+'}}';
-  const at=ta.selectionStart==null?ta.value.length:ta.selectionStart;
-  const end=ta.selectionEnd==null?at:ta.selectionEnd;
+  // A draft he has not clicked into reports a cursor at 0, which used to drop the link ABOVE the
+  // greeting. The gate then refuses the whole email for not opening on the greeting. So a cursor
+  // at the very top means "he did not place it": put the link above the signature instead.
+  let at=ta.selectionStart==null?ta.value.length:ta.selectionStart;
+  if(at===0 && ta.value.trim()){
+    const sig=ta.value.search(/
+s*(Best|Thanks|Talk soon|Regards|Sincerely)/i);
+    at = sig>0 ? sig : ta.value.length;
+  }
+  const end=(ta.selectionEnd==null||ta.selectionEnd<at)?at:ta.selectionEnd;
   const before=ta.value.slice(0,at), after=ta.value.slice(end);
   // A link alone on its line renders as a button, so give it its own line unless he is mid sentence.
   const midSentence=/\S[ ]*$/.test(before);
