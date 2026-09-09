@@ -2021,10 +2021,11 @@ function mdrxInsertLink(moveId, key){
   // Straight at the page, not through go.html?to=pdrxone. The deployed gate does not know that
   // destination, so it rendered "UNKNOWN LINK: pdrxone" in the preview; the page reads ?p= itself
   // and logs the view either way, so nothing is lost by skipping the redirect.
-  // Named anchor, so the email reads "PDRX Overview" rather than whatever label the deployed
-  // gate would fall back to for a bare URL it does not recognise.
+  // A bare URL on its own line. The renderer linkifies it and supplies the anchor text itself;
+  // wrapping it in markdown produced "[PDRX Overview](Read the one page overview)" in the body,
+  // because the linkifier rewrote the URL inside the parentheses.
   const tok = (key==='pdrxone' && MDRX_TOKEN)
-    ? '[PDRX Overview](https://mdconcierge.net/pdrx-onepager.html?p='+encodeURIComponent(MDRX_TOKEN)+')'
+    ? 'https://mdconcierge.net/pdrx-onepager.html?p='+encodeURIComponent(MDRX_TOKEN)
     : '{{'+key+'}}';
   // A draft he has not clicked into reports a cursor at 0, which used to drop the link ABOVE the
   // greeting. The gate then refuses the whole email for not opening on the greeting. So a cursor
