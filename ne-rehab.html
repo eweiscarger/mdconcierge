@@ -356,11 +356,21 @@ body.dead .wrap,body.dead .gate{display:none !important;}
         '<a href="#" id="g-req" style="color:#2F5EA8;font-weight:600;">Ask Eric for access</a>.';
       el('g-req').addEventListener('click',function(ev){
         ev.preventDefault();
+        /* Name and practice before it goes. An access request that reaches Eric as a bare
+           email address tells him nothing he can decide on, and deciding is the whole point:
+           nothing is served to anybody outside the practice until he says so. */
+        var fn=(el('g-first')?el('g-first').value:'')||'', ln=(el('g-last')?el('g-last').value:'')||'',
+            pr=(el('g-practice')?el('g-practice').value:'')||'';
+        if(!fn.trim()||!ln.trim()||!pr.trim()){ msg.className='msg bad';
+          msg.textContent='First name, last name and practice, so Eric knows who is asking.'; return; }
         msg.textContent='Sending…';
         post({action:'request',packet:PACKET,email:e,p:tok(),
               name:((el('g-first')?el('g-first').value:'')+' '+(el('g-last')?el('g-last').value:'')).trim(),
               practice:(el('g-practice')?el('g-practice').value:'')})
-          .then(function(){ msg.className='msg good';
+          .then(function(j2){
+            if(j2&&j2.ok===false){ msg.className='msg bad';
+              msg.textContent='That did not go through. Reply to the email this came from.'; return; }
+            msg.className='msg good';
             msg.textContent='Sent. Eric has to approve it, and you will hear from him.'; })
           .catch(function(){ msg.className='msg bad'; msg.textContent='That did not go through. Reply to the email this came from.'; });
       });
