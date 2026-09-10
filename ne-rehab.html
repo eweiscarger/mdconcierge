@@ -294,6 +294,12 @@ body.dead .wrap,body.dead .gate{display:none !important;}
       body:JSON.stringify(b)}).then(function(r){return r.json();});
   }
 
+  /* Every gate call carries the link token as well as the address. The address on its own is
+     still what decides, but a link may be marked shareable inside one practice's own domain,
+     and the function can only apply that if it knows which link the person came in on. Holding
+     the link is half of it and an address at that domain is the other half; neither alone
+     opens anything, so this stays as private as it was. */
+
   /* A document is a name, never a path. The only way to a file is a signed URL the
      function mints for somebody it has already recognised, and it expires in minutes. */
   function paint(host,rows){
@@ -309,7 +315,7 @@ body.dead .wrap,body.dead .gate{display:none !important;}
         ev.preventDefault();
         var n=a.querySelector('.m'), was=n.textContent;
         n.textContent='opening…';
-        post({action:'open',packet:PACKET,email:EMAIL,doc:a.getAttribute('data-doc')})
+        post({action:'open',packet:PACKET,email:EMAIL,p:tok(),doc:a.getAttribute('data-doc')})
           .then(function(j){
             n.textContent=was;
             if(j&&j.ok&&j.url) window.open(j.url,'_blank','noopener');
@@ -341,7 +347,7 @@ body.dead .wrap,body.dead .gate{display:none !important;}
     var msg=el('g-msg'), btn=el('g-go');
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ msg.className='msg bad'; msg.textContent='That does not look like an email address.'; return; }
     btn.disabled=true; msg.className='msg'; msg.textContent='Checking…';
-    post({action:'check',packet:PACKET,email:e}).then(function(j){
+    post({action:'check',packet:PACKET,email:e,p:tok()}).then(function(j){
       btn.disabled=false;
       if(j&&j.ok&&j.allowed){ msg.textContent=''; unlock({email:e,name:j.name}); return; }
       if(j&&j.pending){ msg.className='msg'; msg.textContent='Your request is with Eric. You will hear as soon as he approves it.'; return; }
@@ -351,7 +357,7 @@ body.dead .wrap,body.dead .gate{display:none !important;}
       el('g-req').addEventListener('click',function(ev){
         ev.preventDefault();
         msg.textContent='Sending…';
-        post({action:'request',packet:PACKET,email:e,
+        post({action:'request',packet:PACKET,email:e,p:tok(),
               name:((el('g-first')?el('g-first').value:'')+' '+(el('g-last')?el('g-last').value:'')).trim(),
               practice:(el('g-practice')?el('g-practice').value:'')})
           .then(function(){ msg.className='msg good';
@@ -372,7 +378,7 @@ body.dead .wrap,body.dead .gate{display:none !important;}
       var saved=''; try{ saved=localStorage.getItem('mdc_pkt_'+PACKET)||''; }catch(e){}
       if(saved){
         el('g-email').value=saved;
-        post({action:'check',packet:PACKET,email:saved}).then(function(j){
+        post({action:'check',packet:PACKET,email:saved,p:tok()}).then(function(j){
           if(j&&j.ok&&j.allowed) unlock({email:saved,name:j.name});
         }).catch(function(){});
       }
