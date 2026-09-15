@@ -243,6 +243,8 @@ function drawTable(){
     rows.push({i:i,p:x.p,g:x.g,rt:x.r,a:x.a,c:x.c,pays:pays,share:NET(pays,x.c+DISP_FEE)});
   }
   rows.sort(function(a,b){
+    var ka=(a.rt==='Injection'), kb=(b.rt==='Injection');
+    if(ka!==kb) return ka?1:-1;
     if(SORT.k!=='p' && a.g!==b.g) return a.g.localeCompare(b.g);
     if(SORT.k==='p' && a.g!==b.g) return a.g.localeCompare(b.g);
     var va=a[SORT.k], vb=b[SORT.k];
@@ -716,7 +718,7 @@ function render(expires){
       <p class="hint noprint" style="margin:0 0 8px;">Filter and sort to find what you dispense, tick the ones you want, then add them to your mix in one go. Click any column heading to sort.</p>
       <div class="fctl noprint">
         <input id="fsearch" placeholder="Search product, category, or route…" oninput="applyForm()">
-        <select id="fcat" onchange="applyForm()">${['<option value="">All categories</option>'].concat([...new Set(FORM.map(f=>f.category).filter(Boolean))].sort().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`)).join('')}</select>
+        <select id="fcat" onchange="applyForm()">${['<option value="">All categories</option>'].concat([...new Set(FORM.map(f=>f.category).filter(Boolean))].sort((a,b)=>((a==='Injection Kits')-(b==='Injection Kits'))||a.localeCompare(b)).map(c=>`<option value="${esc(c)}">${esc(c)}</option>`)).join('')}</select>
         <select id="froute" onchange="applyForm()"><option value="">All routes</option><option value="Oral">Oral</option><option value="Topical">Topical</option><option value="Injection">Injection kits</option></select>
         <button class="btn" onclick="clearForm()">Clear</button>
       </div>
@@ -992,7 +994,9 @@ function applyForm(){
   });
   // Then gather into category sections. Sort is stable, so whatever the physician sorted by still
   // holds inside each section rather than being thrown away.
-  if(k!=='category') rows.sort((a,b)=> String(a.category||'~').toLowerCase().localeCompare(String(b.category||'~').toLowerCase()));
+  // Injection kits always go last, whatever the sort.
+  rows.sort((a,b)=> ((a.route==='Injection')-(b.route==='Injection'))
+    || (k!=='category' ? String(a.category||'~').toLowerCase().localeCompare(String(b.category||'~').toLowerCase()) : 0));
   renderFormHead();
   fillFormTable(rows);
   const cnt=document.getElementById('fcount');
