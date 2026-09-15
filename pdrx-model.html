@@ -641,10 +641,12 @@ function render(expires){
   const forName = REC.practice ? (REC.practice) : (REC.name||'your practice');
   const expTxt = expires ? new Date(expires).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '';
   const oral = FORM.filter(f=>f.route==='Oral');
-  const top  = FORM.filter(f=>f.route!=='Oral');
+  const top  = FORM.filter(f=>f.route==='Topical');
+  const inj  = FORM.filter(f=>f.route==='Injection');
   const opts = '<option value="">Select a medication</option>'
     + '<optgroup label="Oral">'    + oral.map(f=>`<option value="${f.id}">${esc(f.product)}</option>`).join('') + '</optgroup>'
-    + '<optgroup label="Topical">' + top.map(f=>`<option value="${f.id}">${esc(f.product)}</option>`).join('')  + '</optgroup>';
+    + '<optgroup label="Topical">' + top.map(f=>`<option value="${f.id}">${esc(f.product)}</option>`).join('')  + '</optgroup>'
+    + (inj.length ? '<optgroup label="Injection kits">' + inj.map(f=>`<option value="${f.id}">${esc(f.product)}</option>`).join('') + '</optgroup>' : '');
   window._OPTS = opts;
 
   app.innerHTML = `
@@ -674,7 +676,7 @@ function render(expires){
         <label>Dispensing fee / Rx (cost)<input id="a-df" type="number" step="0.01" value="5.00" oninput="compute()"></label>
         <label>Shipping / Rx (cost)<input id="a-ship" type="number" step="0.01" value="8.50" oninput="compute()"></label>
         <label>Oral collection %<input id="a-oc" type="number" value="100" oninput="compute()"></label>
-        <label>Topical collection %<input id="a-tc" type="number" value="100" oninput="compute()"></label>
+        <label>Topical &amp; injection collection %<input id="a-tc" type="number" value="100" oninput="compute()"></label>
         <label>Practice share %<input id="a-sh" type="number" value="50" oninput="compute()"></label>
       </div>
       <p class="hint" style="margin:8px 0 0;">Every product here dispenses as a <b>generic</b>, so your state's generic rate is applied throughout. Brand names in the formulary are the AWP reference, not what ships.</p>
@@ -715,7 +717,7 @@ function render(expires){
       <div class="fctl noprint">
         <input id="fsearch" placeholder="Search product, category, or route…" oninput="applyForm()">
         <select id="fcat" onchange="applyForm()">${['<option value="">All categories</option>'].concat([...new Set(FORM.map(f=>f.category).filter(Boolean))].sort().map(c=>`<option value="${esc(c)}">${esc(c)}</option>`)).join('')}</select>
-        <select id="froute" onchange="applyForm()"><option value="">All routes</option><option value="Oral">Oral</option><option value="Topical">Topical</option></select>
+        <select id="froute" onchange="applyForm()"><option value="">All routes</option><option value="Oral">Oral</option><option value="Topical">Topical</option><option value="Injection">Injection kits</option></select>
         <button class="btn" onclick="clearForm()">Clear</button>
       </div>
       <div class="tablewrap">
@@ -977,7 +979,7 @@ function applyForm(){
   const rt=((document.getElementById('froute')||{}).value||'');
   let rows = FORM.filter(f=>{
     if(cat && (f.category||'')!==cat) return false;
-    if(rt){ const isOral=(f.route==='Oral'); if(rt==='Oral'&&!isOral) return false; if(rt==='Topical'&&isOral) return false; }
+    if(rt && (f.route||'')!==rt) return false;
     if(q && !((f.product+' '+(f.category||'')+' '+(f.route||'')).toLowerCase().includes(q))) return false;
     return true;
   });
