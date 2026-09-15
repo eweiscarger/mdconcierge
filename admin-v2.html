@@ -1293,12 +1293,12 @@ async function funOpenProvider(id){
 // tied to NO lead, so running the exercise never inflates a physician's engagement score and
 // the watermark reads "MDconcierge · Live working session" rather than another practice's name.
 const PRESENTER_LINK='https://mdconcierge.net/pharmacy-model.html?t=bb2eab1360fab913ac8d712a7b6a5458';
-function openPresenter(){ window.open(PRESENTER_LINK,'_blank','noopener'); }
+function openPresenter(){ window.open(PRESENTER_LINK+'&from=portal','_blank'); }
 // pdrx-model.html has existed since 27 August: PROGRAM='pdrx', a 50 percent share, PDRx's own
 // fees and every state selectable. It simply had no button. This is that button, on a presenter
 // token tied to no lead so walkthroughs never inflate a physician's engagement score.
 const PRESENTER_LINK_PDRX='https://mdconcierge.net/pdrx-model.html?t=ca64189d84f3edd390dcc65409493b3f';
-function openPresenterPdrx(){ window.open(PRESENTER_LINK_PDRX,'_blank','noopener'); }
+function openPresenterPdrx(){ window.open(PRESENTER_LINK_PDRX+'&from=portal','_blank'); }
 
 
 // ---- Funnel engagement view ----------------------------------------------

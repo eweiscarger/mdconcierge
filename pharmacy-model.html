@@ -1036,5 +1036,18 @@ function filterForm(){ applyForm(); }
 
 boot();
 </script>
+<script>
+// Only when opened from the admin portal's Present formulary button (&from=portal). A physician's
+// link never carries it, so what they see is unchanged.
+(function(){
+  if(new URL(location.href).searchParams.get('from') !== 'portal') return;
+  var b = document.createElement('button');
+  b.textContent = '← Back to portal';
+  b.style.cssText = 'position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:12px;z-index:99999;padding:9px 16px;font:700 14px Arial,sans-serif;color:#fff;background:#08214C;border:none;border-radius:9px;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer;';
+  b.onclick = function(){ window.close(); setTimeout(function(){ location.href = '/admin-v2.html'; }, 150); };
+  var s = document.createElement('style'); s.textContent = '@media print{.back-to-portal{display:none!important}}';
+  b.className = 'back-to-portal'; document.head.appendChild(s); document.body.appendChild(b);
+})();
+</script>
 </body>
 </html>
