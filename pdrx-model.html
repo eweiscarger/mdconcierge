@@ -1024,7 +1024,8 @@ function fillFormTable(rows){
     return head + `<tr class="${FSEL.has(String(f.id))?'selrow':''}" onclick="toggleSel('${f.id}')" title="${on?'Already on the formulary':''}">
     <td class="noprint" style="text-align:center;"><input type="checkbox" ${FSEL.has(String(f.id))?'checked':''} onclick="event.stopPropagation();toggleSel('${f.id}')"></td>
     <td>${esc(f.product)}${on?' <span style="font-size:10.5px;color:#8a94a4;border:1px solid #d7dee9;border-radius:3px;padding:1px 5px;">on formulary</span>':''}</td><td style="color:var(--muted);">${esc(f.category||'')}</td><td>${esc(f.route||'')}</td>
-    <td class="num moneycol">${money2(f.awp)}</td>${HIDE_COST?'':`<td class="num moneycol">${money2(f.cost)}</td>`}</tr>`;
+    <td class="num moneycol">${money2(f.awp)}</td>${HIDE_COST?'':`<td class="num moneycol">${money2(f.cost)}</td>`}
+    <td class="num moneycol">${money2(lineNet(f).fee)}</td><td class="num net moneycol">${money2(lineNet(f).net)}</td></tr>`;
   }).join('');
 }
 function toggleSel(id){
