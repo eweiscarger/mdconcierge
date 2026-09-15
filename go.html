@@ -50,7 +50,10 @@
     // Journal of Orthopaedic Business, ancillary revenue across imaging, DME, therapy and ASC.
     // Routed through here so a click on the evidence is a signal like any other.
     jortho: "https://jorthobusiness.org/index.php/jorthobusiness/article/view/77",
-    confirmed: "/confirmed.html"
+    confirmed: "/confirmed.html",
+    // The PDRx account intake. A prefilled one carries its data in the #d= fragment, which is
+    // passed through below, so the click is tracked and the form still opens filled in.
+    intake: "/pdrx-intake.html"
   };
   var dest = MAP[to] || MAP.brief;
 
@@ -71,7 +74,8 @@
   // formulary-access answer {"reason":"invalid"}, so every tool link sent through here landed on
   // "This link is not valid". Both are passed now: t unlocks, p is the tracking token.
   var q = token ? ("?t=" + encodeURIComponent(token) + "&p=" + encodeURIComponent(token)) : "";
-  var target = dest + q;
+  // Keep the fragment. It never reaches a server, and the intake reads its prefill from it.
+  var target = dest + q + (window.location.hash || "");
   window.location.replace(target);
 })();
 </script>

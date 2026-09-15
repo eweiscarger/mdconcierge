@@ -359,6 +359,11 @@ input.bad{border-color:var(--err);background:var(--err-bg);}
     need('subemail',emailOk(p.submitter.email),'your email');
     if(!p.locations.length) bad.push('at least one location');
     if(!p.providers.length) bad.push('at least one provider');
+    // The pharmacy cannot open the account without a DEA number, so at least one is required.
+    if(!p.providers.some(function(v){ return !!v.dea; })){
+      bad.push('at least one DEA number');
+      var dea=document.querySelector('#provs [data-f="dea"]'); if(dea) dea.classList.add('bad');
+    }
     if(!p.program) bad.push('a program');
     return bad;
   }
