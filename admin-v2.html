@@ -1456,7 +1456,7 @@ async function loadCockpit(){
     sbClient.from('quote_links').select('recipient_name,recipient_email,practice,view_count,first_viewed_at,last_viewed_at,expires_at,revoked,note').eq('note','live').order('created_at',{ascending:false}),
     sbClient.from('mdrx_inbox_drafts').select('id,from_name,from_addr,subject,sentiment,hot,status,provider_id').eq('status','pending'),
     sbClient.from('mdrx_next_moves').select('*').eq('status','pending').order('recommended_date'),
-    sbClient.from('mdrx_outbox').select('*').eq('status','pending').order('id'),
+    sbClient.from('mdrx_outbox').select('*').in('status',['pending','held']).order('id'),
     sbClient.from('mdrx_contacts').select('id,name,title,role,practice_id'),
     sbClient.from('outreach_config').select('sending_paused,pause_reason').eq('id',1).maybeSingle(),
     sbClient.from('mdrx_content_queue').select('*').in('status',['pending','approved']).order('created_at',{ascending:false})
@@ -1509,7 +1509,11 @@ async function loadCockpit(){
     <div style="margin-top:6px;display:flex;gap:6px;"><button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;" onclick="mdrxApproveContent(${c.id})">Approve</button><button class="ib" onclick="mdrxRejectContent(${c.id})">Reject</button></div>
   </div>`).join('');
   const cqPanel=cqList.length?`<div class="panel" style="margin-bottom:16px;border-left:3px solid var(--steel,#6B9FD4);"><div class="ph"><div class="pt">🧠 Content &amp; opportunities (${cqList.length})</div><div class="ps">Fresh, on-message openers and hot ancillary opportunities the news scout found. Edit, then approve to add to rotation, or reject. Nothing enters rotation until you approve.</div></div><div class="grp" style="margin:0;border:none;">${cqHtml}</div></div>`:'';
-  const outboxList=(ob&&!ob.error&&ob.data)?ob.data:[];
+  const obAll=(ob&&!ob.error&&ob.data)?ob.data:[];
+  const outboxList=obAll.filter(o=>o.status==='pending');
+  // Held mail never joins the batch. It is one-off letters that were written and stopped,
+  // so each one is a separate decision and gets a separate click.
+  const heldList=obAll.filter(o=>o.status==='held');
   // How long since this physician last heard from us, spelled out on the row. Two days is a
   // different decision from eight, and it should not require opening the record to find out.
   const lastTouch=(op)=>{
@@ -1533,7 +1537,7 @@ async function loadCockpit(){
     if(k.startsWith('hot_')) return 'Hot '+k.slice(4);
     return k.replace(/_/g,' ');
   };
-  const obHtml=outboxList.map(o=>{
+  const obRow=(o)=>{
     const op=P.find(x=>x.id===o.provider_id);
     const oc=o.contact_id?contactsAll.find(x=>x.id===o.contact_id):null;
     const lt=lastTouch(op);
@@ -1549,8 +1553,13 @@ async function loadCockpit(){
     <div style="margin-top:4px;font-size:11px;color:var(--muted);">The box above is the plain-text version, so links show as raw URLs. Preview to see what the physician actually gets.</div>
     <div id="obpv-${o.id}" style="display:none;margin-top:8px;border:1px solid var(--border2);border-radius:10px;overflow:hidden;background:#F6F9FD;"></div>
     <div style="margin-top:6px;display:flex;gap:6px;"><button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;" onclick="mdrxSendOutbox([${o.id}])">Send this one</button><button class="ib" onclick="mdrxPreview(${o.id})" id="obpvb-${o.id}">👁 Preview</button><button class="ib" onclick="mdrxSkipOutbox(${o.id})">Skip</button></div>
-  </div>`;}).join('');
+  </div>`;};
+  const obHtml=outboxList.map(obRow).join('');
+  const heldHtml=heldList.map(obRow).join('');
   const paused=!!(cf&&cf.data&&cf.data.sending_paused);
+  // These were written and never went out. They are not cadence touches, so there is no batch
+  // send here on purpose: read it, then send that one.
+  const heldPanel=heldList.length?`<div class="panel" style="margin-bottom:16px;border:2px solid #C8922A;"><div class="ph"><div class="pt">✋ Written but never sent (${heldList.length})</div><div class="ps">One-off emails that were drafted and then held back — not part of any sequence. They have been sitting here unsent. Read each one and send it, or skip it. There is no send-all for these.</div></div><div class="grp" style="margin:0;border:none;padding:2px 14px 12px;">${heldHtml}</div></div>`:'';
   const obPanel=outboxList.length?`<div class="panel" style="margin-bottom:16px;border:2px solid ${paused?'#c0392b':'var(--green)'};"><div class="ph"><div class="pt">📤 Ready to send (${outboxList.length})</div><div class="ps">The day's queued outreach. Edit any, skip any, then send. Your signature attaches automatically. Nothing goes out until you click send.</div></div><div style="padding:10px 14px 4px;">${paused?`<div style="background:#4a1414;border:1px solid #c0392b;border-radius:8px;padding:10px 12px;color:#ff9b9b;font-size:13px;">⛔ Sending is PAUSED — ${ehtml((cf.data&&cf.data.pause_reason)||'deliverability guard')}. <button class="ib" onclick="mdrxResumeSending()" style="margin-left:8px;">Resume sending</button></div>`:`<button onclick="mdrxSendOutbox([${outboxList.map(o=>o.id).join(',')}])" style="padding:10px 20px;background:var(--green);color:#fff;border:none;border-radius:9px;font-weight:800;font-size:14px;cursor:pointer;">✅ Send all ${outboxList.length}</button>`}</div><div class="grp" style="margin:0;border:none;padding:2px 14px 12px;">${obHtml}</div></div>`:'';
   box.innerHTML=`
     <style>#view-cockpit .row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border2);}#view-cockpit .row:last-child{border-bottom:none;}#view-cockpit .meta{flex:1;min-width:0;}#view-cockpit .nm{font-size:14px;font-weight:600;}#view-cockpit .ds{font-size:12px;color:var(--muted);}#view-cockpit .grp{padding:2px 14px;}
@@ -1560,6 +1569,7 @@ async function loadCockpit(){
     .cktab-btn .cb{display:inline-block;min-width:18px;text-align:center;background:var(--gold);color:#241800;border-radius:9px;font-size:11px;padding:0 5px;font-weight:800;}</style>
     <div class="kpi-row" style="margin-bottom:14px;">
       ${outboxList.length?kpi('Ready to send',outboxList.length,'awaiting your go','green'):''}
+      ${heldList.length?kpi('Held, never sent',heldList.length,'written and stopped','gold'):''}
       ${kpi('Meetings today',bookingsToday.length+pipeMeet.length,'on the calendar','gold')}
       ${kpi('Need approval',approvals,'replies to review','purple')}
       ${kpi('Hot leads',hottest.length,'score 15+','green')}
@@ -1577,6 +1587,7 @@ async function loadCockpit(){
         ? `<div class="panel" style="margin-bottom:16px;border:2px solid #c0392b;background:#4a1414;"><div style="padding:12px 14px;color:#ff9b9b;font-size:14px;">⛔ <b>Outreach is PAUSED</b> — ${ehtml((cf.data&&cf.data.pause_reason)||'deliverability guard')}. Nothing will send.<button class="ib" onclick="mdrxResumeSending()" style="margin-left:10px;">Resume sending</button></div></div>`
         : `<div class="panel" style="margin-bottom:16px;"><div style="padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;"><span style="font-size:13px;color:var(--muted);">Outreach is running normally.</span><button onclick="mdrxPauseSending()" style="padding:8px 16px;background:#7a1f1f;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">⛔ Stop all outreach</button></div></div>`}
       ${obPanel}
+      ${heldPanel}
       <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">📅 Today's meetings</div></div><div class="grp" style="margin:0;border:none;">${meetHtml}</div></div>
       <div class="panel" style="margin-bottom:0;"><div class="ph"><div class="pt">⏰ Due today (${due.length})</div><div class="ps">Every contact with an action due. Nothing sits idle.</div></div><div class="grp" style="margin:0;border:none;">${dueHtml}</div></div>
     </div>
