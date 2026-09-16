@@ -85,6 +85,17 @@
     color:#fff; background:var(--navy); border:none; border-radius:10px; }
   .sbcta:hover{ background:#0d2c63; }
   .sbcta .ar{ font-size:20px; font-weight:400; opacity:.85; }
+  .sbsep{ width:1px; align-self:stretch; margin:8px 10px 0; background:var(--line); }
+  .sbslab{ align-self:center; padding:0 9px 12px 0; font-size:11px; font-weight:800;
+    letter-spacing:1.1px; color:#8a94a4; text-transform:uppercase; }
+  .sbs{ padding:12px 15px; border:none; background:none; font-family:inherit; font-size:15px;
+    font-weight:800; letter-spacing:.3px; color:#8a94a4; cursor:pointer;
+    border-bottom:3px solid transparent; margin-bottom:-1px; }
+  .sbs:hover{ color:var(--navy); }
+  .sbs.on{ color:var(--navy); border-bottom-color:var(--navy); }
+  .sbs .r{ display:block; font-size:10.5px; font-weight:600; letter-spacing:0;
+    color:#8a94a4; text-transform:none; margin-top:1px; }
+  .sbs.on .r{ color:var(--steel); }
 </style>
 </head>
 <body>
@@ -95,6 +106,51 @@ function sbTab(n){
   var b=document.querySelectorAll('.sbt');
   for(var i=0;i<b.length;i++) b[i].classList.toggle('on', i===n-1);
   var c=document.querySelector('.sbcta'); if(c) c.style.display = n===1 ? '' : 'none';
+}
+
+// A practice that works across several states can be sent all of them and toggle between,
+// rather than hunting its state in a 50-entry dropdown each time. The list rides in the
+// fragment, like `mine`, so it stays out of server logs and Referer headers. No list, no
+// strip: every link sent before this existed behaves exactly as it did.
+function statesFromUrl(){
+  var h=new URLSearchParams(String(location.hash||'').replace(/^#/,''));
+  var q=new URL(location.href).searchParams;
+  var raw=h.get('states')||q.get('states')||'';
+  var seen={}, out=[];
+  raw.split(',').map(function(x){ return String(x||'').trim().toUpperCase(); })
+    .filter(Boolean).forEach(function(c){
+      // Only states this page actually prices, and never the same one twice.
+      if(!seen[c] && typeof stateByCode==='function' && stateByCode(c)){ seen[c]=1; out.push(c); }
+    });
+  return out;
+}
+function stateTabsHtml(){
+  var codes=statesFromUrl();
+  if(!codes.length) return '';
+  return '<div class="sbsep"></div><span class="sbslab">State</span>' + codes.map(function(c){
+    var s=stateByCode(c), m=(typeof stMult==='function') ? stMult(s,'gr') : null;
+    var rule = m==null ? '' : (m===1 ? 'AWP' : (m>1 ? 'AWP +'+Math.round((m-1)*100)+'%' : 'AWP -'+Math.round((1-m)*100)+'%'));
+    return '<button type="button" class="sbs" data-st="'+c+'" onclick="sbState(\''+c+'\')">'
+      + c + '<span class="r">' + rule + '</span></button>';
+  }).join('');
+}
+// Drives the selector the page already has rather than keeping a second source of truth.
+// Assigning .value fires no event, and the Customize pane listens for 'change' on it, so
+// the event is dispatched by hand or tab 2 would keep pricing the previous state.
+function sbState(code){
+  var sel=document.getElementById('a-state');
+  if(sel){
+    sel.value=code;
+    if(typeof applyState==='function') applyState(code);
+    try{ sel.dispatchEvent(new Event('change')); }catch(e){}
+  }
+  syncStateTabs();
+}
+function syncStateTabs(){
+  var sel=document.getElementById('a-state');
+  var cur=sel?sel.value:'';
+  var b=document.querySelectorAll('.sbs');
+  for(var i=0;i<b.length;i++) b[i].classList.toggle('on', b[i].getAttribute('data-st')===cur);
 }
 function sbInit(FORM){
 /* ---- scenario builder, injected as tab 2 ---- */
@@ -108,7 +164,7 @@ function sbInit(FORM){
   function GID(id){ id=String(id); return document.getElementById(id.indexOf('sb-')===0 ? id : 'sb-'+id); }
 
 var F_DATA=(FORM||[]).map(function(f){ return {p:String(f.product||f.name||''), g:String(f.category||'Other'), r:String(f.route||''), a:+f.awp||0, c:+f.cost||0 };}).filter(function(x){ return x.p && x.a>0; });
-const FEE_SCHED={AK:[1,10,1,5,'AWP + $10.00'],AL:[1.05,15.22,1.05,11.71,'AWPx(1+0.05) + $15.22'],AR:[1,5.13,1,5.13,'AWP + $5.13'],AZ:[0.75,7,0.85,7,'AWPx(1-0.25) + $7.00'],CA:[null,null,null,null,'Medi-Cal based drug rate, dispensing fee $10.05'],CO:[1,4,1,4,'AWP + $4.00'],CT:[1,8,1,5,'AWP + $8.00'],DC:[null,null,null,null,'U&C'],DE:[0.62,4.1,0.681,3.29,'AWPx(1-0.38) + $4.10'],FL:[1,4.18,1,4.18,'AWP + $4.18'],GA:[1,7.25,1,4.83,'AWP + $7.25'],HI:[1.4,0,1.4,0,'AWPx(1+0.40)'],IA:[null,null,null,null,'Reasonable'],ID:[1,8,1,5,'AWP + $8.00'],IL:[null,null,null,null,'Reasonable'],IN:[null,null,null,null,'Reasonable'],KS:[0.85,5,0.9,3,'AWPx(1-0.15) + $5.00'],KY:[0.85,5,0.9,5,'AWPx(1-0.15) + $5.00'],LA:[1.4,11.81,1.1,11.81,'AWPx(1+0.40) + $11.81'],MA:[null,null,null,null,'min (FUL, MMAC, AAC, U&C) + $10.02'],MD:[null,null,null,null,'Relative value or reasonable'],ME:[null,null,null,null,'U&C'],MI:[0.9,5.5,0.9,3.5,'AWPx(1-0.10) + $5.50'],MN:[0.88,3.65,0.88,3.65,'AWPx(1-0.12) + $3.65'],MO:[null,null,null,null,'U&C'],MS:[0.95,5,1,5,'AWPx(1-0.05) + $5.00'],MT:[0.75,3,0.9,3,'AWPx(1-0.25) + $3.00'],NC:[0.95,0,0.95,0,'AWPx(1-0.05)'],ND:[null,null,null,null,'WAC markup + $5.00'],NE:[null,null,null,null,'Actual charge or reasonable'],NH:[null,null,null,null,'Reasonable'],NJ:[null,null,null,null,'U&C'],NM:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00'],NV:[1,13.7,1,13.7,'AWP + $13.70'],NY:[0.8,5,0.88,4,'AWPx(1-0.20) + $5.00'],OH:[0.85,3.5,0.85,3.5,'AWPx(1-0.15) + $3.50'],OK:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00'],OR:[0.835,2,0.835,2,'AWPx(1-0.165) + $2.00'],PA:[1.1,0,1.1,0,'AWPx(1+0.10)'],RI:[0.9,0,0.9,0,'AWPx(1-0.10)'],SC:[1,5,1,5,'AWP + $5.00'],SD:[null,null,null,null,'U&C'],TN:[1,5.1,1,5.1,'AWP + $5.10'],TX:[1.25,4,1.09,4,'AWPx(1+0.25) + $4.00'],UT:[null,null,null,null,'Reasonable'],VA:[null,null,null,null,'Prevailing community rate'],VT:[1,3.15,1,3.15,'AWP + $3.15'],WA:[0.5,4.5,0.9,4.5,'AWPx(1-0.50) + $4.50'],WI:[1,3,1,3,'AWP + $3.00'],WV:[null,null,null,null,'U&C'],WY:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00']};
+const FEE_SCHED={AK:[1,10,1,5,'AWP + $10.00'],AL:[1.05,15.22,1.05,11.71,'AWPx(1+0.05) + $15.22'],AR:[1,5.13,1,5.13,'AWP + $5.13'],AZ:[0.75,7,0.85,7,'AWPx(1-0.25) + $7.00'],CA:[null,null,null,null,'Medi-Cal based drug rate, dispensing fee $10.05'],CO:[1,4,1,4,'AWP + $4.00'],CT:[1,8,1,5,'AWP + $8.00'],DC:[null,null,null,null,'U&C'],DE:[0.62,4.1,0.681,3.29,'AWPx(1-0.38) + $4.10'],FL:[1,4.18,1,4.18,'AWP + $4.18'],GA:[1,7.25,1,4.83,'AWP + $7.25'],HI:[1.4,0,1.4,0,'AWPx(1+0.40)'],IA:[null,null,null,null,'Reasonable'],ID:[1,8,1,5,'AWP + $8.00'],IL:[null,null,null,null,'Reasonable'],IN:[null,null,null,null,'Reasonable'],KS:[0.85,5,0.9,3,'AWPx(1-0.15) + $5.00'],KY:[0.85,5,0.9,5,'AWPx(1-0.15) + $5.00'],LA:[1.4,11.81,1.1,11.81,'AWPx(1+0.40) + $11.81'],MA:[null,null,null,null,'min (FUL, MMAC, AAC, U&C) + $10.02'],MD:[null,null,null,null,'Relative value or reasonable'],ME:[null,null,null,null,'U&C'],MI:[0.9,5.5,0.9,3.5,'AWPx(1-0.10) + $5.50'],MN:[0.88,3.65,0.88,3.65,'AWPx(1-0.12) + $3.65'],MO:[null,null,null,null,'U&C'],MS:[0.85,5,0.9,5,'AWPx(1-0.15) + $5.00'],MT:[0.75,3,0.9,3,'AWPx(1-0.25) + $3.00'],NC:[0.95,0,0.95,0,'AWPx(1-0.05)'],ND:[null,null,null,null,'WAC markup + $5.00'],NE:[null,null,null,null,'Actual charge or reasonable'],NH:[null,null,null,null,'Reasonable'],NJ:[null,null,null,null,'U&C'],NM:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00'],NV:[1,13.7,1,13.7,'AWP + $13.70'],NY:[0.8,5,0.88,4,'AWPx(1-0.20) + $5.00'],OH:[0.85,3.5,0.85,3.5,'AWPx(1-0.15) + $3.50'],OK:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00'],OR:[0.835,2,0.835,2,'AWPx(1-0.165) + $2.00'],PA:[1.1,0,1.1,0,'AWPx(1+0.10)'],RI:[0.9,0,0.9,0,'AWPx(1-0.10)'],SC:[1,5,1,5,'AWP + $5.00'],SD:[null,null,null,null,'U&C'],TN:[1,5.1,1,5.1,'AWP + $5.10'],TX:[1.25,4,1.09,4,'AWPx(1+0.25) + $4.00'],UT:[null,null,null,null,'Reasonable'],VA:[null,null,null,null,'Prevailing community rate'],VT:[1,3.15,1,3.15,'AWP + $3.15'],WA:[0.5,4.5,0.9,4.5,'AWPx(1-0.50) + $4.50'],WI:[1,3,1,3,'AWP + $3.00'],WV:[null,null,null,null,'U&C'],WY:[0.9,5,0.9,5,'AWPx(1-0.10) + $5.00']};
 const ALLOWED=Object.keys(FEE_SCHED);
 const DISP_FEE=5.00;   // dispensing, charged on every medication
 const SHIP_FEE=8.50;   // shipping, charged once per patient per shipment
@@ -317,6 +373,45 @@ PANE.addEventListener('click', function(ev){
 
   window.SB={recalc:recalc,onState:onState,drawTable:drawTable};
   states(); drawPicked(); recalc(); drawTable();
+  // ---- open on the practice's own numbers when the link carries them ----
+  // Nothing here runs for a link without parameters, so existing links are untouched.
+  (function(){
+    function sbPresetFromUrl(){
+      var hh=new URLSearchParams(String(location.hash||'').replace(/^#/,''));
+      var qq=new URL(location.href).searchParams;
+      var g=function(k){ var v=hh.get(k); if(v==null||v==='') v=qq.get(k); return (v==null||v==='')?null:v; };
+      return {nn:g('nn'), ns:g('ns'), mo:g('mo'), core:g('core'), post:g('post'), inj:g('inj')};
+    }
+    var P=sbPresetFromUrl();
+    if(!P.nn && !P.ns && !P.mo && !P.core && !P.post && !P.inj) return;
+    // An id in the link is a formulary id; F_DATA is keyed by product name, so go through it.
+    function idxFor(id){
+      var f=(FORM||[]).filter(function(x){ return String(x.id)===String(id); })[0];
+      if(!f) return -1;
+      var name=String(f.product||f.name||'');
+      for(var i=0;i<F_DATA.length;i++){ if(F_DATA[i].p===name) return i; }
+      return -1;
+    }
+    function fill(box, raw){
+      if(!raw) return;
+      var ids=String(raw).split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      for(var k=0;k<ids.length;k++){
+        var i=idxFor(ids[k]);
+        // Silently skip anything the formulary no longer carries rather than showing a blank row.
+        if(i>=0 && L[box].indexOf(i)<0) L[box].push(i);
+      }
+    }
+    fill('core', P.core); fill('post', P.post); fill('inj', P.inj);
+    var num=function(id, v, lo, hi){
+      if(v==null) return;
+      var n=parseFloat(v); if(isNaN(n)) return;
+      n=Math.max(lo, Math.min(hi, n));
+      var el=GID(id); if(el) el.value=String(n);
+    };
+    num('sb-nn', P.nn, 0, 9999); num('sb-ns', P.ns, 0, 9999); num('sb-mo', P.mo, 1, 12);
+    var r=GID('sb-mo-r'); var mo=GID('sb-mo'); if(r && mo) r.value=mo.value;
+    drawPicked(); recalc(); drawTable();
+  })();
   // follow the one state selector the tool already has
   var LIVE=document.getElementById('a-state');
   if(LIVE){
@@ -667,7 +762,7 @@ function render(expires){
       <h1>Workers' Compensation Medication Dispensing Analysis</h1>
     </header>
 
-    <div class="sbtabs noprint"><button type="button" class="sbt on" onclick="sbTab(1)">Formulary</button><button type="button" class="sbt" onclick="sbTab(2)">Customize</button></div>
+    <div class="sbtabs noprint"><button type="button" class="sbt" onclick="sbTab(1)">Formulary</button><button type="button" class="sbt" onclick="sbTab(2)">Customize</button>${stateTabsHtml()}</div>
     <button type="button" class="sbcta noprint" onclick="sbTab(2)">CLICK HERE FOR FURTHER CUSTOMIZATION FOR YOUR PRACTICE<span class="ar">&rarr;</span></button>
     <div id="sb-tab1">
 
@@ -681,7 +776,7 @@ function render(expires){
       <p class="hint">Editable. Pick your state and the multiplier follows its workers' compensation pharmacy fee schedule, or type your own number over it.</p>
       <div class="assume">
         <label>Patients / month<input id="a-pat" type="number" value="100" oninput="compute()"></label>
-        <label>State<select id="a-state" onchange="applyState(this.value)">${SERVED.map(s=>`<option value="${s.c}">${esc(s.n)} \u2014 ${esc(s.r)}</option>`).join('')}</select></label>
+        <label>State<select id="a-state" onchange="applyState(this.value);syncStateTabs()">${SERVED.map(s=>`<option value="${s.c}">${esc(s.n)} \u2014 ${esc(s.r)}</option>`).join('')}</select></label>
         <label>AWP multiplier<input id="a-mult" type="number" step="0.001" value="1.1" oninput="multChanged()"></label>
         <label>Dispensing fee / Rx (cost)<input id="a-df" type="number" step="0.01" value="5.00" oninput="compute()"></label>
         <label>Shipping / Rx (cost)<input id="a-ship" type="number" step="0.01" value="8.50" oninput="compute()"></label>
@@ -747,12 +842,15 @@ function render(expires){
   </div>`;
 
   document.getElementById('fs-key').innerHTML = fsKeyHtml();
+  sbTab(1);
   try{ sbInit(FORM); }catch(e){ console.error('scenario tab:', e); }
   renderFormHead();
   // Default to the doctor's own state when the CRM knows it, so the numbers are right on arrival.
   // Only default to their own state if we actually serve it, otherwise PA.
   const rc = String(REC.state||'').toUpperCase();
-  const home = ACTIVE.includes(rc) ? rc : 'PA';
+  const urlStates = statesFromUrl();
+  const home = urlStates.length ? (urlStates.includes(rc) ? rc : urlStates[0])
+                                : (ACTIVE.includes(rc) ? rc : 'PA');
   document.getElementById('a-state').value = home;
   const mine = mineFromUrl().filter(id=>FORM.some(f=>String(f.id)===String(id)));
   MIX = mine.map(id=>({id:String(id), units:1}));
@@ -773,6 +871,7 @@ function render(expires){
   applyPreset();
   renderMix();
   applyState(home);
+  syncStateTabs();
 }
 
 
