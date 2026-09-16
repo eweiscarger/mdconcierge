@@ -1454,7 +1454,7 @@ async function loadCockpit(){
     sbClient.from('mdrx_providers').select('id,first_name,last_name,practice_name,funnel_stage,contact_home,next_step,funnel_next_date,intent_score,funnel_score,intent_tier,email,target_specialty,region,needs_attention,funnel_last_seen_at,last_touch_at,touch_count'),
     sbClient.from('bookings').select('*').gte('slot_start',today+'T00:00:00').lte('slot_start',today+'T23:59:59'),
     sbClient.from('quote_links').select('recipient_name,recipient_email,practice,view_count,first_viewed_at,last_viewed_at,expires_at,revoked,note').eq('note','live').order('created_at',{ascending:false}),
-    sbClient.from('mdrx_inbox_drafts').select('id,from_name,from_addr,subject,sentiment,hot,status,provider_id').eq('status','pending'),
+    sbClient.from('mdrx_inbox_drafts').select('id,from_name,from_addr,subject,sentiment,hot,status,provider_id,draft_reply,snippet,received_at').eq('status','pending'),
     sbClient.from('mdrx_next_moves').select('*').eq('status','pending').order('recommended_date'),
     sbClient.from('mdrx_outbox').select('*').in('status',['pending','held']).order('id'),
     sbClient.from('mdrx_contacts').select('id,name,title,role,practice_id'),
@@ -1467,6 +1467,11 @@ async function loadCockpit(){
   const pipeMeet=P.filter(p=>['Meeting Booked','Closing','Met'].includes(p.funnel_stage)&&p.funnel_next_date===today);
   const mdrxDrafts=(mdrxd&&!mdrxd.error&&mdrxd.data)?mdrxd.data:[];
   const mdrxNeedReply=mdrxDrafts.filter(d=>d.sentiment!=='decline'&&d.sentiment!=='optout');
+  // The cockpit renders its own copy of these drafts, so the send button needs the row without
+  // depending on MDRX_DRAFTS, which only loadMdrx() fills. A cockpit button that reads an array the
+  // cockpit never populates does nothing at all, silently - the same failure the next-move button
+  // had when it reached for loadCockpit's local P.
+  window.CK_DRAFTS=mdrxNeedReply;
   const mdrxHot=mdrxNeedReply.filter(d=>d.hot);
   const nmList=(nm&&!nm.error&&nm.data)?nm.data:[];
   const approvals=mdrxNeedReply.length;
@@ -1597,13 +1602,22 @@ async function loadCockpit(){
     </div>
     <div class="cktab-pane" id="ckpane-approvals" style="display:none;">
       <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">✅ Replies needing approval</div><div class="ps">${approvals?('<b>'+approvals+'</b> reply draft(s) waiting'+(mdrxHot.length?' &middot; <span style="color:#c0392b;font-weight:700;">'+mdrxHot.length+' hot</span>':'')):'Nothing waiting'}</div></div><div style="padding:4px 14px 12px;">${approvals?(
-        (mdrxNeedReply.map(d=>`<div onclick="showView('mdrx',document.querySelector('[onclick*=mdrx]'));mdrxTab='inbox';setTimeout(()=>renderMdrx(),60)" style="cursor:pointer;display:flex;gap:10px;align-items:flex-start;border-bottom:1px solid var(--border2);padding:9px 0;">
-          <div style="font-size:15px;">${d.hot?'🔥':'📨'}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;">${ehtml(d.from_name||d.from_addr||'Unknown sender')}${d.sentiment?` <span style="font-weight:400;color:var(--muted);font-size:11.5px;">[${ehtml(d.sentiment)}]</span>`:''}</div>
-            <div style="font-size:12px;color:var(--muted2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ehtml(d.subject||'(no subject)')}</div>
+        (mdrxNeedReply.map(d=>`<div style="border-bottom:1px solid var(--border2);padding:11px 0;">
+          <div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;">
+            <div style="font-size:15px;">${d.hot?'🔥':'📨'}</div>
+            <b style="font-size:13px;">${ehtml(d.from_name||d.from_addr||'Unknown sender')}</b>
+            <span style="font-size:11.5px;color:var(--muted);">${ehtml(d.from_addr||'')}</span>
+            ${d.sentiment?`<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);">${ehtml(d.sentiment)}</span>`:''}
+            <span style="margin-left:auto;font-size:11px;color:var(--muted);">${ehtml(String(d.received_at||'').slice(0,16).replace('T',' '))}</span>
           </div>
-          <div style="color:var(--gold);font-size:12px;font-weight:700;white-space:nowrap;">review &rarr;</div>
+          <div style="font-size:12.5px;font-weight:700;margin:4px 0 3px;">${ehtml(d.subject||'(no subject)')}</div>
+          ${d.snippet?`<div style="font-size:11.5px;color:var(--muted2);background:rgba(255,255,255,.03);border-left:2px solid var(--border2);padding:6px 9px;margin-bottom:7px;white-space:pre-wrap;max-height:84px;overflow:auto;">${ehtml(d.snippet)}</div>`:''}
+          <textarea id="ck-draft-${d.id}" rows="6" style="width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:8px;background:var(--card,#0d1830);color:var(--text);font-size:12.5px;font-family:inherit;line-height:1.5;box-sizing:border-box;">${ehtml(d.draft_reply||'')}</textarea>
+          <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="ib" style="border-color:#2D6A4F;color:#2ecc8a;font-weight:700;" onclick="mdrxCockpitSendDraft(${d.id})">✅ Approve &amp; send</button>
+            <button class="ib" onclick="showView('mdrx',document.querySelector('[onclick*=mdrx]'));mdrxTab='inbox';setTimeout(()=>renderMdrx(),60)">Open the thread</button>
+            <button class="ib" onclick="mdrxDismissDraft(${d.id}).then(()=>loadCockpit())">Dismiss</button>
+          </div>
         </div>`).join(''))
       ):'<span style="color:var(--muted);font-size:13px;">You are all caught up.</span>'}</div></div>
       ${nmList.length?`<div class="panel" style="margin-bottom:16px;border-left:3px solid var(--gold);"><div class="ph"><div class="pt">🎯 Recommended next moves</div><div class="ps">The AI picked the message, channel, and date from each lead's behavior. Approve to lock it in. Nothing sends until you enable sending.</div></div><div class="grp" style="margin:0;border:none;">${nmHtml}</div></div>`:''}
@@ -3330,6 +3344,35 @@ async function mdrxSendDraft(id){
   try{ await sbClient.from('mdrx_inbox_drafts').update({status:'sent',draft_reply:text}).eq('id',id); }catch(e){}
   if(d.provider_id){ try{ await sbClient.from('mdrx_activity').insert({provider_id:d.provider_id,type:'email_out',subject:'Reply: '+(d.subject||''),notes:'To: '+d.from_addr,created_by:'eric'}); }catch(e){} }
   showToast('Reply sent ✓'); await loadMdrx();
+}
+// Reply and send without leaving the cockpit. The old panel only linked through to the MDRx inbox,
+// so answering a physician meant three screens; the drafts were already on the cockpit, just not
+// editable there. Reads CK_DRAFTS rather than MDRX_DRAFTS because the cockpit never calls
+// loadMdrx(), and falls back to the database if the row is somehow missing: sending a reply to
+// whoever else shares that row id is far worse than not sending.
+async function mdrxCockpitSendDraft(id){
+  let d=(window.CK_DRAFTS||[]).find(x=>x.id===id);
+  if(!d){
+    const {data}=await sbClient.from('mdrx_inbox_drafts').select('id,from_addr,subject,provider_id').eq('id',id).maybeSingle();
+    d=data||null;
+  }
+  if(!d||!d.from_addr){showToast('Could not find that draft, open the thread instead.');return;}
+  const text=((document.getElementById('ck-draft-'+id)||{}).value||'').trim();
+  if(!text){showToast('Draft is empty, write a reply first.');return;}
+  if(!confirm('Send this reply to '+d.from_addr+' now?'))return;
+  const subject=/^re:/i.test(d.subject||'')?d.subject:('Re: '+(d.subject||''));
+  showToast('Sending…');
+  const {data,error}=await sbClient.functions.invoke('send-mail',{body:{signature:true,to:[d.from_addr],subject,text}});
+  if(error||!data||!data.ok){showToast('Send failed: '+((data&&data.error)||(error&&error.message)||'unknown'));return;}
+  try{ await sbClient.from('mdrx_inbox_drafts').update({status:'sent',draft_reply:text}).eq('id',id); }catch(e){}
+  if(d.provider_id){
+    try{ await sbClient.from('mdrx_activity').insert({provider_id:d.provider_id,type:'email_out',subject:'Reply: '+(d.subject||''),notes:'To: '+d.from_addr,created_by:'eric'}); }catch(e){}
+    // The reply IS the next touch, so the record should say so rather than still showing the lead
+    // as owing an answer. Without this the desk keeps flagging them as waiting on a reply.
+    try{ await sbClient.from('mdrx_providers').update({last_touch_at:new Date().toISOString(),needs_attention:false}).eq('id',d.provider_id); }catch(e){}
+  }
+  showToast('Reply sent ✓');
+  loadCockpit();
 }
 async function mdrxDismissDraft(id){
   try{ await sbClient.from('mdrx_inbox_drafts').update({status:'dismissed'}).eq('id',id); }catch(e){}
