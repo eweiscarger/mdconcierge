@@ -285,21 +285,15 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni" data-biz="ml" onclick="showView('signups',this)"><span class="ni-ic">📝</span> Sign-ups <span class="nb" id="signup-count" style="display:none;">0</span></button>
     <button class="ni" data-biz="ml" onclick="showView('crm',this)"><span class="ni-ic">⚖️</span> Attorney CRM <span class="nb" id="crm-count" style="display:none;">0</span></button>
     <button class="ni" data-biz="rx" onclick="showView('mdrx',this)"><span class="ni-ic">💊</span> MDRx Pharmacy CRM <span class="nb" id="mdrx-due" style="display:none;">0</span></button>
-    <button class="ni" data-biz="rx" onclick="showView('funnel',this)"><span class="ni-ic">🎯</span> Funnel Engagement <span class="nb" id="funnel-hot" style="display:none;">0</span></button>
-    <button class="ni" data-biz="rx" onclick="showView('deals',this)"><span class="ni-ic">🎯</span> Deals</button>
     <button class="ni" data-biz="rx" onclick="openPresenter()" title="Opens the dispensing model in a clean tab. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary <span style="opacity:.6;font-size:11px;">MDRx</span></button>
     <button class="ni" data-biz="rx" onclick="openPresenterPdrx()" title="The PDRx price book on the chosen state’s fee schedule. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary <span style="opacity:.6;font-size:11px;">PDRx</span></button>
     <button class="ni" data-biz="rx" onclick="showView('calendar',this)"><span class="ni-ic">🗓️</span> Calendar</button>
     <button class="ni" data-biz="rx" onclick="showView('booking',this)"><span class="ni-ic">📅</span> Booking &amp; Availability <span class="nb" id="booking-pending" style="display:none;">0</span></button>
     <button class="ni" data-biz="rx" onclick="showView('pipeline',this)"><span class="ni-ic">📊</span> Pipeline <span class="nb" id="pipe-due" style="display:none;">0</span></button>
-    <div class="ns">Analytics</div>
-    <button class="ni" data-biz="ml" onclick="showView('revenue',this)"><span class="ni-ic">💰</span> Revenue</button>
-    <button class="ni" data-biz="ml" onclick="showView('analytics',this)"><span class="ni-ic">📊</span> Analytics</button>
+    <div class="ns">Security</div>
     <button class="ni" data-biz="both" onclick="showView('access',this)"><span class="ni-ic">🛡️</span> Access Log <span class="nb" id="access-pending" style="display:none;">0</span></button>
     <div class="ns">Resources</div>
     <a class="ni" data-biz="both" href="overview.html" target="_blank" rel="noopener" style="text-decoration:none;"><span class="ni-ic">📊</span> Platform Overview</a>
-    <button class="ni" data-biz="both" onclick="showView('tools',this)"><span class="ni-ic">🔗</span> Links &amp; Tools</button>
-    <a class="ni" data-biz="both" href="demo.html" target="_blank" rel="noopener" style="text-decoration:none;"><span class="ni-ic">🎓</span> Tutorials</a>
     <button class="ni" data-biz="both" onclick="showView('settings',this)"><span class="ni-ic">⚙️</span> Settings</button>
   </div>
   <div class="sb-foot"><div class="u-chip"><div class="u-av">A</div><div><div style="font-size:13px;color:#fff;">Admin</div><div style="font-size:11px;color:rgba(255,255,255,.55);">MDconcierge Owner</div></div></div><button onclick="openPw()" style="margin-top:10px;width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.75);border-radius:8px;font-size:12px;cursor:pointer;">Change password</button><button onclick="doLogout()" style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.75);border-radius:8px;font-size:12px;cursor:pointer;">Sign out</button></div>
@@ -435,35 +429,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
   </div>
 
-  <!-- REVENUE VIEW -->
-  <div class="view" id="view-revenue">
-    <div class="kpi-row">
-      <div class="kpi gold"><div class="kpi-lbl">Provider retainers/mo</div><div class="kpi-v">$8,100</div><div class="kpi-d up">9 active providers</div></div>
-      <div class="kpi green"><div class="kpi-lbl">Vendor retainers/mo</div><div class="kpi-v">$4,500</div><div class="kpi-d up">7 active vendors</div></div>
-      <div class="kpi blue"><div class="kpi-lbl">Total MRR</div><div class="kpi-v">$12,600</div><div class="kpi-d">Monthly recurring</div></div>
-      <div class="kpi purple"><div class="kpi-lbl">Leads routed YTD</div><div class="kpi-v">184</div><div class="kpi-d up">↑ 22% vs last yr</div></div>
-    </div>
-    <div class="panel">
-      <div class="ph"><div class="pt">Revenue by member</div></div>
-      <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Member</th><th>Type</th><th>Monthly fee</th><th>Since</th><th>Status</th></tr></thead><tbody>
-        <tr><td><div class="ln">Atlantic Spine &amp; Rehab</div></td><td><span class="ct ct-construct">Provider</span></td><td style="font-family:var(--mono);color:var(--green);">$900/mo</td><td style="color:var(--muted);font-size:12px;">Jan 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
-        <tr><td><div class="ln">Premier Pain Management</div></td><td><span class="ct ct-construct">Provider</span></td><td style="font-family:var(--mono);color:var(--green);">$900/mo</td><td style="color:var(--muted);font-size:12px;">Feb 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
-        <tr><td><div class="ln">MedLien Finance Group</div></td><td><span class="ct ct-ssdi">Vendor</span></td><td style="font-family:var(--mono);color:var(--green);">$1,200/mo</td><td style="color:var(--muted);font-size:12px;">Jan 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
-        <tr><td><div class="ln">Legal Records Plus</div></td><td><span class="ct ct-ssdi">Vendor</span></td><td style="font-family:var(--mono);color:var(--green);">$600/mo</td><td style="color:var(--muted);font-size:12px;">Mar 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
-        <tr><td><div class="ln">Metro Orthopedics</div></td><td><span class="ct ct-construct">Provider</span></td><td style="font-family:var(--mono);color:var(--green);">$900/mo</td><td style="color:var(--muted);font-size:12px;">Mar 2025</td><td><span class="sd s-routed"></span>Active</td></tr>
-      </tbody></table></div>
-    </div>
-  </div>
 
-  <!-- ANALYTICS VIEW -->
-  <div class="view" id="view-analytics">
-    <div id="analytics-body" style="color:var(--muted);padding:8px 2px;">Loading analytics…</div>
-  </div>
 
-  <!-- FUNNEL ENGAGEMENT VIEW -->
-  <div class="view" id="view-funnel">
-    <div id="funnel-body" style="color:var(--muted);padding:8px 2px;">Loading funnel…</div>
-  </div>
 
   <!-- BOOKING & AVAILABILITY VIEW -->
   <div class="view" id="view-booking">
@@ -484,9 +451,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <div id="cockpit-body" style="color:var(--muted);padding:8px 2px;">Loading cockpit…</div>
   </div>
 
-  <!-- ACCESS LOG VIEW -->
-  <div class="view" id="view-deals"></div>
-
 
   <div class="view" id="view-access">
     <div class="panel" style="margin-bottom:16px;">
@@ -499,23 +463,6 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     </div>
   </div>
 
-  <!-- LINKS & TOOLS VIEW -->
-  <div class="view" id="view-tools">
-    <div class="panel" style="margin-bottom:16px;">
-      <div class="ph"><div class="pt">📤 Share with partners</div><div class="ps">The links you hand out — Open to preview, Copy to paste into an email or text</div></div>
-      <div id="tools-share" style="padding:6px 2px;"></div>
-    </div>
-    <div class="panel" style="margin-bottom:16px;">
-      <div class="ph"><div class="pt">🎓 Training</div><div class="ps">Narrated walkthroughs — for you and to share</div></div>
-      <div id="tools-train" style="padding:6px 2px;"></div>
-    </div>
-    <div class="panel" style="margin-bottom:0;">
-      <div class="ph"><div class="pt">⚙️ Automatic pages</div><div class="ps">These are sent by the system inside emails — you don't open or share them yourself</div></div>
-      <div style="padding:10px 4px;font-size:13px;color:var(--muted2);">
-        <b>respond.html</b> (referral accept) and <b>status.html</b> (live case status) only work from the secure one-time link the system emails to a specific provider/attorney. Opening them directly just shows “invalid link,” which is by design. Nothing to manage here.
-      </div>
-    </div>
-  </div>
 
   <!-- ATTORNEY CRM VIEW -->
   <div class="view" id="view-crm">
@@ -1253,21 +1200,17 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  document.getElementById('pg-title').textContent={cockpit:'Daily Cockpit',leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',funnel:'Funnel Engagement',calendar:'Calendar',booking:'Booking & Availability',pipeline:'Pipeline',tools:'Links & Tools',revenue:'Revenue',analytics:'Analytics & Quality',deals:'Deals',dispensing:'Dispensing Tools',access:'Access Log',settings:'Settings'}[v]||v;
+  document.getElementById('pg-title').textContent={cockpit:'Daily Cockpit',leads:'Lead Queue',network:'Network Management',portal:'Portal Accounts',signups:'Sign-ups',crm:'Attorney CRM',mdrx:'MDRx Pharmacy CRM',calendar:'Calendar',booking:'Booking & Availability',pipeline:'Pipeline',dispensing:'Dispensing Tools',access:'Access Log',settings:'Settings'}[v]||v;
   if(v==='network')renderNetwork();
   if(v==='portal')loadPortalAccounts();
   if(v==='signups')loadSignups();
   if(v==='crm')loadCrm();
   if(v==='mdrx')loadMdrx();
-  if(v==='funnel')loadFunnel();
   if(v==='calendar')loadCalendar();
   if(v==='booking')loadBooking();
   if(v==='pipeline')loadPipeline();
   if(v==='cockpit')loadCockpit();
-  if(v==='tools')renderTools();
-  if(v==='analytics')loadAnalytics();
   if(v==='access'){loadAccessLog();loadAccessRequests();}
-  if(v==='deals')loadDeals();
 }
 // Clicking a physician here jumps straight to their full record: what they did, what we
 // sent back, and what happens next. Same destination as the CRM board.
@@ -1290,60 +1233,6 @@ const PRESENTER_LINK_PDRX='https://mdconcierge.net/pdrx-model.html?t=ca64189d84f
 function openPresenterPdrx(){ window.open(PRESENTER_LINK_PDRX+'&from=portal','_blank'); }
 
 
-// ---- Funnel engagement view ----------------------------------------------
-const FUNNEL_BASE='https://mdconcierge.net/go.html';
-function funName(p){return (((p.first_name||'')+' '+(p.last_name||'')).trim())||'(no name)';}
-function funScore(p){return (Number(p.intent_score)||0)+(Number(p.funnel_score)||0);}
-function funTime(s){s=Number(s)||0;if(!s)return '0s';const m=Math.floor(s/60),r=s%60;return m?(m+'m '+r+'s'):(r+'s');}
-function funAgo(iso){if(!iso)return '';const d=Date.now()-new Date(iso).getTime();const mi=Math.floor(d/60000);if(mi<1)return 'just now';if(mi<60)return mi+'m ago';const h=Math.floor(mi/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
-function funLink(tok,to){return FUNNEL_BASE+'?p='+encodeURIComponent(tok||'')+'&to='+(to||'brief');}
-function funToast(msg){let t=document.getElementById('fun-toast');if(!t){t=document.createElement('div');t.id='fun-toast';t.style.cssText='position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#08214C;color:#fff;padding:9px 16px;border-radius:9px;font-size:13px;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,.25);transition:opacity .3s;';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';clearTimeout(t._h);t._h=setTimeout(()=>{t.style.opacity='0';},1600);}
-function funCopy(tok){const u=funLink(tok,'brief');navigator.clipboard.writeText(u).then(()=>funToast('Tracked link copied'),()=>funToast(u));}
-async function loadFunnel(){
-  const box=document.getElementById('funnel-body');
-  box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Loading…</div>';
-  const cols='id,first_name,last_name,credential,target_specialty,region,intent_tier,intent_score,funnel_score,funnel_token,funnel_open_count,funnel_max_scroll,funnel_total_seconds,funnel_clicked,funnel_booked,funnel_last_cta,funnel_first_open_at,funnel_last_seen_at';
-  const {data,error}=await sbClient.from('mdrx_providers').select(cols);
-  if(error){box.innerHTML='<div class="panel" style="padding:20px;color:#c0392b;">Could not load funnel: '+ehtml(error.message)+'<div style="color:var(--muted);font-size:12px;margin-top:8px;">If this mentions a missing column, the funnel migration has not run yet.</div></div>';return;}
-  let rows=(data||[]).filter(p=>p.funnel_token);
-  const engaged=rows.filter(p=>p.funnel_open_count||p.funnel_clicked||p.funnel_last_seen_at);
-  const clicked=rows.filter(p=>p.funnel_clicked).length;
-  const opened=rows.filter(p=>p.funnel_open_count>0).length;
-  const booked=rows.filter(p=>p.funnel_booked).length;
-  const hot=rows.filter(p=>funScore(p)>=40).length;
-  const badge=document.getElementById('funnel-hot');if(badge){badge.textContent=hot;badge.style.display=hot?'':'none';}
-  const kpi=(l,v,d,c)=>`<div class="kpi ${c||''}"><div class="kpi-lbl">${l}</div><div class="kpi-v">${v}</div><div class="kpi-d">${d}</div></div>`;
-  const kpis=kpi('Leads tracked',rows.length,'have a link','blue')+kpi('Opened',opened,'viewed a page','gold')+kpi('Clicked',clicked,'hit a tracked link','purple')+kpi('Booked',booked,'meeting set','green')+kpi('Hot',hot,'score 40+','green');
-  // sort: most engaged first
-  rows.sort((a,b)=>funScore(b)-funScore(a)||(new Date(b.funnel_last_seen_at||0)-new Date(a.funnel_last_seen_at||0)));
-  const tr=rows.map(p=>{
-    const sc=funScore(p),seen=p.funnel_last_seen_at;
-    const dim=seen?'':'opacity:.5;';
-    const cta=p.funnel_booked?'📅 booked':(p.funnel_last_cta?ehtml(p.funnel_last_cta):'');
-    const focus=[p.target_specialty,p.region].filter(Boolean).map(ehtml).join(' · ')||'<span style="color:var(--muted)">no focus set</span>';
-    return `<tr style="${dim}cursor:pointer;" onclick="funOpenProvider(${p.id})" title="Open the full timeline">
-      <td><b>${ehtml(funName(p))}</b>${p.credential?(' <span style="color:var(--muted);font-size:11px;">'+ehtml(p.credential)+'</span>'):''}</td>
-      <td style="font-size:12px;">${focus}</td>
-      <td>${p.intent_tier?('<span class="nb" style="display:inline-block;background:var(--border2);color:var(--muted2);">'+ehtml(p.intent_tier)+'</span>'):''}</td>
-      <td><b style="color:${sc>=40?'var(--green)':sc>=15?'var(--gold)':'var(--muted2)'};">${sc}</b> <span style="color:var(--muted);font-size:11px;">${p.intent_score||0}+${p.funnel_score||0}</span></td>
-      <td style="text-align:center;">${p.funnel_open_count||0}</td>
-      <td style="text-align:center;">${p.funnel_max_scroll||0}%</td>
-      <td style="text-align:center;">${funTime(p.funnel_total_seconds)}</td>
-      <td style="font-size:12px;">${cta}</td>
-      <td style="font-size:12px;color:var(--muted);">${seen?funAgo(seen):'no activity'}</td>
-      <td style="white-space:nowrap;" onclick="event.stopPropagation()"><a href="${funLink(p.funnel_token,'brief')}" target="_blank" style="font-size:11px;">open</a> · <a href="javascript:void(0)" onclick="funCopy('${p.funnel_token}')" style="font-size:11px;">copy link</a></td>
-    </tr>`;
-  }).join('');
-  box.innerHTML=`
-    <div class="kpi-row" style="margin-bottom:14px;">${kpis}</div>
-    <div class="panel" style="margin-bottom:0;">
-      <div class="ph"><div class="pt">🎯 Physician engagement</div><div class="ps">Every tracked link ties a click, scroll, and time-on-page back to the physician. Score = list intent + on-page behavior. ${engaged.length} of ${rows.length} have activity.</div></div>
-      <div style="overflow-x:auto;"><table class="lt">
-        <thead><tr><th>Physician</th><th>Focus</th><th>Tier</th><th>Score</th><th>Opens</th><th>Scroll</th><th>Time</th><th>Last CTA</th><th>Last seen</th><th>Link</th></tr></thead>
-        <tbody>${tr||'<tr><td colspan="10" style="color:var(--muted);padding:16px;">No leads with tracked links yet. Load the list in Task 4, or seed a test row.</td></tr>'}</tbody>
-      </table></div>
-    </div>`;
-}
 // ---- Booking & Availability view -----------------------------------------
 const BK_FN="https://pjdbzrzadlldojuvdrfj.supabase.co/functions/v1";
 const BK_DOW=['','Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -2160,97 +2049,6 @@ async function loadPipeline(){
       <div class="ph"><div class="pt">🚫 Suppression list (${supp.length})</div><div class="ps">Opt-outs and unsubscribes. Checked before every send. Never re-imported, for any client.</div></div>
       <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Email</th><th>Source</th><th>When</th></tr></thead><tbody>${supRows||'<tr><td colspan="3" style="color:var(--muted);padding:14px;">No opt-outs yet.</td></tr>'}</tbody></table></div>
     </div>`;
-}
-async function loadAnalytics(){
-  const box=document.getElementById('analytics-body');
-  box.innerHTML='Loading analytics…';
-  const {data:cases,error}=await sbClient.from('cases').select('*');
-  if(error){box.innerHTML='<div class="panel" style="padding:20px;color:var(--muted);">Could not load: '+ehtml(error.message)+'</div>';return;}
-  const [{data:provs},{data:practices}]=await Promise.all([
-    sbClient.from('providers').select('id,doctor_name,practice_id'),
-    sbClient.from('practices').select('id,name')
-  ]);
-  const rows=(cases||[]).filter(c=>!/^TEST-/i.test(c.case_id||''));
-  const provMap={},practiceName={};
-  (provs||[]).forEach(p=>provMap[p.id]=p);
-  (practices||[]).forEach(p=>practiceName[p.id]=p.name);
-  const DAY=86400000,now=Date.now();
-  const age=c=>c.created_at?(now-new Date(c.created_at).getTime()):null;
-  const closed=new Set(['closed','declined','archived','duplicate']);
-  const sched=new Set(['scheduled','treating']);
-  const active=rows.filter(c=>!closed.has(c.status));
-  const thisWk=rows.filter(c=>{const a=age(c);return a!=null&&a<=7*DAY;}).length;
-  const lastWk=rows.filter(c=>{const a=age(c);return a!=null&&a>7*DAY&&a<=14*DAY;}).length;
-  const reached=rows.filter(c=>sched.has(c.status)).length;
-  const conv=rows.length?Math.round(100*reached/rows.length):0;
-  const routedCases=rows.filter(c=>c.routed_provider_id);
-  const avgRem=routedCases.length?(routedCases.reduce((s,c)=>s+(c.followup_count||0),0)/routedCases.length):0;
-  // pipeline funnel
-  const order=[['new','New'],['review','In review'],['routed','Sent to provider'],['in_coordination','In coordination'],['scheduled','Scheduled'],['treating','In treatment'],['escalated','Needs attention'],['closed','Closed']];
-  const cnt={};rows.forEach(c=>{cnt[c.status]=(cnt[c.status]||0)+1;});
-  const maxc=Math.max(1,...order.map(([k])=>cnt[k]||0));
-  const funnel=order.filter(([k])=>cnt[k]).map(([k,lbl])=>{
-    const n=cnt[k]||0,w=Math.round(100*n/maxc);
-    return `<div style="display:flex;align-items:center;gap:10px;margin:7px 0;"><div style="width:130px;font-size:13px;color:var(--muted2);flex:none;">${lbl}</div><div style="flex:1;background:var(--border2);border-radius:6px;overflow:hidden;"><div style="width:${w}%;min-width:24px;background:var(--gold);color:#ffffff;font-weight:700;font-size:12px;padding:3px 8px;border-radius:6px;">${n}</div></div></div>`;
-  }).join('')||'<div style="color:var(--muted);font-size:13px;">No cases yet.</div>';
-  // case mix
-  const mix={};rows.forEach(c=>{const t=(c.case_type||'other').toLowerCase();mix[t]=(mix[t]||0)+1;});
-  const mixLabel={wc:"Workers' comp",auto:'Auto',truck:'Truck',slip:'Slip & fall',pi:'Personal injury',other:'Other'};
-  const mixHtml=Object.entries(mix).sort((a,b)=>b[1]-a[1]).map(([t,n])=>`<span style="display:inline-block;background:var(--border2);border-radius:14px;padding:4px 12px;margin:3px 6px 3px 0;font-size:12px;">${ehtml(mixLabel[t]||t)}: <b>${n}</b></span>`).join('')||'<span style="color:var(--muted);font-size:13px;">No cases yet.</span>';
-  // practice scorecard
-  const byP={};
-  routedCases.forEach(c=>{const p=provMap[c.routed_provider_id];const key=p&&p.practice_id?('p'+p.practice_id):('d'+c.routed_provider_id);
-    const name=(p&&p.practice_id&&practiceName[p.practice_id])||(p&&p.doctor_name)||'Unknown';
-    byP[key]=byP[key]||{name,routed:0,scheduled:0,rem:0};byP[key].routed++;if(sched.has(c.status))byP[key].scheduled++;byP[key].rem+=(c.followup_count||0);});
-  const scoreRows=Object.values(byP).sort((a,b)=>b.routed-a.routed).map(p=>{
-    const rate=p.routed?Math.round(100*p.scheduled/p.routed):0;const ar=(p.rem/p.routed).toFixed(1);
-    const rc=rate>=70?'var(--green)':rate>=40?'var(--gold)':'#c0392b';
-    return `<tr><td><div class="ln">${ehtml(p.name)}</div></td><td>${p.routed}</td><td>${p.scheduled}</td><td style="color:${rc};font-weight:700;">${rate}%</td><td>${ar}</td></tr>`;
-  }).join('')||'<tr><td colspan="5" style="color:var(--muted);font-size:13px;padding:14px;">No routed cases yet — this fills in as you route referrals to practices.</td></tr>';
-  const deltaTxt=thisWk>=lastWk?`↑ vs ${lastWk} last week`:`↓ vs ${lastWk} last week`;
-  box.innerHTML=`
-    <div class="kpi-row">
-      <div class="kpi blue"><div class="kpi-lbl">Active cases</div><div class="kpi-v">${active.length}</div><div class="kpi-d">${rows.length} total all-time</div></div>
-      <div class="kpi gold"><div class="kpi-lbl">New this week</div><div class="kpi-v">${thisWk}</div><div class="kpi-d ${thisWk>=lastWk?'up':''}">${deltaTxt}</div></div>
-      <div class="kpi green"><div class="kpi-lbl">Reached scheduling</div><div class="kpi-v">${conv}%</div><div class="kpi-d">${reached} of ${rows.length} cases</div></div>
-      <div class="kpi purple"><div class="kpi-lbl">Avg reminders to respond</div><div class="kpi-v">${avgRem.toFixed(1)}</div><div class="kpi-d">lower = more responsive</div></div>
-    </div>
-    <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">Pipeline</div><div class="ps">Where every case sits right now</div></div><div style="padding:14px 16px;">${funnel}</div></div>
-    <div class="panel" style="margin-bottom:16px;"><div class="ph"><div class="pt">Case mix</div><div class="ps">By type — WC should dominate</div></div><div style="padding:14px 16px;">${mixHtml}</div></div>
-    <div class="panel" style="margin-bottom:0;"><div class="ph"><div class="pt">Practice scorecard</div><div class="ps">Responsiveness & quality — rank your network on this, never on money</div></div>
-      <div style="overflow-x:auto;"><table class="lt"><thead><tr><th>Practice</th><th>Routed</th><th>Scheduled</th><th>Response rate</th><th>Avg reminders</th></tr></thead><tbody>${scoreRows}</tbody></table></div></div>`;
-}
-const SITE_BASE='https://mdconcierge.net/';
-function copyLink(url){
-  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(()=>showToast('Link copied ✓'),()=>showToast(url));
-  else showToast(url);
-}
-function toolRow(ic,name,desc,path,share){
-  const url=SITE_BASE+path;
-  return `<div style="display:flex;align-items:center;gap:14px;padding:13px;border:1px solid var(--border2);border-radius:10px;margin-bottom:10px;">
-    <div style="font-size:22px;flex:none;">${ic}</div>
-    <div style="flex:1;min-width:0;">
-      <div style="font-weight:700;">${ehtml(name)}</div>
-      <div style="font-size:12.5px;color:var(--muted2,#8b949e);">${ehtml(desc)}</div>
-      <div style="font-size:11px;color:var(--muted);font-family:var(--mono,monospace);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${ehtml(url)}</div>
-    </div>
-    <a class="ib" href="${url}" target="_blank" rel="noopener" style="flex:none;">Open ↗</a>
-    ${share?`<button class="ib" onclick="copyLink('${url}')" style="flex:none;">⧉ Copy</button>`:''}
-  </div>`;
-}
-function renderTools(){
-  const share=document.getElementById('tools-share');
-  if(share)share.innerHTML=
-    toolRow('🩺','Provider sign-up form','Send to a medical practice — they enter their own info.','signup.html?type=provider',true)
-   +toolRow('⚖️','Attorney sign-up form','Send to a law firm — they enter their own info.','signup.html?type=attorney',true)
-   +toolRow('📨','Refer a Client','For attorneys to submit a client referral.','refer.html',true)
-   +toolRow('🔐','Partner portal login','Where providers & attorneys sign in to see their cases.','portal.html',true);
-  const train=document.getElementById('tools-train');
-  if(train)train.innerHTML=
-    toolRow('🎬','All tutorials (hub)','Pick the admin, attorney, or provider walkthrough.','demo.html',true)
-   +toolRow('👤','Admin tutorial','How to run the platform (just for you).','demo-admin.html',true)
-   +toolRow('⚖️','Attorney tutorial','Share with attorneys you onboard.','demo-attorney.html',true)
-   +toolRow('🩺','Provider tutorial','Share with providers you onboard.','demo-provider.html',true);
 }
 // ── Attorney CRM (prospect_firms + attorney_contacts) ──────────────────────────
 let CRM_FIRMS=[], CRM_ATTYS=[], crmStatusFilter='all', crmSearch='', crmOpen=new Set();
@@ -3254,113 +3052,6 @@ function setBiz(b, keepView){
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>setBiz(b,true));
   else setBiz(b,true);
 })();
-
-// ---- Deal room ---------------------------------------------------------------------------------
-// The cadence machinery serves the 276 people who are not in a deal. This serves the handful who
-// are. It answers the three questions a rep has before any deal conversation: who decides and who
-// have I not got yet, what is actually in the way, and what do I say. Risk is computed from the
-// shape of the deal rather than from activity counts, because a single-threaded deal that looks
-// busy is still fragile.
-var DEAL_ROWS=[], DEAL_CONTACTS=[], DEAL_LINKS=[];
-const DEAL_STAGES=['Won','Closing','Meeting Booked','Materials Sent','Met','Follow-up'];
-
-async function loadDeals(){
-  const el=document.getElementById('view-deals');
-  el.innerHTML='<div class="panel" style="padding:16px;">Loading the deals…</div>';
-  const [{data:prov},{data:cons},{data:links}]=await Promise.all([
-    sbClient.from('mdrx_providers').select('id,first_name,last_name,credentials,email,cell,office_phone,practice_name,practice_id,state,funnel_stage,stage,first_rx_received,next_step,next_action_date,last_touch_at,touch_count,funnel_open_count,funnel_clicked,engaged_at')
-      .in('funnel_stage',DEAL_STAGES).order('funnel_stage'),
-    sbClient.from('mdrx_contacts').select('*'),
-    sbClient.from('quote_links').select('recipient_name,recipient_email,provider_id,view_count,last_viewed_at,revoked'),
-  ]);
-  DEAL_ROWS=prov||[]; DEAL_CONTACTS=cons||[]; DEAL_LINKS=links||[];
-  renderDeals();
-}
-
-const daysSince=(d)=>d?Math.floor((Date.now()-new Date(d).getTime())/86400000):null;
-
-// Everyone we know at the practice: the physician, any siblings at the same practice, and staff.
-function dealPeople(p){
-  const out=[{name:mdrxProvName(p), role:'Physician', kind:'physician', email:p.email, id:p.id}];
-  DEAL_ROWS.filter(x=>x.id!==p.id && x.practice_name && x.practice_name===p.practice_name)
-    .forEach(x=>out.push({name:mdrxProvName(x), role:'Physician, same practice', kind:'physician', email:x.email, id:x.id}));
-  DEAL_CONTACTS.filter(c=>c.provider_id===p.id || (p.practice_id && c.practice_id===p.practice_id))
-    .forEach(c=>out.push({name:c.name, role:(c.title||c.role||'Contact')+(c.influence==='decision_maker'?' · decision maker':''), kind:'staff', email:c.email}));
-  return out;
-}
-
-// What is actually wrong with this deal, in the order it matters.
-function dealRisks(p, people){
-  const r=[]; const quiet=daysSince(p.last_touch_at);
-  const staff=people.filter(x=>x.kind==='staff');
-  if(p.funnel_stage==='Won' && !p.first_rx_received)
-    r.push({sev:'hot', txt:'Signed but no first script yet. Revenue does not start until one is written.'});
-  if(!staff.length)
-    r.push({sev:'warn', txt:'Single threaded. Nobody at the practice but the physician, so if he goes quiet the deal has no other way in.'});
-  if(!staff.some(s=>/decision maker/i.test(s.role)) && staff.length)
-    r.push({sev:'warn', txt:'No decision maker identified among the staff contacts.'});
-  if(quiet!=null && quiet>=7 && p.funnel_stage!=='Won')
-    r.push({sev:'warn', txt:`Quiet for ${quiet} days.`});
-  const unopened=DEAL_LINKS.filter(l=>l.provider_id===p.id && !l.revoked && !l.view_count);
-  if(unopened.length)
-    r.push({sev:'info', txt:`${unopened.map(u=>u.recipient_name).join(', ')} never opened the analysis sent to them.`});
-  return r;
-}
-
-// The single next move, and the one thing to bring to it.
-function dealMove(p, people, risks){
-  const staff=people.filter(x=>x.kind==='staff');
-  if(p.funnel_stage==='Won' && !p.first_rx_received)
-    return {move:'Get the first script written. Ask what is holding it up: staff training, the ordering workflow, or a patient they have in mind.',
-            asset:'Nothing to send. This is a phone call to the practice, not an email.'};
-  if(p.next_action_date && p.next_action_date>new Date().toISOString().slice(0,10))
-    return {move:`Holding until ${p.next_action_date}. ${ehtml(p.next_step||'')}`, asset:'Nothing until then. Chasing early costs more than waiting.'};
-  if(!staff.length)
-    return {move:'Find the practice administrator and get them into the deal before it stalls on one person.',
-            asset:'Check the practice website or LinkedIn for the administrator.'};
-  return {move: p.next_step || 'Confirm what is outstanding and who else needs to see it.',
-          asset:'Offer to build the dispensing analysis around their own numbers rather than sending a generic one.'};
-}
-
-function renderDeals(){
-  const el=document.getElementById('view-deals');
-  const won=DEAL_ROWS.filter(p=>p.funnel_stage==='Won');
-  const live=DEAL_ROWS.filter(p=>p.funnel_stage!=='Won');
-  const card=(p)=>{
-    const people=dealPeople(p), risks=dealRisks(p,people), mv=dealMove(p,people,risks);
-    const quiet=daysSince(p.last_touch_at);
-    const sevColor={hot:'#c0563a',warn:'#C8922A',info:'var(--muted)'};
-    return `<div class="panel" style="padding:15px 17px;margin-bottom:11px;border-left:3px solid ${p.funnel_stage==='Won'?'#2f8f5b':'#6B9FD4'};">
-      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline;">
-        <div><b style="font-size:15px;">${ehtml(mdrxProvName(p))}</b>
-          <span style="font-size:12px;color:var(--muted);margin-left:8px;">${ehtml(p.practice_name||'')}${p.state?' · '+ehtml(p.state):''}</span></div>
-        <div style="font-size:11.5px;font-weight:700;color:var(--muted);">${ehtml(p.funnel_stage)}${quiet!=null?' · quiet '+quiet+'d':''}</div>
-      </div>
-
-      <div style="margin:10px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;">Who is in it</div>
-      <div style="font-size:12.5px;">${people.map(x=>`<div>${ehtml(x.name)} <span style="color:var(--muted);">— ${ehtml(x.role)}</span></div>`).join('')}</div>
-
-      ${risks.length?`<div style="margin:11px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;">What is in the way</div>
-      ${risks.map(r=>`<div style="font-size:12.5px;color:${sevColor[r.sev]};margin-bottom:3px;">${ehtml(r.txt)}</div>`).join('')}`:''}
-
-      <div style="margin:11px 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;">The move</div>
-      <div style="font-size:13px;">${mv.move}</div>
-      <div style="font-size:12px;color:var(--muted);margin-top:3px;">${mv.asset}</div>
-
-      <div style="margin-top:11px;display:flex;gap:7px;flex-wrap:wrap;">
-        <button class="ib" onclick="mdrxOpen(${p.id});showView('mdrx',document.querySelector('.ni'))">Open record</button>
-        <button class="ib" onclick="mdrxBrief(${p.id})">🧾 Pre-call brief</button>
-      </div>
-    </div>`;
-  };
-  el.innerHTML=`
-    <div class="panel" style="padding:14px 16px;margin-bottom:12px;">
-      <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${won.length+live.length} deals that can actually close</div>
-      <div style="font-size:12.5px;color:var(--muted);">Who decides, what is in the way, and the single next move. Everything else in this CRM serves the people who are not here yet.</div>
-    </div>
-    ${won.length?`<div class="ph" style="padding:0 2px 6px;"><div class="pt">Signed · waiting on first scripts</div></div>${won.map(card).join('')}`:''}
-    ${live.length?`<div class="ph" style="padding:10px 2px 6px;"><div class="pt">In play</div></div>${live.map(card).join('')}`:''}`;
-}
 
 // ---- Interactive dispensing model -----------------------------------------------------------
 // Sends the doctor the tool where he builds his OWN formulary mix, rather than a quote Eric built
