@@ -380,10 +380,11 @@ PANE.addEventListener('click', function(ev){
       var hh=new URLSearchParams(String(location.hash||'').replace(/^#/,''));
       var qq=new URL(location.href).searchParams;
       var g=function(k){ var v=hh.get(k); if(v==null||v==='') v=qq.get(k); return (v==null||v==='')?null:v; };
-      return {nn:g('nn'), ns:g('ns'), mo:g('mo'), core:g('core'), post:g('post'), inj:g('inj')};
+      return {nn:g('nn'), ns:g('ns'), mo:g('mo'), ni:g('ni'),
+              core:g('core'), post:g('post'), inj:g('inj')};
     }
     var P=sbPresetFromUrl();
-    if(!P.nn && !P.ns && !P.mo && !P.core && !P.post && !P.inj) return;
+    if(!P.nn && !P.ns && !P.mo && !P.ni && !P.core && !P.post && !P.inj) return;
     // An id in the link is a formulary id; F_DATA is keyed by product name, so go through it.
     function idxFor(id){
       var f=(FORM||[]).filter(function(x){ return String(x.id)===String(id); })[0];
@@ -408,7 +409,8 @@ PANE.addEventListener('click', function(ev){
       n=Math.max(lo, Math.min(hi, n));
       var el=GID(id); if(el) el.value=String(n);
     };
-    num('sb-nn', P.nn, 0, 9999); num('sb-ns', P.ns, 0, 9999); num('sb-mo', P.mo, 1, 12);
+    num('sb-nn', P.nn, 0, 9999); num('sb-ns', P.ns, 0, 9999);
+    num('sb-mo', P.mo, 1, 12);  num('sb-ni', P.ni, 0, 9999);
     var r=GID('sb-mo-r'); var mo=GID('sb-mo'); if(r && mo) r.value=mo.value;
     drawPicked(); recalc(); drawTable();
   })();
