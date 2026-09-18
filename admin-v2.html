@@ -282,7 +282,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
     <button class="ni active" data-biz="ml" onclick="showView('leads',this)"><span class="ni-ic">📋</span> Lead Queue <span class="nb" id="new-count">6</span></button>
     <button class="ni" data-biz="ml" onclick="showView('network',this)"><span class="ni-ic">🏥</span> Provider Network</button>
     <button class="ni" data-biz="ml" onclick="showView('portal',this)"><span class="ni-ic">🔐</span> Portal Accounts <span class="nb" id="hold-count" style="display:none;">0</span></button>
-    <button class="ni" data-biz="ml" onclick="showView('signups',this)"><span class="ni-ic">📝</span> Sign-ups <span class="nb" id="signup-count" style="display:none;">0</span></button>
+    <button class="ni" data-biz="ml" onclick="showView('signups',this);filterLane('medlegal',document.getElementById('lane-medlegal'))"><span class="ni-ic">📝</span> Sign-ups <span class="nb" id="signup-count" style="display:none;">0</span></button>
+    <!-- The pharmacy sign-up lane belongs to MDRx, not to the med-legal side. Same view, opened
+         on the other lane, so the two functions stay separate while the platform stays one login.
+         Eric, 17 Sep 2026. -->
+    <button class="ni" data-biz="rx" onclick="showView('signups',this);filterLane('pharmacy',document.getElementById('lane-pharmacy'))"><span class="ni-ic">📝</span> Intakes <span class="nb" id="rx-signup-count" style="display:none;">0</span></button>
     <button class="ni" data-biz="ml" onclick="showView('crm',this)"><span class="ni-ic">⚖️</span> Attorney CRM <span class="nb" id="crm-count" style="display:none;">0</span></button>
     <button class="ni" data-biz="rx" onclick="showView('mdrx',this)"><span class="ni-ic">💊</span> MDRx Pharmacy CRM <span class="nb" id="mdrx-due" style="display:none;">0</span></button>
     <button class="ni" data-biz="rx" onclick="openPresenter()" title="Opens the dispensing model in a clean tab. No CRM data on screen."><span class="ni-ic">🎥</span> Present formulary <span style="opacity:.6;font-size:11px;">MDRx</span></button>
@@ -362,14 +366,22 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <span style="margin-left:12px;font-size:12px;color:var(--muted);">Use the “+ Add” card in each tab</span>
       </div>
       <div class="net-tabs">
-        <button class="net-tab active" onclick="switchTab('attorneys',this)">Attorneys (6)</button>
-        <button class="net-tab" onclick="switchTab('providers',this)">Medical Providers (9)</button>
-        <button class="net-tab" onclick="switchTab('vendors',this)">Vendors (7)</button>
-        <button class="net-tab" onclick="switchTab('contacts',this)">Unassigned Contacts (0)</button>
+        <button class="net-tab active" onclick="switchTab('attorneys',this)">Attorneys</button>
+        <button class="net-tab" onclick="switchTab('providers',this)">Network</button>
+        <button class="net-tab" onclick="switchTab('directory',this)">Directory</button>
+        <button class="net-tab" onclick="switchTab('vendors',this)">Vendors</button>
+        <button class="net-tab" onclick="switchTab('contacts',this)">Unassigned Contacts</button>
       </div>
       <div class="net-body">
         <div id="tab-attorneys"><div class="net-grid" id="atty-grid"></div></div>
-        <div id="tab-providers" style="display:none;"><div class="net-grid" id="prov-grid"></div></div>
+        <div id="tab-providers" style="display:none;">
+          <div id="net-filter" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:2px 2px 14px;"></div>
+          <div class="net-grid" id="prov-grid"></div>
+        </div>
+        <div id="tab-directory" style="display:none;">
+          <div style="padding:2px 2px 14px;"><input class="finput" id="dir-search" placeholder="Search every provider by name, specialty or practice…" style="max-width:440px;" oninput="DIR_SEARCH=this.value;renderDirectory();"/></div>
+          <div class="net-grid" id="dir-grid"></div>
+        </div>
         <div id="tab-vendors"   style="display:none;"><div class="net-grid" id="vend-grid"></div></div>
         <div id="tab-contacts"  style="display:none;"><div style="font-size:12px;color:var(--muted);padding:2px 2px 10px;">Scraped from emails you forward to <b>referrals@mdconcierge.net</b> with a subject starting “Contact”. Attach each to a provider, practice, or firm — or leave it here as a standalone reference.</div><div class="net-grid" id="contacts-grid"></div></div>
       </div>
@@ -424,6 +436,9 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <button class="fb" onclick="filterSignups('all',this)">All</button>
         <button class="fb" onclick="filterSignups('approved',this)">Approved</button>
         <button class="fb" onclick="filterSignups('rejected',this)">Rejected</button>
+        <span style="margin:0 10px;opacity:.4;">|</span>
+        <button class="fb active" id="lane-medlegal" onclick="filterLane('medlegal',this)">Med-legal</button>
+        <button class="fb" id="lane-pharmacy" onclick="filterLane('pharmacy',this)">Pharmacy (PDRx)</button>
       </div>
       <div id="signup-list" style="padding:4px 2px;"></div>
     </div>
@@ -566,6 +581,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 <div class="modal-bg" id="modal-prov"><div class="modal" id="mp-inner" style="max-height:88vh;overflow:auto;"></div></div>
 <div class="modal-bg" id="modal-atty"><div class="modal" id="ma-inner" style="max-height:88vh;overflow:auto;"></div></div>
 <div class="modal-bg" id="modal-vend"><div class="modal" id="mv-inner" style="max-height:88vh;overflow:auto;"></div></div>
+<div class="modal-bg" id="modal-prac"><div class="modal" id="mpr-inner" style="max-height:88vh;overflow:auto;"></div></div>
 
 <div class="toast" id="toast"></div>
 
@@ -918,17 +934,163 @@ function provCardReal(p){
 function baaBadge(o){return (o&&o.baa_on_file)
   ?`<div style="margin:6px 0;"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#10311f;color:#3ad07f;">✓ BAA on file${o.baa_date?(' · '+ehtml(o.baa_date)):''}</span></div>`
   :`<div style="margin:6px 0;"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#3a1417;color:#ff6b81;">⚠ No BAA on file</span></div>`;}
+/* ── Network, consolidated by practice (Eric, 18 Sep 2026) ────────────────────────────────
+   The network is PRACTICES and INDIVIDUAL PHYSICIANS, not a flat list of 120 doctors.
+   One practice = one scheduling contact, and THEY decide who sees the patient.
+   A doctor is named on a referral only where there is no choice to make:
+     - the specialty or body part resolves to exactly one doctor at that practice, or
+     - the attorney asked for someone by name (that happens at routing time, not here).
+   A general referral into a practice's main specialty is deliberately NOT named - e.g. any
+   ortho case into Mountain Valley goes to Mountain Valley, even though Williams could take it.
+   The full doctor list still exists, in the Directory tab, as reference rather than routing. */
+const NET_TEST=/^(DEMO|LIVE TEST)|\(TEST\)/i;
+let NET_REGION='All', NET_REGION_LIST=['All'], DIR_SEARCH='';
+
+function netLive(){return NET_PRACTICES.filter(p=>p.status!=='inactive');}
+function netDocs(id){return NET_PROVIDERS.filter(d=>d.active&&d.practice_id===id);}
+function netRegionsFor(id){return [...new Set(NET_LOCATIONS.filter(l=>l.practice_id===id&&l.region).map(l=>l.region))];}
+function netOffices(id){return NET_LOCATIONS.filter(l=>l.practice_id===id).length;}
+function netPOC(id){const cs=NET_CONTACTS.filter(c=>c.practice_id===id);
+  return cs.find(c=>c.receives_referrals)||cs.find(c=>c.is_primary)||cs[0]||null;}
+function netShort(n){const s=String(n||'').split(',')[0].trim().split(/\s+/).filter(Boolean);
+  return s.length>1?('Dr. '+s[s.length-1]):String(n||'');}
+function netSpecMap(id){const m=new Map();
+  for(const d of netDocs(id)){const s=(d.specialty||'General').trim();if(!m.has(s))m.set(s,[]);m.get(s).push(d);}return m;}
+function netBodyMap(id){const m=new Map();
+  for(const d of netDocs(id))for(const b of (d.body_parts||[])){if(!m.has(b))m.set(b,[]);m.get(b).push(d);}return m;}
+function netBadge(t,bg,fg){return `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:${bg};color:${fg};margin:0 4px 4px 0;display:inline-block;">${ehtml(t)}</span>`;}
+function netCommercial(p,docs){
+  const out=[],ns=p.network_status;
+  if(ns==='retainer')out.push(netBadge('Network client','#10311f','#3ad07f'));
+  else if(ns==='founding')out.push(netBadge('Founding · not yet billed','#2a2416','#e0c060'));
+  else if(ns==='prospect')out.push(netBadge('Network prospect','#1b2233','#7fa8e0'));
+  else if(ns)out.push(netBadge(ns,'#242a33','#9fb0c8'));
+  const pick=f=>docs.find(d=>d[f]==='client')?'client':docs.find(d=>d[f]==='prospect')?'prospect':docs.find(d=>d[f]==='signed_elsewhere')?'signed elsewhere':null;
+  const ph=pick('pharmacy_status');
+  if(ph)out.push(netBadge('Pharmacy: '+ph,ph==='client'?'#10311f':'#2a2416',ph==='client'?'#3ad07f':'#e0c060'));
+  const co=pick('collagen_status');
+  if(co)out.push(netBadge('Collagen: '+co,co==='client'?'#10311f':'#1b2233',co==='client'?'#3ad07f':'#7fa8e0'));
+  return out.join('');
+}
+function netPracticeCard(p){
+  const docs=netDocs(p.id),poc=netPOC(p.id),solo=docs.length===1;
+  const title=solo?docs[0].doctor_name:p.name;
+  const nOff=netOffices(p.id);
+  const sub=solo?((docs[0].specialty||'—')+' · individual physician')
+                :(docs.length+' providers · '+(nOff||1)+(nOff===1?' office':' offices'));
+  const named=[],assigns=[];
+  for(const [s,arr] of netSpecMap(p.id)){
+    if(solo)named.push(`<span class="ct-chip on">${ehtml(s)}</span>`);
+    else if(arr.length===1)named.push(`<span class="ct-chip on" title="Only doctor here for this - the referral names them">${ehtml(s)} → ${ehtml(netShort(arr[0].doctor_name))}</span>`);
+    else assigns.push(`<span class="ct-chip" title="${arr.length} doctors - the practice assigns">${ehtml(s)} · ${arr.length} <span style="opacity:.6">they assign</span></span>`);
+  }
+  if(!solo)for(const [b,arr] of netBodyMap(p.id))
+    if(arr.length===1)named.push(`<span class="ct-chip on" title="Only doctor here for this body part">${ehtml(b)} → ${ehtml(netShort(arr[0].doctor_name))}</span>`);
+  const chips=named.concat(assigns).join('')||'<span style="font-size:11px;color:var(--muted);">No specialties recorded</span>';
+  const testTag=NET_TEST.test(p.name||'')?netBadge('TEST RECORD','#3a1417','#ff6b81'):'';
+  const noSub=(!solo&&docs.length>2&&netBodyMap(p.id).size===0)
+    ?`<div style="margin:6px 0;"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#2a2416;color:#e0c060;">⚠ No body parts set — every referral here will say “they assign”</span></div>`:'';
+  const pocLine=poc
+    ?`<div class="dp-f" style="margin:6px 0;"><span class="dp-fk" style="font-size:11px;">Scheduling</span><span class="dp-fv" style="font-size:11.5px;">${ehtml(poc.name||'(unnamed)')}${poc.phone?(' · '+ehtml(poc.phone)):''}</span></div>`
+    :`<div style="margin:6px 0;"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#3a2a10;color:#f0b34a;">⚠ No scheduling contact — referrals cannot be placed</span></div>`;
+  const regTags=netRegionsFor(p.id).map(r=>`<span class="stag">${ehtml(r)}</span>`).join('')||'<span class="stag">No region set</span>';
+  return `<div class="mc-card" style="cursor:pointer;" onclick="openPracModal(${p.id})">
+    <div class="mc-top"><div class="mc-av av-p">${ehtml(String(title||'?').charAt(0))}</div>
+      <div><div class="mc-name">${ehtml(title)}</div><div class="mc-role">${ehtml(sub)}</div></div></div>
+    <div class="stags">${regTags}</div>
+    <div style="margin:8px 0 2px;">${testTag}${netCommercial(p,docs)}</div>
+    ${noSub}${pocLine}
+    <div class="ct-checks" style="margin-bottom:10px;">${chips}</div>
+    <div class="mc-acts"><button class="btn-sm" onclick="event.stopPropagation();openPracModal(${p.id})">Open</button></div></div>`;
+}
+function netVisible(){
+  let list=netLive().filter(p=>netDocs(p.id).length>0);
+  if(NET_REGION!=='All')list=list.filter(p=>netRegionsFor(p.id).includes(NET_REGION));
+  return list.sort((a,b)=>(NET_TEST.test(a.name||'')?1:0)-(NET_TEST.test(b.name||'')?1:0)
+    ||netDocs(b.id).length-netDocs(a.id).length||String(a.name||'').localeCompare(String(b.name||'')));
+}
+function setNetRegion(i){NET_REGION=NET_REGION_LIST[i]||'All';renderNetworkPractices();}
+function renderNetworkPractices(){
+  const regs=new Set();netLive().forEach(p=>netRegionsFor(p.id).forEach(r=>regs.add(r)));
+  NET_REGION_LIST=['All',...[...regs].sort()];
+  const f=document.getElementById('net-filter');
+  if(f)f.innerHTML=NET_REGION_LIST.map((r,i)=>`<button class="btn-sm" style="${r===NET_REGION?'background:var(--gold);color:#16181d;font-weight:700;':''}" onclick="setNetRegion(${i})">${ehtml(r)}</button>`).join('')
+    +`<span style="font-size:11px;color:var(--muted);margin-left:10px;">Referrals go to the practice. A doctor is named only where there is one obvious choice.</span>`;
+  const g=document.getElementById('prov-grid');
+  if(g)g.innerHTML=netVisible().map(netPracticeCard).join('')+addCard('Add practice / physician','openProvModal(null)');
+}
+function renderDirectory(){
+  const g=document.getElementById('dir-grid');if(!g)return;
+  const q=(DIR_SEARCH||'').trim().toLowerCase();
+  let list=NET_PROVIDERS.filter(p=>p.active);
+  if(q)list=list.filter(p=>{const pr=NET_PRACTICES.find(x=>x.id===p.practice_id);
+    return (p.doctor_name||'').toLowerCase().includes(q)||(p.specialty||'').toLowerCase().includes(q)||((pr&&pr.name)||'').toLowerCase().includes(q);});
+  g.innerHTML=list.length?(list.map(provCardReal).join('')+addCard('Add provider','openProvModal(null)'))
+    :'<div style="color:var(--muted);font-size:13px;padding:20px;">No providers match that search.</div>';
+}
 function renderNetwork(){
   document.getElementById('atty-grid').innerHTML=NET_ATTORNEYS.map(attyCardReal).join('')+addCard('Add attorney','openAttyModal(null)');
-  document.getElementById('prov-grid').innerHTML=NET_PROVIDERS.map(provCardReal).join('')+addCard('Add provider','openProvModal(null)');
+  renderNetworkPractices();
+  renderDirectory();
   document.getElementById('vend-grid').innerHTML=NET_VENDORS.map(vendCardReal).join('')+addCard('Add vendor','openVendModal(null)');
   const tabs=document.querySelectorAll('.net-tab');
   if(tabs[0])tabs[0].textContent=`Attorneys (${NET_ATTORNEYS.length})`;
-  if(tabs[1])tabs[1].textContent=`Medical Providers (${NET_PROVIDERS.length})`;
-  if(tabs[2])tabs[2].textContent=`Vendors (${NET_VENDORS.length})`;
+  if(tabs[1])tabs[1].textContent=`Network (${netVisible().length})`;
+  if(tabs[2])tabs[2].textContent=`Directory (${NET_PROVIDERS.filter(p=>p.active).length})`;
+  if(tabs[3])tabs[3].textContent=`Vendors (${NET_VENDORS.length})`;
   const unassigned=NET_CONTACTS.filter(c=>!c.practice_id&&!c.provider_id&&!c.firm_id);
-  if(tabs[3])tabs[3].textContent=`Unassigned Contacts (${unassigned.length})`;
+  if(tabs[4])tabs[4].textContent=`Unassigned Contacts (${unassigned.length})`;
   renderUnassigned(unassigned);
+}
+/* ── Practice record: the scheduling contact and commercial standing live here ── */
+let mprEditId=null, mprContacts=[];
+function openPracModal(id){
+  const p=NET_PRACTICES.find(x=>x.id===id);if(!p)return;
+  mprEditId=id;
+  mprContacts=NET_CONTACTS.filter(c=>c.practice_id===id&&!c.provider_id)
+    .map(c=>({role:c.role||PROV_ROLES[0],name:c.name||'',email:c.email||'',phone:c.phone||'',receives_referrals:!!c.receives_referrals}));
+  const docs=netDocs(id);
+  const docRows=docs.map(d=>{const bp=(d.body_parts||[]).join(', ');
+    return `<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);">
+      <div><div style="font-size:13px;font-weight:600;">${ehtml(d.doctor_name)}</div>
+      <div style="font-size:11px;color:var(--muted2);">${ehtml(d.specialty||'—')} · ${bp?ehtml(bp):'<span style="color:#e0c060;">no body parts set</span>'}</div></div>
+      <button class="btn-sm" onclick="closeModal('modal-prac');openProvModal(${d.id})">Edit</button></div>`;}).join('')
+    ||'<div style="font-size:12px;color:var(--muted);">No active providers.</div>';
+  const offices=NET_LOCATIONS.filter(l=>l.practice_id===id)
+    .map(l=>ehtml((l.label||'Office')+' — '+(l.address||'')+(l.region?('  ['+l.region+']'):''))).join('<br>')||'No offices recorded';
+  document.getElementById('mpr-inner').innerHTML=`
+   <h2>${ehtml(p.name)}</h2>
+   <div style="font-size:12px;color:var(--muted);margin:-6px 0 14px;">Referrals go to ONE contact here. This practice decides which doctor sees the patient, unless a specialty has a single obvious doctor or the attorney names one.</div>
+   <div class="form-row" style="margin-bottom:12px;">
+     <div class="fgroup"><label class="flabel">Network status</label><select class="ms" id="mpr-net">${selOpts(['prospect','founding','retainer','declined'],p.network_status||'')}</select></div>
+     <div class="fgroup"><label class="flabel">Website</label><input class="finput" id="mpr-web" value="${ehtml(p.website||'')}"/></div>
+   </div>
+   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Offices &amp; regions</label><div style="font-size:12px;color:var(--muted2);line-height:1.7;">${offices}</div></div>
+   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Providers (${docs.length}) — set body parts so the right doctor can be named automatically</label>${docRows}</div>
+   <div class="fgroup" style="margin-bottom:8px;"><label class="flabel">Contacts — tick “referrals” for the ONE who receives them</label><div id="mpr-contacts"></div>
+     <button class="btn-sm" onclick="mprAddContact()">+ Add contact</button></div>
+   <div class="mbtns"><button class="btn-cancel" onclick="closeModal('modal-prac')">Cancel</button><button class="btn-ok" onclick="savePrac()">Save</button></div>`;
+  mprRenderContacts();
+  document.getElementById('modal-prac').classList.add('open');
+}
+function mprRenderContacts(){const box=document.getElementById('mpr-contacts');if(!box)return;
+  box.innerHTML=mprContacts.map((c,i)=>`<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;"><select class="ms" style="max-width:180px;" onchange="mprContacts[${i}].role=this.value">${PROV_ROLES.map(r=>`<option ${r===c.role?'selected':''}>${r}</option>`).join('')}</select><input class="finput" placeholder="Name" value="${ehtml(c.name)}" oninput="mprContacts[${i}].name=this.value"/><input class="finput" placeholder="Email" value="${ehtml(c.email)}" oninput="mprContacts[${i}].email=this.value"/><input class="finput" placeholder="Phone" value="${ehtml(c.phone)}" style="max-width:140px;" oninput="mprContacts[${i}].phone=this.value"/><label class="ct-chk" style="white-space:nowrap;"><input type="checkbox" ${c.receives_referrals?'checked':''} onchange="mprPickReferral(${i},this.checked)"/> referrals</label><button class="btn-sm danger" onclick="mprRemoveContact(${i})">✕</button></div>`).join('')
+    ||'<div style="font-size:12px;color:var(--muted);margin-bottom:6px;">No contacts yet — add the scheduler who should receive referrals.</div>';}
+function mprPickReferral(i,on){mprContacts.forEach((c,j)=>c.receives_referrals=(on&&j===i));mprRenderContacts();}
+function mprAddContact(){mprContacts.push({role:PROV_ROLES[0],name:'',email:'',phone:'',receives_referrals:mprContacts.length===0});mprRenderContacts();}
+function mprRemoveContact(i){mprContacts.splice(i,1);mprRenderContacts();}
+async function savePrac(){
+  if(!mprEditId)return;
+  const upd={network_status:document.getElementById('mpr-net').value||null,
+             website:(document.getElementById('mpr-web').value||'').trim()||null};
+  const {error}=await sbClient.from('practices').update(upd).eq('id',mprEditId);
+  if(error){showToast('Error: '+error.message);return;}
+  await sbClient.from('contacts').delete().eq('practice_id',mprEditId).is('provider_id',null);
+  const rows=mprContacts.filter(c=>(c.name&&c.name.trim())||(c.email&&c.email.trim()))
+    .map(c=>({practice_id:mprEditId,role:c.role,name:(c.name||'').trim(),email:(c.email||'').trim(),phone:(c.phone||'').trim(),receives_referrals:!!c.receives_referrals}));
+  if(rows.length){const {error:e2}=await sbClient.from('contacts').insert(rows);
+    if(e2){showToast('Saved practice; contact error: '+e2.message);return;}}
+  closeModal('modal-prac');await loadProviders();renderNetwork();showToast('Practice saved');
 }
 function renderUnassigned(list){
   const grid=document.getElementById('contacts-grid');if(!grid)return;
@@ -1166,7 +1328,7 @@ async function saveVend(){
 async function delVend(id){const v=NET_VENDORS.find(x=>x.id===id);if(!confirm('Remove '+(v?v.company_name:'')+'?'))return;const {error}=await sbClient.from('vendors').delete().eq('id',id);if(error){showToast('Error: '+error.message);return;}await loadProviders();renderNetwork();showToast('Vendor removed');}
 function switchTab(tab,btn){
   document.querySelectorAll('.net-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');
-  ['attorneys','providers','vendors','contacts'].forEach(t=>document.getElementById('tab-'+t).style.display=t===tab?'block':'none');
+  ['attorneys','providers','directory','vendors','contacts'].forEach(t=>{const el=document.getElementById('tab-'+t);if(el)el.style.display=t===tab?'block':'none';});
 }
 
 function openAddModal(){document.getElementById('modal-add').classList.add('open');}
@@ -3763,10 +3925,19 @@ async function markNotifsSeen(){
 }
 
 // ── Self-serve sign-ups: review queue + 1-click approve (creates the real network records) ──
-let SIGNUPS=[], SIGNUP_FILTER='pending';
+let SIGNUPS=[], SIGNUP_FILTER='pending', SIGNUP_LANE='medlegal';
+// The two lanes are kept apart. A PDRx pharmacy account intake must never sit in the med-legal
+// network queue, and vice versa — Eric, 17 Sep 2026. Default view is med-legal; the Pharmacy
+// button switches lanes rather than blending them.
+function filterLane(lane,btn){
+  SIGNUP_LANE=lane;
+  ['lane-medlegal','lane-pharmacy'].forEach(id=>{const b=document.getElementById(id);if(b)b.classList.remove('active');});
+  if(btn)btn.classList.add('active');
+  loadSignups();
+}
 async function loadSignups(){
   try{
-    const {data,error}=await sbClient.from('signup_submissions').select('*').order('created_at',{ascending:false});
+    const {data,error}=await sbClient.from('signup_submissions').select('*').eq('lane',SIGNUP_LANE).order('created_at',{ascending:false});
     if(error){showToast('Sign-up load error: '+error.message);SIGNUPS=[];}else SIGNUPS=data||[];
   }catch(e){console.warn('signup load failed',e);SIGNUPS=[];}
   renderSignups();
@@ -3783,7 +3954,9 @@ async function queueImport(){
     if(error||!data||!data.ok)throw new Error((data&&data.error)||'extract failed');
     const payload={practice:data.practice||{website:url},providers:(data.providers||[]).filter(d=>d&&d.doctor_name),contacts:(data.contacts||[]).filter(c=>c&&(c.name||c.email)),services:data.services||[],locations:data.locations||[],submitter:{name:'Website import',email:''},source_url:url};
     const org=(data.practice&&data.practice.name)||url.replace(/^https?:\/\//,'').split('/')[0];
-    const {error:ie}=await sbClient.from('signup_submissions').insert({type:'provider',payload,org_name:org,submitter_email:'',flagged_reason:'Imported from website — verify details before approving'});
+    // lane set explicitly rather than left to the column default. A website import is always a
+    // med-legal network practice; PDRx pharmacy intakes are a separate lane. Eric, 17 Sep 2026.
+    const {error:ie}=await sbClient.from('signup_submissions').insert({type:'provider',lane:'medlegal',payload,org_name:org,submitter_email:'',flagged_reason:'Imported from website — verify details before approving'});
     if(ie)throw ie;
     document.getElementById('imp-url').value='';
     showToast('✓ Drafted '+org+' — review & edit it below.');
@@ -3937,13 +4110,29 @@ function fmtSignup(s){
   return h;
 }
 function suStatusBadge(s){const m={pending:['#fff8e8','#9a6700','Pending review'],approved:['#eaf7f0','#1e9e6a','Approved'],rejected:['#fdeceb','#c0392b','Rejected']};const x=m[s]||['#eef0f2','#6b7583',s];return `<span style="display:inline-block;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:700;background:${x[0]};color:${x[1]};">${x[2]}</span>`;}
-function renderSignups(){
-  const pend=SIGNUPS.filter(s=>s.status==='pending');
+// Counts pending across BOTH lanes, not just the one on screen. SIGNUPS only ever holds the
+// loaded lane, so counting off it hid two pending PDRx intakes the moment the lanes were split.
+// Eric, 17 Sep 2026.
+async function refreshSignupBadge(){
   const sc=document.getElementById('signup-count');
-  if(sc){if(pend.length){sc.style.display='';sc.textContent=pend.length;}else sc.style.display='none';}
+  if(!sc)return;
+  try{
+    const {count,error}=await sbClient.from('signup_submissions')
+      .select('id',{count:'exact',head:true}).eq('status','pending');
+    if(error)throw error;
+    if(count){sc.style.display='';sc.textContent=count;}else sc.style.display='none';
+  }catch(e){ sc.style.display='none'; }
+}
+function renderSignups(){
+  refreshSignupBadge();
   const list=SIGNUP_FILTER==='all'?SIGNUPS:SIGNUPS.filter(s=>s.status===SIGNUP_FILTER);
   const box=document.getElementById('signup-list');if(!box)return;
-  if(!list.length){box.innerHTML='<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">Nothing here. Share your sign-up links to start collecting.</div>';return;}
+  if(!list.length){
+    const laneName=SIGNUP_LANE==='pharmacy'?'PDRx pharmacy':'med-legal';
+    const msg=SIGNUP_FILTER==='all'
+      ? 'Nothing in the '+laneName+' lane yet.'
+      : 'No '+SIGNUP_FILTER+' submissions in the '+laneName+' lane.';
+    box.innerHTML='<div style="text-align:center;color:var(--muted);padding:30px;font-size:13px;">'+msg+'</div>';return;}
   box.innerHTML=list.map(s=>{
     const flag=s.flagged_reason?`<div style="font-size:12px;color:#9a6700;background:#fff8e8;border:1px solid #f0c36d;border-radius:7px;padding:6px 10px;margin-top:8px;">⚠ ${ehtml(s.flagged_reason)}</div>`:'';
     const editable=s.status==='pending';
