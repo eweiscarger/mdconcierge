@@ -968,8 +968,6 @@ function netCommercial(p,docs){
   const pick=f=>docs.find(d=>d[f]==='client')?'client':docs.find(d=>d[f]==='prospect')?'prospect':docs.find(d=>d[f]==='signed_elsewhere')?'signed elsewhere':null;
   const ph=pick('pharmacy_status');
   if(ph)out.push(netBadge('Pharmacy: '+ph,ph==='client'?'#10311f':'#2a2416',ph==='client'?'#3ad07f':'#e0c060'));
-  const co=pick('collagen_status');
-  if(co)out.push(netBadge('Collagen: '+co,co==='client'?'#10311f':'#1b2233',co==='client'?'#3ad07f':'#7fa8e0'));
   return out.join('');
 }
 function netPracticeCard(p){
@@ -1184,6 +1182,8 @@ function openProvModal(id){
      <label class="ct-chk"><input type="checkbox" id="mp-lit" ${p&&p.litigation_acceptance?'checked':''}/> Litigation OK</label>
    </div></div>
    <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Compliance — required before any records are coordinated</label><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;"><label class="ct-chk"><input type="checkbox" id="mp-baa" ${p&&p.baa_on_file?'checked':''}/> BAA on file</label><input class="finput" id="mp-baa-date" value="${p&&p.baa_date?ehtml(p.baa_date):''}" placeholder="signed date (optional)" style="max-width:200px;"/></div></div>
+   <div class="fgroup" style="margin-bottom:12px;"><label class="flabel">Pharmacy standing <span style="font-weight:400;color:var(--muted);">— internal. Clients and open prospects rank higher when a referral could go to more than one practice.</span></label>
+     <select class="ms" id="mp-pharm" style="max-width:280px;">${selOpts(['client','prospect','signed_elsewhere','declined'],p?p.pharmacy_status:'')}</select></div>
    <div class="fgroup" style="margin-bottom:8px;"><label class="flabel">Contacts — check “receives referrals” for who gets the referral email</label><div id="mp-contacts"></div>
      <button class="btn-sm" onclick="mpAddContactRow()">+ Add contact</button></div>
    <div class="mbtns"><button class="btn-cancel" onclick="closeModal('modal-prov')">Cancel</button><button class="btn-ok" onclick="saveProv()">${id?'Save changes':'Add provider'}</button></div>`;
@@ -1212,6 +1212,7 @@ async function saveProv(){
     lien_acceptance:document.getElementById('mp-lien').checked,ncp_required:document.getElementById('mp-ncp').checked,
     litigation_acceptance:document.getElementById('mp-lit').checked,
     baa_on_file:document.getElementById('mp-baa').checked,baa_date:(document.getElementById('mp-baa-date').value||'').trim()||null,
+    pharmacy_status:document.getElementById('mp-pharm').value||null,
     body_parts:Array.from(document.querySelectorAll('.mp-bp:checked')).map(x=>x.value)};
   let provId=mpEditId;
   if(mpEditId){const {error}=await sbClient.from('providers').update(rec).eq('id',mpEditId);if(error){showToast('Error: '+error.message);return;}}
