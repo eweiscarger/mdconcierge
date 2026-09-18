@@ -976,18 +976,17 @@ function netPracticeCard(p){
   const nOff=netOffices(p.id);
   const sub=solo?((docs[0].specialty||'—')+' · individual physician')
                 :(docs.length+' providers · '+(nOff||1)+(nOff===1?' office':' offices'));
-  const named=[],assigns=[];
-  for(const [s,arr] of netSpecMap(p.id)){
-    if(solo)named.push(`<span class="ct-chip on">${ehtml(s)}</span>`);
-    else if(arr.length===1)named.push(`<span class="ct-chip on" title="Only doctor here for this - the referral names them">${ehtml(s)} → ${ehtml(netShort(arr[0].doctor_name))}</span>`);
-    else assigns.push(`<span class="ct-chip" title="${arr.length} doctors - the practice assigns">${ehtml(s)} · ${arr.length} <span style="opacity:.6">they assign</span></span>`);
-  }
-  if(!solo)for(const [b,arr] of netBodyMap(p.id))
-    if(arr.length===1)named.push(`<span class="ct-chip on" title="Only doctor here for this body part">${ehtml(b)} → ${ehtml(netShort(arr[0].doctor_name))}</span>`);
-  const chips=named.concat(assigns).join('')||'<span style="font-size:11px;color:var(--muted);">No specialties recorded</span>';
+  // COVERAGE, not instructions. Eric, 18 Sep 2026: "dont tell mvo who to schedule with you just
+  // send them the lead and they figure it out... who treats the patient is not up to you in a
+  // practice like that." So these chips only say what the practice CAN take, which is how Eric
+  // knows where a case can go. The lead goes to the practice's one contact and they decide who
+  // sees the patient. The only name that ever travels is one the attorney asked for.
+  const cov=new Set();
+  for(const [s] of netSpecMap(p.id))cov.add(s);
+  for(const [b] of netBodyMap(p.id))cov.add(b);
+  const chips=[...cov].sort((a,b)=>a.localeCompare(b)).map(c=>`<span class="ct-chip on">${ehtml(c)}</span>`).join('')
+    ||'<span style="font-size:11px;color:var(--muted);">No specialties recorded</span>';
   const testTag=NET_TEST.test(p.name||'')?netBadge('TEST RECORD','#3a1417','#ff6b81'):'';
-  const noSub=(!solo&&docs.length>2&&netBodyMap(p.id).size===0)
-    ?`<div style="margin:6px 0;"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#2a2416;color:#e0c060;">⚠ No body parts set — every referral here will say “they assign”</span></div>`:'';
   const pocLine=poc
     ?`<div class="dp-f" style="margin:6px 0;"><span class="dp-fk" style="font-size:11px;">Scheduling</span><span class="dp-fv" style="font-size:11.5px;">${ehtml(poc.name||'(unnamed)')}${poc.phone?(' · '+ehtml(poc.phone)):''}</span></div>`
     :`<div style="margin:6px 0;"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:#3a2a10;color:#f0b34a;">⚠ No scheduling contact — referrals cannot be placed</span></div>`;
@@ -997,7 +996,7 @@ function netPracticeCard(p){
       <div><div class="mc-name">${ehtml(title)}</div><div class="mc-role">${ehtml(sub)}</div></div></div>
     <div class="stags">${regTags}</div>
     <div style="margin:8px 0 2px;">${testTag}${netCommercial(p,docs)}</div>
-    ${noSub}${pocLine}
+    ${pocLine}
     <div class="ct-checks" style="margin-bottom:10px;">${chips}</div>
     <div class="mc-acts"><button class="btn-sm" onclick="event.stopPropagation();openPracModal(${p.id})">Open</button></div></div>`;
 }
@@ -1013,7 +1012,7 @@ function renderNetworkPractices(){
   NET_REGION_LIST=['All',...[...regs].sort()];
   const f=document.getElementById('net-filter');
   if(f)f.innerHTML=NET_REGION_LIST.map((r,i)=>`<button class="btn-sm" style="${r===NET_REGION?'background:var(--gold);color:#16181d;font-weight:700;':''}" onclick="setNetRegion(${i})">${ehtml(r)}</button>`).join('')
-    +`<span style="font-size:11px;color:var(--muted);margin-left:10px;">Referrals go to the practice. A doctor is named only where there is one obvious choice.</span>`;
+    +`<span style="font-size:11px;color:var(--muted);margin-left:10px;">Every referral goes to the practice's one contact. They decide who treats the patient.</span>`;
   const g=document.getElementById('prov-grid');
   if(g)g.innerHTML=netVisible().map(netPracticeCard).join('')+addCard('Add practice / physician','openProvModal(null)');
 }
